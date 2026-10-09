@@ -36,7 +36,7 @@ the permissions.
 | Requirement                         | Status                                                                                                                                                                                                                                                                                                        |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | WYSIWYG, Word-like paste            | Tiptap editor: headings, lists, checklists, tables, links, code, highlight, alignment. Pasting from Word / Excel / web keeps structure.                                                                                                                                                                       |
-| Paste images from analysis software | Pasted or dropped image files are inserted inline (downscaled to ≤1920 px).                                                                                                                                                                                                                                   |
+| Paste images from analysis software | Pasted or dropped image files are inserted inline exactly as they are, with no resizing or re-encoding (up to 20 MB each).                                                                                                                                                                                    |
 | Photos from a tablet                | Toolbar "Take photo" opens the camera on tablets and phones. Layout is responsive.                                                                                                                                                                                                                            |
 | Sample information                  | "Insert sample information" adds a structured sample / proposal / instrument block (mock proposal data for now).                                                                                                                                                                                              |
 | Auto-saving                         | Debounced, serialised, retried on failure, flushed on tab hide / navigation. Status shown in the entry bar.                                                                                                                                                                                                   |
@@ -57,7 +57,7 @@ the permissions.
 - **Real proposal / sample data.** Implement `ExperimentContext` against the proposal system or SciCat.
 - **Instrument scan macros.** Plan: a second structured node (like `sampleInfo`) created from control-software
   events, e.g. a "scan" block with run number and a link to the data.
-- **Image storage.** Images are currently embedded in the entry. Replace `ImageService` with an upload that returns a URL.
+- **Image storage.** Images are currently embedded in the entry, at full quality. That makes entries and their saved versions large when there are many big images. Replace `ImageService` with an upload that returns a URL (original files in object storage, shown scaled in the page).
 - **Search across entries, templates, comments.**
 
 ## Architecture

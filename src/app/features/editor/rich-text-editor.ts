@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { Editor, type JSONContent } from '@tiptap/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ImageService } from './image.service';
+import { ImageRejected, ImageService } from './image.service';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { EditorToolbar } from './toolbar/editor-toolbar';
 
@@ -77,8 +77,12 @@ export class RichTextEditor {
       extensions: createEditorExtensions({
         placeholder: this.placeholder(),
         upload: (file) => this.images.toDocumentUrl(file),
-        onError: () =>
-          this.snackBar.open('Could not insert the image.', 'Dismiss', { duration: 5000 }),
+        onError: (error) =>
+          this.snackBar.open(
+            error instanceof ImageRejected ? error.message : 'Could not insert the image.',
+            'Dismiss',
+            { duration: 5000 },
+          ),
       }),
       editorProps: { attributes: { class: 'rt-content', 'aria-label': 'Logbook entry' } },
       onUpdate: ({ editor }) => {
