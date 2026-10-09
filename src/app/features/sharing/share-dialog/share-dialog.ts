@@ -9,7 +9,7 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatError, MatFormField } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatRadioButton, MatRadioGroup } from '@angular/material/radio';
@@ -45,7 +45,6 @@ type GrantableRole = Exclude<MemberRole, 'owner'>;
     MatIcon,
     MatIconButton,
     MatInput,
-    MatLabel,
     MatOption,
     MatRadioButton,
     MatRadioGroup,

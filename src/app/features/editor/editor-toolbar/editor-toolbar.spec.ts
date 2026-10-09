@@ -2,7 +2,9 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Editor } from '@tiptap/core';
 import { of } from 'rxjs';
+import { By } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MAX_IMAGE_BYTES } from '../image.service';
 import { createEditorExtensions } from '../extensions/editor-extensions';
@@ -113,6 +115,12 @@ describe('EditorToolbar', () => {
     await settle();
 
     expect(editor.getHTML()).not.toContain('href');
+  });
+
+  it('tells the user that the inserted sample block can be dragged', () => {
+    const tooltip = fixture.debugElement.query(By.css('.sample-button')).injector.get(MatTooltip);
+
+    expect(tooltip.message).toContain('Drag the block by its handle to move it');
   });
 
   it('inserts the sample information chosen in the dialog', async () => {

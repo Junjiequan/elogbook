@@ -1,5 +1,16 @@
 .content {
   width: min(560px, 85vw);
+
+  // The radio buttons have an invisible touch target that pokes out below the last one; room for it
+  // keeps a scrollbar from appearing when the list is short (it still scrolls when the list is long).
+  padding-bottom: 8px;
+
+  // Compact fields: none of them has a floating label, so they need far less height than Material's
+  // default 56px (a label would be cut off at this size).
+  --mat-form-field-container-height: 40px;
+  --mat-form-field-container-vertical-padding: 8px;
+  --mat-form-field-container-text-size: 14px;
+  --mat-select-trigger-text-size: 14px;
 }
 
 h3 {
@@ -18,7 +29,7 @@ h3 {
   }
 
   button {
-    margin-top: 8px;
+    margin-top: 0;
   }
 }
 

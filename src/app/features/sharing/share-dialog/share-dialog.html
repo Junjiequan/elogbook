@@ -7,16 +7,21 @@
       #inviteForm="ngForm"
       (ngSubmit)="addMember(inviteForm)"
     >
-      <mat-form-field class="grow">
-        <mat-label>Add person by email</mat-label>
-        <input matInput type="email" formControlName="email" autocomplete="off" />
+      <mat-form-field class="grow" subscriptSizing="dynamic">
+        <input
+          matInput
+          type="email"
+          formControlName="email"
+          placeholder="Add person by email"
+          aria-label="Add person by email"
+          autocomplete="off"
+        />
         @if (invite.controls.email.hasError('duplicate')) {
           <mat-error>Already has access</mat-error>
         }
       </mat-form-field>
-      <mat-form-field class="role">
-        <mat-label>Role</mat-label>
-        <mat-select formControlName="role">
+      <mat-form-field class="role" subscriptSizing="dynamic">
+        <mat-select formControlName="role" aria-label="Role of the new person">
           <mat-option value="editor">Can edit</mat-option>
           <mat-option value="viewer">Can view</mat-option>
         </mat-select>
