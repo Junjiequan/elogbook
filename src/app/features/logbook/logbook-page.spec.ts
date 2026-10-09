@@ -1,16 +1,17 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { Component, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DEMO_USERS } from '../../core/data-access/demo/demo-users';
 import type { Entry, Logbook } from '../../core/models/logbook.models';
 import { provideFakeAuth } from '../../testing/fake-auth';
 import { LogbooksStore } from '../logbooks/logbooks.store';
 import { EntriesStore } from './entries.store';
-import { MatSidenav } from '@angular/material/sidenav';
-import { By } from '@angular/platform-browser';
-import { LogbookPage, SIDEBAR_COLLAPSED_KEY } from './logbook-page';
+import { LogbookPage } from './logbook-page';
+
+@Component({ template: 'stub' })
+class Stub {}
 
 const logbook: Logbook = {
   id: 'l1',
@@ -42,7 +43,6 @@ describe('LogbookPage sidebar', () => {
   };
 
   beforeEach(() => {
-    localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -74,31 +74,29 @@ describe('LogbookPage sidebar', () => {
     });
   });
 
-  afterEach(() => localStorage.removeItem(SIDEBAR_COLLAPSED_KEY));
-
   it('starts open on a wide screen', async () => {
     await create();
     expect(drawer().classList).toContain('mat-drawer-opened');
   });
 
-  it('collapses from the sidebar button and remembers it', async () => {
+  it('collapses from the sidebar button, for this visit only', async () => {
     await create();
     await click('button[aria-label="Collapse entry list"]');
 
     expect(drawer().classList).not.toContain('mat-drawer-opened');
-    expect(localStorage.getItem(SIDEBAR_COLLAPSED_KEY)).toBe('true');
 
-    await create();
-    expect(drawer().classList).not.toContain('mat-drawer-opened');
+    await create(); // opening a logbook again: the list is back, it is how you reach the content
+    expect(drawer().classList).toContain('mat-drawer-opened');
   });
 
-  it('does not remember a close it did not cause, such as the panel closing while the window is resized', async () => {
+  it('keeps the list closed through the visit once it was closed on purpose', async () => {
     await create();
-    fixture.debugElement.query(By.directive(MatSidenav)).componentInstance.close();
+    await click('button[aria-label="Collapse entry list"]');
+    fixture.componentRef.setInput('logbookId', 'l1');
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(localStorage.getItem(SIDEBAR_COLLAPSED_KEY)).not.toBe('true');
+    expect(drawer().classList).not.toContain('mat-drawer-opened');
   });
 
   it('shows the list again with a tab at the same height as the button that hid it', async () => {
@@ -117,13 +115,12 @@ describe('LogbookPage sidebar', () => {
   });
 
   it('reopens from the edge tab', async () => {
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true');
     await create();
+    await click('button[aria-label="Collapse entry list"]');
     expect(drawer().classList).not.toContain('mat-drawer-opened');
 
     await click('button[aria-label="Show entry list"]');
     expect(drawer().classList).toContain('mat-drawer-opened');
-    expect(localStorage.getItem(SIDEBAR_COLLAPSED_KEY)).toBe('false');
   });
 
   describe('entry filter', () => {
@@ -249,5 +246,71 @@ describe('LogbookPage sidebar', () => {
       expect(title.textContent).toContain('Test logbook');
       expect(getComputedStyle(crumbs).overflowY).toBe('visible'); // no stray scrollbar next to the title
     });
+  });
+});
+
+describe('LogbookPage opening a logbook', () => {
+  const entry = (id: string): Entry => ({ id, logbookId: 'l1', title: id }) as Entry;
+
+  const open = async (entries: Entry[], url: string) => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([
+          { path: 'logbooks/:logbookId', component: Stub },
+          { path: 'logbooks/:logbookId/entries/:entryId', component: Stub },
+        ]),
+        provideFakeAuth(),
+        {
+          provide: BreakpointObserver,
+          useValue: { observe: () => of({ matches: false, breakpoints: {} }) },
+        },
+        {
+          provide: LogbooksStore,
+          useValue: { logbooks: signal([logbook]), status: signal('ready') },
+        },
+      ],
+    }).overrideComponent(LogbookPage, {
+      set: {
+        providers: [
+          {
+            provide: EntriesStore,
+            useValue: {
+              entries: signal(entries),
+              status: signal('ready'),
+              load: () => undefined,
+              create: () => undefined,
+            },
+          },
+        ],
+      },
+    });
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl(url);
+    const fixture = TestBed.createComponent(LogbookPage);
+    fixture.componentRef.setInput('logbookId', 'l1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return router;
+  };
+
+  it('shows the latest entry straight away', async () => {
+    const router = await open([entry('newest'), entry('older')], '/logbooks/l1');
+
+    expect(router.url).toBe('/logbooks/l1/entries/newest');
+  });
+
+  it('leaves the entry alone when one is already selected', async () => {
+    const router = await open([entry('newest'), entry('older')], '/logbooks/l1/entries/older');
+
+    expect(router.url).toBe('/logbooks/l1/entries/older');
+  });
+
+  it('stays on the empty page when the logbook has no entries', async () => {
+    const router = await open([], '/logbooks/l1');
+
+    expect(router.url).toBe('/logbooks/l1');
   });
 });

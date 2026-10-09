@@ -11,14 +11,14 @@ import {
 } from '@angular/core';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatTooltip } from '@angular/material/tooltip';
-import { map } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { CurrentUserService } from '../../core/auth/current-user.service';
 import { canDelete, canManage, canWrite, roleOf } from '../../core/auth/permissions';
 import { ShareDialog, type ShareDialogData } from '../sharing/share-dialog';
@@ -26,16 +26,6 @@ import { DeleteLogbook } from '../logbooks/delete-logbook.service';
 import { LogbooksStore } from '../logbooks/logbooks.store';
 import { EntriesStore } from './entries.store';
 import { LogbookTags } from '../../shared/logbook-tags/logbook-tags';
-
-export const SIDEBAR_COLLAPSED_KEY = 'elogbook.sidebarCollapsed';
-
-function readCollapsedPreference(): boolean {
-  try {
-    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
 
 @Component({
   selector: 'app-logbook-page',
@@ -100,9 +90,20 @@ export class LogbookPage {
       .pipe(map((state) => state.matches)),
     { initialValue: false },
   );
-  /** Desktop preference, remembered between visits. On small screens the list always starts closed. */
-  private readonly collapsedPreference = signal(readCollapsedPreference());
-  protected readonly drawerOpen = signal(!this.collapsedPreference());
+  /**
+   * Closing the entry list lasts only for this visit: every time a logbook is opened the list is there
+   * again, since it is how you get to the content. On small screens it starts closed.
+   */
+  private readonly collapsed = signal(false);
+  protected readonly drawerOpen = signal(true);
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map(() => this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
 
   constructor() {
     effect(() => {
@@ -110,17 +111,29 @@ export class LogbookPage {
       untracked(() => void this.entries.load(id));
     });
     effect(() => {
-      const open = !this.narrow() && !this.collapsedPreference();
+      const open = !this.narrow() && !this.collapsed();
       untracked(() => this.drawerOpen.set(open));
     });
+    // Opening a logbook shows its latest entry right away, instead of an empty page that asks you to
+    // pick one. (A logbook without entries keeps the "create the first one" page.)
     effect(() => {
-      const collapsed = this.collapsedPreference();
-      try {
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
-      } catch {
-        // storage unavailable: the choice just won't survive a reload
+      const latest = this.entries.status() === 'ready' ? this.entries.entries()[0] : undefined;
+      const url = this.url();
+      if (latest && this.isLogbookRoot(url)) {
+        untracked(
+          () =>
+            void this.router.navigate(['/logbooks', this.logbookId(), 'entries', latest.id], {
+              replaceUrl: true,
+            }),
+        );
       }
     });
+  }
+
+  /** True when no entry is selected, i.e. the URL is just /logbooks/<id>. */
+  private isLogbookRoot(url: string): boolean {
+    const path = url.split(/[?#]/)[0].replace(/\/$/, '');
+    return path === `/logbooks/${this.logbookId()}`;
   }
 
   protected async newEntry(): Promise<void> {
@@ -139,11 +152,11 @@ export class LogbookPage {
     this.filter.set((event.target as HTMLInputElement).value);
   }
 
-  /** The user opened or closed the entry list on purpose; on desktop the choice is remembered. */
+  /** The user opened or closed the entry list on purpose; on desktop that holds until they leave. */
   protected toggleDrawer(open: boolean): void {
     this.drawerOpen.set(open);
     if (!this.narrow()) {
-      this.collapsedPreference.set(!open);
+      this.collapsed.set(!open);
     }
   }
 
