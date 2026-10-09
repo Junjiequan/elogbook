@@ -72,7 +72,7 @@ import { ThemeService } from './core/theme/theme.service';
     <main><router-outlet /></main>
     <footer class="shell-footer no-print">
       <span class="footer-brand"><mat-icon>menu_book</mat-icon> eLogbook</span>
-      <span class="footer-note">Closed-source MVP · your demo data stays in this browser</span>
+      <span class="footer-note">Open-source MVP · your demo data stays in this browser</span>
       <nav class="footer-links" aria-label="Project links">
         <a href="https://github.com/Junjiequan/elogbook" target="_blank" rel="noopener">Source</a>
         <a

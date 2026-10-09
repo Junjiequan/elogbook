@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DEMO_USERS } from '../../core/data-access/demo/demo-users';
-import type { Logbook } from '../../core/models/logbook.models';
+import type { Entry, Logbook } from '../../core/models/logbook.models';
 import { provideFakeAuth } from '../../testing/fake-auth';
 import { LogbooksStore } from '../logbooks/logbooks.store';
 import { EntriesStore } from './entries.store';
@@ -130,6 +130,48 @@ describe('LogbookPage sidebar', () => {
       await click('.filter .clear');
       expect(input().value).toBe('');
       expect(el().querySelector('.filter .clear')).toBeNull();
+    });
+  });
+
+  describe('on a phone (the list opens over the page)', () => {
+    const entry: Entry = {
+      id: 'e1',
+      logbookId: 'l1',
+      title: 'Tappable entry',
+      content: { type: 'doc', content: [] },
+      revision: 1,
+      createdAt: '2026-10-01T10:00:00Z',
+      updatedAt: '2026-10-01T10:00:00Z',
+      updatedBy: DEMO_USERS[0],
+    };
+
+    it('lets a tap reach an entry instead of the backdrop behind the list', async () => {
+      TestBed.overrideProvider(BreakpointObserver, {
+        useValue: { observe: () => of({ matches: true, breakpoints: {} }) },
+      });
+      TestBed.overrideComponent(LogbookPage, {
+        set: {
+          providers: [
+            {
+              provide: EntriesStore,
+              useValue: {
+                entries: signal([entry]),
+                status: signal('ready'),
+                load: () => undefined,
+                create: () => undefined,
+              },
+            },
+          ],
+        },
+      });
+      await create();
+      await click('button[aria-label="Toggle entry list"]');
+
+      const link = el().querySelector<HTMLElement>('.entry-link')!;
+      const box = link.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+
+      expect(link.contains(hit)).withContext(`tap landed on ${hit?.className}`).toBeTrue();
     });
   });
 });

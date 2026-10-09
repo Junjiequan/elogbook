@@ -18,9 +18,15 @@
   // A distinct white panel next to the tinted content area, with a soft edge between them.
   --mat-sidenav-container-background-color: var(--mat-sys-surface);
   --mat-sidenav-container-shape: 0; // square edges; Material's default rounds the outer corners
-  z-index: 2; // keep the soft shadow above the editor content
   border-right: 1px solid var(--mat-sys-outline-variant);
   box-shadow: 4px 0 16px rgb(10 30 80 / 10%);
+
+  // Desktop (docked panel): sit above the editor so the soft shadow shows over it.
+  // Do NOT raise it in "over" mode (phones): there Material stacks it above its own backdrop,
+  // and a lower z-index here would put the backdrop on top and swallow every tap.
+  &.mat-drawer-side {
+    z-index: 2;
+  }
 }
 
 .sidenav-head {
