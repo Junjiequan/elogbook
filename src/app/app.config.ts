@@ -3,7 +3,13 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { provideRouter, withComponentInputBinding, withRouterConfig } from '@angular/router';
+import {
+  TitleStrategy,
+  provideRouter,
+  withComponentInputBinding,
+  withRouterConfig,
+} from '@angular/router';
+import { AppTitleStrategy } from './core/titles/app-title-strategy';
 import { ProposalRepository } from './core/data-access/proposal.repository';
 import { DemoProposalRepository } from '../demo/demo-proposals';
 import { IndexedDbLogbookRepository } from './core/data-access/indexeddb-logbook.repository';
@@ -23,6 +29,7 @@ export const appConfig: ApplicationConfig = {
       // Child routes (entries) also receive `logbookId` as an input.
       withRouterConfig({ paramsInheritanceStrategy: 'always' }),
     ),
+    { provide: TitleStrategy, useClass: AppTitleStrategy },
     // TEST-ONLY sign-in. To remove: delete features/test-auth, drop these two lines and the /login route,
     // and provide an OIDC-backed AuthService instead.
     TestAuthService,

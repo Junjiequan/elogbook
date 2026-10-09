@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#003366"/>
+  <!-- open logbook -->
+  <path d="M32 18c-5-3-12-4-20-3v32c8-1 15 0 20 3 5-3 12-4 20-3V15c-8-1-15 0-20 3z" fill="#fff"/>
+  <path d="M32 18v32" stroke="#003366" stroke-width="2.5" fill="none"/>
+  <!-- lines of notes on both pages -->
+  <g stroke="#0099dc" stroke-width="2.6" stroke-linecap="round" fill="none">
+    <path d="M17 24c4-.5 8 0 11 1.2M17 31c4-.5 8 0 11 1.2M17 38c4-.5 8 0 11 1.2"/>
+    <path d="M36 25.2c3-1.2 7-1.7 11-1.2M36 32.2c3-1.2 7-1.7 11-1.2"/>
+  </g>
+  <!-- a highlighted result, in ESS-style grass green -->
+  <circle cx="44.5" cy="40" r="3.6" fill="#99be00"/>
+</svg>

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { entryTitle, exportTitle, logbookTitle } from './features/logbook/logbook-titles';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'logbooks' },
@@ -21,12 +22,13 @@ export const routes: Routes = [
       },
       {
         path: 'logbooks/:logbookId/print',
-        title: 'Export logbook',
+        title: exportTitle,
         loadComponent: () =>
           import('./features/print/print-page/print-page').then((m) => m.PrintPage),
       },
       {
         path: 'logbooks/:logbookId',
+        title: logbookTitle,
         // The content view uses the whole screen: no footer.
         data: { hideFooter: true },
         loadComponent: () =>
@@ -42,6 +44,7 @@ export const routes: Routes = [
           },
           {
             path: 'entries/:entryId',
+            title: entryTitle,
             loadComponent: () =>
               import('./features/entry/entry-page/entry-page').then((m) => m.EntryPage),
           },
