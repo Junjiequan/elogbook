@@ -1,12 +1,4 @@
-import type { JSONContent } from '@tiptap/core';
-import type {
-  Entry,
-  Logbook,
-  LogbookBundle,
-  MemberRole,
-  User,
-  Visibility,
-} from '../app/core/models/logbook.models';
+import type { Entry, Logbook, LogbookBundle, User } from '../app/core/models/logbook.models';
 import {
   bold,
   bullets,
@@ -27,34 +19,15 @@ import {
   moment,
   PRINCIPAL_INVESTIGATOR,
   REMOTE_COLLEAGUE,
+  TEAM,
 } from './demo-people';
+import { MORE_SPECS } from './demo-more';
+import type { LogbookSpec } from './demo-spec';
 
 /**
  * Smaller demo logbooks that fill the list with a realistic spread: different instruments,
  * roles (owner / editor / viewer) and access levels. Illustrative content only.
  */
-interface EntrySpec {
-  title: string;
-  daysAgo: number;
-  at: [hours: number, minutes: number];
-  by: 'user' | 'owner';
-  content: () => JSONContent;
-}
-
-interface LogbookSpec {
-  slug: string;
-  title: string;
-  description: string;
-  instrument: string | null;
-  proposalId: string | null;
-  visibility: Visibility;
-  /** The signed-in user's role. When not 'owner', `owner` below owns it. */
-  role: MemberRole;
-  owner?: User;
-  daysAgo: number;
-  entries: EntrySpec[];
-}
-
 const SPECS: LogbookSpec[] = [
   {
     slug: 'estia-pd',
@@ -131,12 +104,19 @@ const SPECS: LogbookSpec[] = [
     slug: 'dream-nmc',
     title: 'DREAM – NMC811 cathode degradation',
     description:
-      'Powder diffraction on pristine and cycled NMC811 cathode material. Led by Henrik Larsen.',
+      'Powder diffraction on pristine and cycled NMC811 cathode material. Led by Henrik Larsen.\n\nThe goal is to follow the loss of lithium and the growth of the rock-salt surface layer as a function of cycle number. Samples: pristine, 100, 250 and 500 cycles, each measured in a 3 mm vanadium capillary at room temperature and, for the 500-cycle sample, up to 600 K to see the thermal decomposition. Refinements are done with a two-phase model (layered R-3m and rock-salt Fm-3m); the working notes, the refined structures and the plots of lattice parameters against cycle number are collected in the entries below.',
     instrument: 'DREAM',
     proposalId: '2026-0290',
     visibility: 'private',
     role: 'editor',
     owner: PRINCIPAL_INVESTIGATOR,
+    members: [
+      { user: TEAM.priya, role: 'editor' },
+      { user: TEAM.tomasz, role: 'editor' },
+      { user: TEAM.elena, role: 'viewer' },
+      { user: TEAM.kenji, role: 'viewer' },
+      { user: TEAM.amara, role: 'viewer' },
+    ],
     daysAgo: 12,
     entries: [
       {
@@ -196,12 +176,17 @@ const SPECS: LogbookSpec[] = [
     slug: 'bifrost-commissioning',
     title: 'BIFROST – detector commissioning notes',
     description:
-      'Shared, read-only notes from the analyser commissioning. Maintained by the instrument team.',
+      'Shared, read-only notes from the analyser commissioning. Maintained by the instrument team.\n\nContents: analyser calibration for each triplet, chopper phasing logs, vanadium and elastic-line checks, the list of known dead pixels, and the open issues with the data acquisition. Please do not edit; send corrections to the local contact.',
     instrument: 'BIFROST',
     proposalId: null,
     visibility: 'facility-read',
     role: 'viewer',
     owner: LOCAL_CONTACT,
+    members: [
+      { user: TEAM.lars, role: 'editor' },
+      { user: TEAM.chloe, role: 'viewer' },
+      { user: TEAM.diego, role: 'viewer' },
+    ],
     daysAgo: 20,
     entries: [
       {
@@ -383,12 +368,19 @@ const SPECS: LogbookSpec[] = [
   {
     slug: 'trex-mn3sn',
     title: 'T-REX – Mn₃Sn magnetic excitations',
-    description: 'Inelastic scattering on a Mn₃Sn single crystal. Led by Henrik Larsen.',
+    description:
+      'Inelastic scattering on a Mn₃Sn single crystal. Led by Henrik Larsen. A 4 g crystal is aligned in the (H, H, L) plane and cooled to 1.5 K; constant-energy cuts around the zone centre map the spin-wave dispersion, and temperature scans through the Néel point follow the softening of the gap. Notes from the cooldown, the alignment and the first cuts are below; the reduced data and the fitting scripts are in the shared proposal folder.',
     instrument: 'T-REX',
     proposalId: '2026-0211',
     visibility: 'private',
     role: 'editor',
     owner: PRINCIPAL_INVESTIGATOR,
+    members: [
+      { user: TEAM.kenji, role: 'editor' },
+      { user: TEAM.elena, role: 'editor' },
+      { user: TEAM.chloe, role: 'viewer' },
+      { user: TEAM.diego, role: 'viewer' },
+    ],
     daysAgo: 60,
     entries: [
       {
@@ -450,6 +442,7 @@ function toBundle(spec: LogbookSpec, user: User, now: Date): LogbookBundle {
           { user: owner, role: 'owner' },
           { user, role: spec.role },
         ];
+  members.push(...(spec.members ?? []));
 
   const entries: Entry[] = spec.entries.map((e) => {
     const created = moment(now, e.daysAgo, e.at[0], e.at[1]);
@@ -485,4 +478,4 @@ function toBundle(spec: LogbookSpec, user: User, now: Date): LogbookBundle {
 }
 
 export const createExtraDemoLogbooks = (user: User, now = new Date()): LogbookBundle[] =>
-  SPECS.map((spec) => toBundle(spec, user, now));
+  [...SPECS, ...MORE_SPECS].map((spec) => toBundle(spec, user, now));

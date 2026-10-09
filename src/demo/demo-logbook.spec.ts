@@ -9,7 +9,7 @@ import {
 } from '../app/core/data-access/indexeddb-logbook.repository';
 import { LogbookRepository } from '../app/core/data-access/logbook.repository';
 import { createDemoLogbook } from './demo-logbook';
-import { DemoSeeder, demoSeededKey } from './demo-seeder';
+import { DEMO_VERSION, DemoSeeder, demoSeededKey } from './demo-seeder';
 import { createDemoLogbooks } from './demo-set';
 import { DEMO_USERS } from './demo-users';
 
@@ -36,6 +36,23 @@ describe('demo logbook set', () => {
     );
     expect(new Set(logbooks.map((l) => l.instrument)).size).toBeGreaterThanOrEqual(5);
     expect(logbooks.every((l) => l.demo)).toBeTrue();
+  });
+
+  it('has enough logbooks to need a second page of the list', () => {
+    expect(bundles.length).toBeGreaterThan(11);
+  });
+
+  it('mixes very long descriptions with short ones, to show the hover cards and the cut-off text', () => {
+    const lengths = bundles.map((b) => b.logbook.description.length);
+    expect(lengths.filter((n) => n > 400).length).toBeGreaterThanOrEqual(4);
+    expect(lengths.filter((n) => n < 100).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('has logbooks with many members, and some with few', () => {
+    const counts = bundles.map((b) => b.logbook.members.length);
+    expect(counts.filter((n) => n > 3).length).toBeGreaterThanOrEqual(5);
+    expect(Math.max(...counts)).toBeGreaterThanOrEqual(8);
+    expect(counts.filter((n) => n <= 3).length).toBeGreaterThanOrEqual(3);
   });
 
   it('uses stable ids per user, different between users', () => {
@@ -171,6 +188,27 @@ describe('DemoSeeder', () => {
     await seeder.ensureFor(anna);
 
     expect((await repo.listLogbooks(anna)).length).toBe(total - 1);
+  });
+
+  it('brings someone seeded with an older version up to date, keeping their entries', async () => {
+    await seeder.ensureFor(anna);
+    const [stale] = (await repo.listLogbooks(anna)).filter((l) => l.title.startsWith('LoKI'));
+    await repo.updateLogbook(stale.id, {
+      description: 'old text',
+      members: stale.members.slice(0, 1),
+    });
+    const entriesBefore = (await repo.listEntries(stale.id)).map((e) => e.id).sort();
+    localStorage.setItem(demoSeededKey(anna), 'true'); // what the first version stored
+
+    await seeder.ensureFor(anna);
+
+    const logbooks = await repo.listLogbooks(anna);
+    const fresh = logbooks.find((l) => l.id === stale.id)!;
+    expect(logbooks.length).toBe(total);
+    expect(fresh.description).not.toBe('old text');
+    expect(fresh.members.length).toBeGreaterThan(3);
+    expect((await repo.listEntries(stale.id)).map((e) => e.id).sort()).toEqual(entriesBefore);
+    expect(localStorage.getItem(demoSeededKey(anna))).toBe(DEMO_VERSION);
   });
 
   it('completes a partial seed without duplicating what exists', async () => {

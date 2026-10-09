@@ -1,0 +1,53 @@
+<span class="avatars">
+  @for (member of shown(); track member.user.id) {
+    <app-table-popover
+      #person="appTablePopover"
+      icon="person"
+      [heading]="member.user.name"
+      [pinnable]="false"
+    >
+      <button
+        type="button"
+        class="avatar"
+        [class.active]="person.open()"
+        [attr.aria-label]="member.user.name + ' (' + member.role + ')'"
+      >
+        {{ initials(member.user.name) }}
+      </button>
+      <div popoverBody class="person">
+        <span class="email">{{ member.user.email }}</span>
+        <span class="role" [attr.data-role]="member.role">{{ member.role }}</span>
+      </div>
+    </app-table-popover>
+  }
+  @if (extra() > 0) {
+    <app-table-popover
+      #everyone="appTablePopover"
+      heading="Members"
+      icon="group"
+      [pinnable]="false"
+    >
+      <button
+        type="button"
+        class="avatar more"
+        [class.active]="everyone.open()"
+        [attr.aria-label]="'Show all ' + members().length + ' members'"
+        (click)="everyone.toggle(); $event.stopPropagation()"
+      >
+        …
+      </button>
+      <ul popoverBody class="member-list">
+        @for (member of members(); track member.user.id) {
+          <li>
+            <span class="avatar">{{ initials(member.user.name) }}</span>
+            <span class="who">
+              <span class="name">{{ member.user.name }}</span>
+              <span class="email">{{ member.user.email }}</span>
+            </span>
+            <span class="role" [attr.data-role]="member.role">{{ member.role }}</span>
+          </li>
+        }
+      </ul>
+    </app-table-popover>
+  }
+</span>

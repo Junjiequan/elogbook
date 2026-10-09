@@ -35,7 +35,6 @@
   }
 
   tbody tr {
-    cursor: pointer;
     border-top: 1px solid var(--mat-sys-outline-variant);
 
     &:first-child {
@@ -55,44 +54,83 @@
     white-space: nowrap;
   }
 
-  td {
-    vertical-align: top;
+  // Every row is a single line. The two text columns get a share of the width and cut what does not
+  // fit with an ellipsis (`max-width: 0` is what lets a table cell shrink below its text).
+  .title-cell,
+  .description-cell {
+    max-width: 0;
+  }
+
+  .title-cell {
+    width: 32%;
   }
 
   .description-cell {
-    width: 34%;
-    max-width: 480px;
+    width: 36%;
     color: var(--mat-sys-on-surface-variant);
-    vertical-align: top;
   }
 
+  .title-wrap,
   .description-wrap {
     display: flex;
-    align-items: flex-start;
-    gap: 2px;
+    align-items: center;
+    gap: 6px;
   }
 
+  .title-text,
   .description-text {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
-    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-
-    // Unfolded: the whole text, wrapped.
-    &.expanded {
-      white-space: normal;
-      overflow: visible;
-    }
   }
 
-  .expand {
-    // Perfectly centred icon: fixed square, no padding, icon sized to match.
+  .description-text {
+    flex: 1 1 auto;
+  }
+
+  .title-text {
+    font-weight: 500;
+  }
+
+  // Cut-off text fades out at its end instead of being chopped through a letter, and our own "…" follows
+  // it in the accent colour. (The marker only exists when something really is cut off.)
+  .title-text.cut,
+  .description-text.cut {
+    text-overflow: clip;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.6em), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.6em), transparent);
+  }
+
+  .cut-dots {
     flex: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    margin-left: 2px;
+    color: var(--mat-sys-primary);
+    font-size: 1.15em;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    cursor: default;
+  }
+
+  .title-wrap app-table-popover {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .description-wrap app-table-popover {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .action-cell {
+    width: 1%; // as narrow as the button
+    padding-right: 0;
+  }
+
+  // An icon-only button, small enough not to make the row taller than its text.
+  .view-button {
     width: 28px;
     height: 28px;
     padding: 0;
@@ -107,15 +145,13 @@
     }
   }
 
-  .title-cell a {
-    font-weight: 500;
-    color: var(--mat-sys-primary);
-    text-decoration: none;
-
-    &:hover,
-    &:focus-visible {
-      text-decoration: underline;
-    }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 
@@ -130,7 +166,7 @@
 }
 
 .badge {
-  margin-left: 8px;
+  flex: none;
 }
 
 .role {
@@ -151,33 +187,6 @@
     width: 17px;
     height: 17px;
     font-size: 17px;
-    color: var(--mat-sys-on-surface-variant);
-  }
-}
-
-.avatars {
-  display: inline-flex;
-}
-
-.avatar {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-left: -6px;
-  border: 1.5px solid var(--mat-sys-surface);
-  border-radius: 50%;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
-  font-size: 0.6875rem;
-  font-weight: 500;
-
-  &:first-child {
-    margin-left: 0;
-  }
-
-  &.more {
-    background: var(--mat-sys-surface-container-highest);
     color: var(--mat-sys-on-surface-variant);
   }
 }

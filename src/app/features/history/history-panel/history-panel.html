@@ -12,7 +12,7 @@
         [class.selected]="version.id === selectedId()"
         (click)="selected.emit(version)"
       >
-        <span class="when">{{ version.savedAt | date: 'd MMM y, HH:mm' }}</span>
+        <span class="when">{{ version.savedAt | date }}</span>
         <span class="who">{{ version.savedBy.name }} · {{ reasonLabel(version.reason) }}</span>
       </button>
     </li>

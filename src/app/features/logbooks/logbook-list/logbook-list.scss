@@ -4,6 +4,12 @@
   padding: 28px 24px 40px;
 }
 
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .page-header {
   display: flex;
   align-items: flex-end;
@@ -227,7 +233,9 @@ app-logbook-table .pager {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: 100%;
+  // Every card is the same height, so a grid of them stays even whatever the text. Long titles and
+  // descriptions are cut (2 and 3 lines) and shown in full in a card on hover.
+  height: var(--card-height, 17rem);
   box-sizing: border-box;
   overflow: hidden;
   padding: 20px 18px 16px;
@@ -237,9 +245,6 @@ app-logbook-table .pager {
   box-shadow: var(--app-shadow-sm);
   color: inherit;
   text-decoration: none;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
 
   // brand-coloured accent along the top edge
   &::before {
@@ -250,37 +255,112 @@ app-logbook-table .pager {
     background: var(--app-brand-accent);
   }
 
-  &:hover,
-  &:focus-visible {
-    transform: translateY(-2px);
-    box-shadow: var(--app-shadow-lg);
+  h2,
+  .description {
+    // Cut after a fixed number of lines (a clamp), but always take that much room, so the tags and
+    // the date below sit at the same height in every card.
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    margin: 0;
   }
 
   h2 {
-    margin: 0;
     font: var(--mat-sys-title-medium);
+    line-height: 1.4;
+    min-height: 2lh;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .description {
-    margin: 0;
+    flex: 1;
     color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-medium);
+    line-height: 1.45;
+    min-height: 3lh;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .title-slot,
+  .description-slot {
+    display: block; // the popover host; the text inside is what is cut
+    min-width: 0;
+  }
+
+  .title-slot ::ng-deep .anchor,
+  .description-slot ::ng-deep .anchor {
+    position: relative; // the "…" marker sits in the bottom-right corner of the cut-off text
+    display: block;
+    width: 100%;
+  }
+
+  // Cut-off text ends in a "…" in the accent colour. It sits over the last line's own ellipsis (the
+  // fade hides that one), so there is exactly one set of dots and it stands out.
+  .cut-dots {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding-left: 1.6em;
+    background: linear-gradient(to right, transparent, var(--mat-sys-surface) 40%);
+    color: var(--mat-sys-primary);
+    font-weight: 700;
+    cursor: default;
+  }
+
+  .cut-dots--title {
+    font: var(--mat-sys-title-medium);
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .cut-dots--description {
+    font: var(--mat-sys-body-medium);
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+  // A full-width banner along the bottom edge: the one way into the logbook (the card itself is not a
+  // link). Quiet on purpose: a soft tint and a hairline, not a solid block of colour.
+  .view-banner {
+    flex: none;
+    width: auto;
+    height: 32px;
+    margin: 0 -18px -16px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 0;
+    background: color-mix(in srgb, var(--mat-sys-primary) 7%, var(--mat-sys-surface));
+    --mat-button-text-container-height: 32px;
+    --mat-button-text-label-text-size: 0.8125rem;
+    --mat-button-text-label-text-weight: 500;
+    --mat-button-text-icon-spacing: 6px;
+
+    mat-icon {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--mat-sys-primary) 14%, var(--mat-sys-surface));
+    }
+  }
+
+  // Members on the left, when it was last touched on the right: a row of its own, apart from the tags.
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
   }
 
   .meta {
-    margin: auto 0 0;
+    margin: 0;
     font: var(--mat-sys-label-small);
     color: var(--mat-sys-on-surface-variant);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card {
-    transition: none;
-
-    &:hover,
-    &:focus-visible {
-      transform: none;
-    }
   }
 }
 

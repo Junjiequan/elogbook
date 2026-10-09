@@ -32,6 +32,16 @@
   background: color-mix(in srgb, var(--mat-sys-surface) 38%, transparent);
 }
 
+.corner {
+  position: fixed;
+  z-index: 2;
+  top: 8px;
+  right: 12px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mat-sys-surface) 80%, transparent);
+}
+
 .credit {
   position: fixed;
   z-index: 1;

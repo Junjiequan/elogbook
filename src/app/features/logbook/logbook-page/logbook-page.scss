@@ -301,6 +301,14 @@
     min-width: 0;
   }
 
+  // Set apart from the logbook's own buttons: these belong to the person, not the logbook.
+  .user-controls {
+    flex: none;
+    margin-left: 4px;
+    padding-left: 8px;
+    border-left: 1px solid var(--mat-sys-outline-variant);
+  }
+
   // "‹ Logbooks" above the title in small text: a quiet way back, so the title stays the main text.
   .crumbs {
     margin-bottom: 1px;

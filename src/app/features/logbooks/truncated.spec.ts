@@ -10,7 +10,11 @@ import { Truncated } from './truncated';
         class="text"
         appTruncated
         #t="appTruncated"
-        style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+        [style]="
+          clamp()
+            ? 'display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden'
+            : 'display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap'
+        "
         >{{ text() }}</span
       >
       <output>{{ t.truncated() }}</output>
@@ -19,6 +23,7 @@ import { Truncated } from './truncated';
 })
 class Host {
   readonly width = signal(500);
+  readonly clamp = signal(false);
   readonly text = signal('A short description');
 }
 
@@ -54,6 +59,37 @@ describe('Truncated', () => {
     expect(result()).toBe('true');
 
     host.width.set(900);
+    await settle();
+    expect(result()).toBe('false');
+  });
+
+  it('also notices text cut off at the bottom, as with a line clamp', async () => {
+    host.clamp.set(true);
+    host.width.set(150);
+    host.text.set('word '.repeat(60));
+    await settle();
+    expect(result()).toBe('true');
+
+    host.text.set('two short lines');
+    host.width.set(400);
+    await settle();
+    expect(result()).toBe('false');
+  });
+
+  it('ignores a pixel or two of rounding, which fractional screen scaling produces', async () => {
+    host.clamp.set(true);
+    host.width.set(400);
+    host.text.set('two short lines');
+    await settle();
+    const text = fixture.nativeElement.querySelector('.text') as HTMLElement;
+
+    // Three lines of content in a box three pixels too short: nothing is really cut off.
+    text.style.cssText =
+      'display: block; overflow: hidden; line-height: 20px; height: 57px; white-space: pre';
+    text.textContent = 'one\ntwo\nthree';
+    window.dispatchEvent(new Event('resize'));
+    await settle();
+    text.style.width = '399px'; // makes the ResizeObserver look again
     await settle();
     expect(result()).toBe('false');
   });

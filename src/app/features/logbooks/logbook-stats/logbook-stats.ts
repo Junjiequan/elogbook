@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
+import { DATE_FORMAT } from '../../../core/date-format';
 
 export interface LogbookStatsData {
   total: number;
@@ -19,5 +20,6 @@ export interface LogbookStatsData {
   styleUrl: './logbook-stats.scss',
 })
 export class LogbookStats {
+  protected readonly dateFormat = DATE_FORMAT;
   readonly data = input.required<LogbookStatsData>();
 }

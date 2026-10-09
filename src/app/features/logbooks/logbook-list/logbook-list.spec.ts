@@ -32,7 +32,7 @@ describe('LogbookList', () => {
   let fixture: ComponentFixture<LogbookList>;
   const el = () => fixture.nativeElement as HTMLElement;
   const titles = () =>
-    Array.from(el().querySelectorAll('.card h2, .title-cell a')).map((n) => n.textContent?.trim());
+    Array.from(el().querySelectorAll('.card h2, .title-text')).map((n) => n.textContent?.trim());
 
   const type = async (text: string) => {
     const input = el().querySelector<HTMLInputElement>('input[type="search"]')!;
@@ -73,6 +73,49 @@ describe('LogbookList', () => {
   it('shows every logbook as a card by default', () => {
     expect(titles()).toEqual(['LoKI beamtime', 'Reflectometry run', 'Battery cathode']);
     expect(el().querySelector('table')).toBeNull();
+  });
+
+  it('carries a single profile and colour-mode icon in its top-right corner, next to New logbook', () => {
+    const actions = el().querySelector('.page-header .page-actions')!;
+
+    expect(actions.querySelectorAll('app-user-controls').length).toBe(1);
+    expect(
+      actions.querySelector('app-user-controls button.trigger')!.getAttribute('aria-label'),
+    ).toBe('Account and appearance');
+    expect(actions.textContent).toContain('New logbook');
+  });
+
+  it('gives every card a full-width View banner as the way into the logbook', () => {
+    const cards = Array.from(el().querySelectorAll<HTMLElement>('.card'));
+    expect(cards.length).toBe(3);
+
+    for (const card of cards) {
+      const banner = card.querySelector<HTMLAnchorElement>('a.view-banner')!;
+      expect(banner.textContent).toContain('View');
+      expect(banner.getAttribute('href')).toMatch(/^\/logbooks\/.+/);
+      expect(card.querySelectorAll('a').length).toBe(1); // the banner is the only link
+      // it spans the card from edge to edge, below the "Updated" line
+      const box = card.getBoundingClientRect();
+      const bannerBox = banner.getBoundingClientRect();
+      expect(Math.round(bannerBox.width)).toBe(Math.round(box.width) - 2); // minus the card's border
+      expect(bannerBox.top).toBeGreaterThanOrEqual(
+        card.querySelector('.meta')!.getBoundingClientRect().bottom,
+      );
+    }
+    expect(el().querySelector('a.card')).toBeNull(); // the card itself is not a link
+  });
+
+  it('marks no text as cut off when everything fits', () => {
+    expect(el().querySelector('.card .cut-dots')).toBeNull();
+  });
+
+  it('shows the members on each card, in a row of their own and not among the tags', () => {
+    for (const card of Array.from(el().querySelectorAll<HTMLElement>('.card'))) {
+      const members = card.querySelector('app-member-avatars')!;
+      expect(members).not.toBeNull();
+      expect(card.querySelector('app-logbook-tags')!.contains(members)).toBeFalse();
+      expect(card.querySelector('.foot')!.contains(members)).toBeTrue();
+    }
   });
 
   it('searches title, instrument and proposal, matching every word', async () => {
@@ -132,7 +175,7 @@ describe('LogbookList pagination', () => {
   let loader: HarnessLoader;
   const el = () => fixture.nativeElement as HTMLElement;
   const titles = () =>
-    Array.from(el().querySelectorAll('.card h2, .title-cell a')).map((n) => n.textContent?.trim());
+    Array.from(el().querySelectorAll('.card h2, .title-text')).map((n) => n.textContent?.trim());
   const pager = () => loader.getHarness(MatPaginatorHarness);
 
   const make = async (count: number) => {

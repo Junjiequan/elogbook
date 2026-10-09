@@ -19,7 +19,7 @@
         @if (book.proposalId) {
           <span>Proposal: {{ book.proposalId }}</span>
         }
-        <span>Exported {{ exportedAt | date: 'd MMM y, HH:mm' }}</span>
+        <span>Exported {{ exportedAt | date }}</span>
       </p>
     </header>
 
@@ -30,11 +30,8 @@
       <section class="entry">
         <h2>{{ entry.title || 'Untitled entry' }}</h2>
         <p class="meta">
-          <span>Created {{ entry.createdAt | date: 'd MMM y, HH:mm' }}</span>
-          <span
-            >Last edited {{ entry.updatedAt | date: 'd MMM y, HH:mm' }} by
-            {{ entry.updatedBy.name }}</span
-          >
+          <span>Created {{ entry.createdAt | date }}</span>
+          <span>Last edited {{ entry.updatedAt | date }} by {{ entry.updatedBy.name }}</span>
         </p>
         <app-rich-text-editor [docKey]="entry.id" [content]="entry.content" [editable]="false" />
       </section>

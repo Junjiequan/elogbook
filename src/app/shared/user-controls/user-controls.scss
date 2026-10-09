@@ -1,0 +1,105 @@
+// One round icon in the corner: a little bigger than the ones in tables, and quiet until it is used.
+:host {
+  display: inline-flex;
+  --popover-trigger-size: 36px;
+  --popover-trigger-icon-size: 26px;
+  --popover-trigger-color: var(--mat-sys-on-surface-variant);
+}
+
+// The panel is projected into the card, so it is styled here.
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--mat-sys-on-surface);
+}
+
+.who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.admin-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font: var(--mat-sys-label-small);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.section-title {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+// Light | Dark as a two-part switch: the chosen one is filled.
+.modes {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+}
+
+.mode,
+.sign-out {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-large);
+  cursor: pointer;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: -2px;
+  }
+}
+
+.mode {
+  flex: 1;
+
+  & + .mode {
+    border-left: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  &.on {
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+  }
+}
+
+.sign-out {
+  justify-content: flex-start;
+  margin: 0 -14px -12px; // a full-width row along the bottom of the card
+  height: 40px;
+  padding: 0 14px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  color: var(--mat-sys-error);
+}

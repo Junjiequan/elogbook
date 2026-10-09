@@ -3,6 +3,7 @@
     <table class="table">
       <thead>
         <tr>
+          <th scope="col" class="action-cell"><span class="visually-hidden">View</span></th>
           <th scope="col">Title</th>
           <th scope="col" class="wide-only">Description</th>
           <th scope="col">Instrument</th>
@@ -15,56 +16,67 @@
       </thead>
       <tbody>
         @for (logbook of logbooks(); track logbook.id) {
-          <tr (click)="open(logbook)">
+          <tr>
+            <td class="action-cell">
+              <a
+                mat-icon-button
+                class="view-button"
+                matTooltip="View logbook"
+                [routerLink]="['/logbooks', logbook.id]"
+                [attr.aria-label]="'View ' + logbook.title"
+              >
+                <mat-icon>visibility</mat-icon>
+              </a>
+            </td>
             <td class="title-cell">
-              <a [routerLink]="['/logbooks', logbook.id]" (click)="$event.stopPropagation()">{{
-                logbook.title
-              }}</a>
-              @if (logbook.demo) {
-                <span class="badge">Demo</span>
-              }
+              <div class="title-wrap">
+                <app-table-popover
+                  heading="Title"
+                  icon="menu_book"
+                  [text]="logbook.title"
+                  [enabled]="title.truncated()"
+                >
+                  <span
+                    class="title-text"
+                    appTruncated
+                    #title="appTruncated"
+                    [class.cut]="title.truncated()"
+                    >{{ logbook.title }}</span
+                  >
+                  @if (title.truncated()) {
+                    <span class="cut-dots" aria-hidden="true">…</span>
+                  }
+                </app-table-popover>
+                @if (logbook.demo) {
+                  <span class="badge">Demo</span>
+                }
+              </div>
             </td>
             <td class="wide-only description-cell">
               <div class="description-wrap">
-                <span
-                  class="description-text"
-                  appTruncated
-                  #text="appTruncated"
-                  [class.expanded]="isExpanded(logbook)"
-                  >{{ logbook.description || '–' }}</span
+                <app-table-popover
+                  icon="subject"
+                  [heading]="logbook.title"
+                  [text]="logbook.description"
+                  [enabled]="!!logbook.description && text.truncated()"
                 >
-                @if (text.truncated() || isExpanded(logbook)) {
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="expand"
-                    [attr.aria-expanded]="isExpanded(logbook)"
-                    [attr.aria-label]="
-                      (isExpanded(logbook) ? 'Collapse' : 'Show full') +
-                      ' description of ' +
-                      logbook.title
-                    "
-                    [matTooltip]="isExpanded(logbook) ? 'Show less' : 'Show full description'"
-                    (click)="toggleExpanded(logbook, $event)"
+                  <span
+                    class="description-text"
+                    appTruncated
+                    #text="appTruncated"
+                    [class.cut]="text.truncated()"
+                    >{{ logbook.description || '–' }}</span
                   >
-                    <mat-icon>{{ isExpanded(logbook) ? 'expand_less' : 'expand_more' }}</mat-icon>
-                  </button>
-                }
+                  @if (logbook.description && text.truncated()) {
+                    <span class="cut-dots" aria-hidden="true">…</span>
+                  }
+                </app-table-popover>
               </div>
             </td>
             <td>{{ logbook.instrument ?? '–' }}</td>
             <td class="narrow-hide">{{ logbook.proposalId ?? '–' }}</td>
             <td class="narrow-hide">
-              <span class="avatars">
-                @for (member of avatars(logbook); track member.user.id) {
-                  <span class="avatar" [matTooltip]="member.user.name + ' (' + member.role + ')'">{{
-                    initials(member.user.name)
-                  }}</span>
-                }
-                @if (extraMembers(logbook) > 0) {
-                  <span class="avatar more">+{{ extraMembers(logbook) }}</span>
-                }
-              </span>
+              <app-member-avatars [members]="logbook.members" />
             </td>
             <td>
               <span class="role" [attr.data-role]="roleLabel(logbook)">{{
@@ -80,7 +92,7 @@
               </span>
             </td>
             <td class="narrow-hide nowrap">
-              {{ logbook.updatedAt | date: 'd MMM y, HH:mm' }}
+              {{ logbook.updatedAt | date }}
             </td>
           </tr>
         }

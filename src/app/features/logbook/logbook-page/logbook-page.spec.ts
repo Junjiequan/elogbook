@@ -180,6 +180,7 @@ describe('LogbookPage sidebar', () => {
       await click('button[aria-label="Show entry list"]');
 
       const link = el().querySelector<HTMLElement>('.entry-link')!;
+      link.scrollIntoView({ block: 'center' }); // elementFromPoint only sees what is on screen
       const box = link.getBoundingClientRect();
       const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
 
@@ -226,6 +227,18 @@ describe('LogbookPage sidebar', () => {
 
       expect(addButton()).toBeNull();
       expect(el().textContent).not.toContain('Create the first entry');
+    });
+  });
+
+  describe('the profile and colour mode', () => {
+    it('are at the end of the title bar, set apart from the logbook’s own buttons', async () => {
+      await create();
+
+      const bar = el().querySelector('.logbook-bar')!;
+      const controls = bar.querySelector('.user-controls')!;
+      expect(controls.querySelectorAll('button').length).toBe(1); // one icon opens everything
+      expect(controls.querySelector('button[aria-label="Account and appearance"]')).not.toBeNull();
+      expect(bar.lastElementChild).toBe(controls);
     });
   });
 

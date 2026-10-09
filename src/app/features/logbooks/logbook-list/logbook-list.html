@@ -4,10 +4,13 @@
       <h1>Logbooks</h1>
       <p class="subtitle">Your experiment records, and the ones shared with you.</p>
     </div>
-    <button mat-flat-button (click)="create()">
-      <mat-icon>add</mat-icon>
-      New logbook
-    </button>
+    <div class="page-actions">
+      <button mat-flat-button (click)="create()">
+        <mat-icon>add</mat-icon>
+        New logbook
+      </button>
+      <app-user-controls />
+    </div>
   </header>
 
   @if (store.status() === 'ready' && store.logbooks().length > 0) {
@@ -93,11 +96,33 @@
         <ul class="cards">
           @for (logbook of pageItems(); track logbook.id) {
             <li>
-              <a class="card" [routerLink]="['/logbooks', logbook.id]">
-                <h2>{{ logbook.title }}</h2>
-                @if (logbook.description) {
-                  <p class="description">{{ logbook.description }}</p>
-                }
+              <article class="card">
+                <app-table-popover
+                  class="title-slot"
+                  heading="Title"
+                  icon="menu_book"
+                  [text]="logbook.title"
+                  [enabled]="title.truncated()"
+                >
+                  <h2 appTruncated #title="appTruncated">{{ logbook.title }}</h2>
+                  @if (title.truncated()) {
+                    <span class="cut-dots cut-dots--title" aria-hidden="true">…</span>
+                  }
+                </app-table-popover>
+                <app-table-popover
+                  class="description-slot"
+                  icon="subject"
+                  [heading]="logbook.title"
+                  [text]="logbook.description"
+                  [enabled]="!!logbook.description && description.truncated()"
+                >
+                  <p class="description" appTruncated #description="appTruncated">
+                    {{ logbook.description }}
+                  </p>
+                  @if (logbook.description && description.truncated()) {
+                    <span class="cut-dots cut-dots--description" aria-hidden="true">…</span>
+                  }
+                </app-table-popover>
                 <app-logbook-tags
                   [instrument]="logbook.instrument"
                   [proposalId]="logbook.proposalId"
@@ -105,8 +130,20 @@
                   [role]="roleLabel(logbook) || null"
                   [visibility]="logbook.visibility"
                 />
-                <p class="meta">Updated {{ logbook.updatedAt | date: 'd MMM y, HH:mm' }}</p>
-              </a>
+                <div class="foot">
+                  <app-member-avatars [members]="logbook.members" />
+                  <p class="meta">Updated {{ logbook.updatedAt | date }}</p>
+                </div>
+                <a
+                  mat-button
+                  class="view-banner"
+                  [routerLink]="['/logbooks', logbook.id]"
+                  [attr.aria-label]="'View ' + logbook.title"
+                >
+                  <mat-icon>visibility</mat-icon>
+                  View
+                </a>
+              </article>
             </li>
           }
         </ul>

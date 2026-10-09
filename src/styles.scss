@@ -85,6 +85,10 @@ html {
   --app-shadow-lg:
     0 2px 6px rgb(var(--app-shadow-rgb) / calc(5% * var(--app-shadow-strength))),
     0 10px 24px rgb(var(--app-shadow-rgb) / calc(8% * var(--app-shadow-strength)));
+  // Popovers float above everything else, so they get the strongest shadow of the scale.
+  --app-shadow-pop:
+    0 4px 10px rgb(var(--app-shadow-rgb) / calc(10% * var(--app-shadow-strength))),
+    0 18px 44px rgb(var(--app-shadow-rgb) / calc(20% * var(--app-shadow-strength)));
   --app-shadow-side: 2px 0 10px rgb(var(--app-shadow-rgb) / calc(6% * var(--app-shadow-strength)));
 
   &[data-theme='dark'] {

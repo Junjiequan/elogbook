@@ -17,6 +17,7 @@ import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/for
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 
+import { UserControls } from '../../../shared/user-controls/user-controls';
 import { DEMO_USERS } from '../../../../demo/demo-users';
 import { renderGoogleButton } from '../google-identity';
 import { AuthError, TestAuthService } from '../test-auth.service';
@@ -36,6 +37,7 @@ import { DEMO_PASSWORD, GOOGLE_CLIENT_ID } from '../test-auth.config';
     MatInput,
     MatLabel,
     ReactiveFormsModule,
+    UserControls,
   ],
   templateUrl: './login-page.html',
   styleUrl: './login-page.scss',

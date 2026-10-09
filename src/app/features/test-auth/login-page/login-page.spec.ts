@@ -5,6 +5,7 @@ import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { User } from '../../../core/models/logbook.models';
 import { DEMO_PASSWORD, GOOGLE_CLIENT_ID } from '../test-auth.config';
 import { AuthError, TestAuthService } from '../test-auth.service';
+import { provideFakeAuth } from '../../../testing/fake-auth';
 import { LoginPage } from './login-page';
 
 describe('LoginPage', () => {
@@ -29,6 +30,7 @@ describe('LoginPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideFakeAuth(),
         { provide: TestAuthService, useValue: auth },
         { provide: GOOGLE_CLIENT_ID, useValue: googleClientId },
       ],
@@ -60,6 +62,12 @@ describe('LoginPage', () => {
     Array.from(el().querySelectorAll<HTMLButtonElement>('mat-button-toggle button')).find((b) =>
       b.textContent?.includes(label),
     )!;
+
+  it('lets you switch between light and dark before signing in', async () => {
+    await create();
+
+    expect(el().querySelector('.corner button.trigger')).not.toBeNull();
+  });
 
   it('signs in with the email and password, once both are valid', async () => {
     await create();

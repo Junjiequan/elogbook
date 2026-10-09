@@ -1,0 +1,86 @@
+<span
+  #anchor
+  class="anchor"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  (mouseenter)="pointerEnter()"
+  (mousemove)="pointerMove()"
+  (mouseleave)="pointerLeave()"
+  (focusin)="focusIn()"
+  (focusout)="pointerLeave()"
+>
+  @if (triggerIcon(); as iconName) {
+    <button
+      type="button"
+      class="trigger"
+      aria-haspopup="dialog"
+      [attr.aria-expanded]="open()"
+      [attr.aria-label]="triggerLabel()"
+      (click)="toggle(); $event.stopPropagation()"
+    >
+      <mat-icon>{{ iconName }}</mat-icon>
+    </button>
+  } @else {
+    <ng-content />
+  }
+</span>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayPositions]="positions()"
+  [cdkConnectedOverlayPush]="true"
+  (positionChange)="positioned($event)"
+  (overlayOutsideClick)="outsideClick($event, anchor)"
+  (overlayKeydown)="$event.key === 'Escape' && close()"
+>
+  <section
+    class="card"
+    role="dialog"
+    cdkTrapFocus
+    [cdkTrapFocusAutoCapture]="takesFocus()"
+    [style.width]="width()"
+    [class.pinned]="pinned()"
+    [class.above]="placement().above"
+    [class.align-end]="placement().alignEnd"
+    [attr.aria-label]="heading()"
+    (mouseenter)="keepOpen()"
+    (mouseleave)="pointerLeave()"
+  >
+    <span class="arrow" aria-hidden="true"></span>
+    <div class="panel">
+      <header>
+        <mat-icon class="icon" aria-hidden="true">{{ icon() }}</mat-icon>
+        <h3>{{ heading() }}</h3>
+        @if (pinnable()) {
+          <button
+            type="button"
+            class="pin"
+            [class.on]="pinned()"
+            [attr.aria-pressed]="pinned()"
+            [attr.aria-label]="pinned() ? 'Unpin' : 'Pin to keep open'"
+            (click)="togglePin()"
+          >
+            <mat-icon>push_pin</mat-icon>
+          </button>
+        }
+      </header>
+      <div class="body">
+        @if (text(); as body) {
+          <p class="text">{{ body }}</p>
+        }
+        <ng-content select="[popoverBody]" />
+      </div>
+      @if (pinnable()) {
+        <footer>
+          @if (pinned()) {
+            Pinned · click the pin or press Esc to close
+          } @else {
+            Click the pin to keep this open
+          }
+        </footer>
+      }
+    </div>
+  </section>
+</ng-template>

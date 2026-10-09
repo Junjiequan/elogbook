@@ -1,0 +1,47 @@
+<app-table-popover
+  align="end"
+  width="280px"
+  [interactive]="true"
+  [pinnable]="false"
+  [openDelay]="openDelay"
+  [heading]="currentUser.isSignedIn() ? currentUser.user().name : 'Appearance'"
+  [icon]="currentUser.isSignedIn() ? 'account_circle' : 'palette'"
+  [triggerIcon]="currentUser.isSignedIn() ? 'account_circle' : 'palette'"
+  [triggerLabel]="currentUser.isSignedIn() ? 'Account and appearance' : 'Appearance'"
+>
+  <div popoverBody class="panel">
+    @if (currentUser.isSignedIn()) {
+      <div class="who">
+        <span class="email">{{ currentUser.user().email }}</span>
+        @if (currentUser.isAdmin()) {
+          <span class="admin-badge">Administrator</span>
+        }
+      </div>
+    }
+
+    <div class="section" role="group" aria-label="Colour mode">
+      <span class="section-title">Colour mode</span>
+      <div class="modes">
+        @for (option of modes; track option.mode) {
+          <button
+            type="button"
+            class="mode"
+            [class.on]="theme.mode() === option.mode"
+            [attr.aria-pressed]="theme.mode() === option.mode"
+            (click)="theme.set(option.mode)"
+          >
+            <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (currentUser.isSignedIn()) {
+      <button type="button" class="sign-out" (click)="signOut()">
+        <mat-icon aria-hidden="true">logout</mat-icon>
+        Sign out
+      </button>
+    }
+  </div>
+</app-table-popover>

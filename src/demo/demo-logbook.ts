@@ -28,7 +28,7 @@ import {
   type SampleBlock,
 } from './content-builders';
 import { detectorImage, iqPlot, shearCellSchematic } from './figures';
-import { demoLogbookId, later, LOCAL_CONTACT, moment, REMOTE_COLLEAGUE } from './demo-people';
+import { demoLogbookId, later, LOCAL_CONTACT, moment, REMOTE_COLLEAGUE, TEAM } from './demo-people';
 
 const PROPOSAL = {
   proposalId: '2026-0412',
@@ -484,7 +484,7 @@ export function createDemoLogbook(owner: User, now = new Date()): LogbookBundle 
     id: logbookId,
     title: 'LoKI beamtime 2026-0412 – SDS micelles under shear',
     description:
-      'Demo logbook with illustrative data: a three-day SANS beamtime with runs, samples, figures and history.',
+      'Demo logbook with illustrative data: a three-day SANS beamtime with runs, samples, figures and history.\n\nThe experiment follows the shear-induced structural changes of SDS micelles in D₂O using a rheo-SANS cell on LoKI. Day 1 covers safety checks, sample preparation and alignment; day 2 the temperature series (runs 0041–0058) and the first shear series; day 3 the shear-cell commissioning issue (a small leak at the lower seal), the repeat measurements and the handover. Every entry links the run numbers to the reduced data so that results can be traced back to the raw files.',
     instrument: PROPOSAL.instrument,
     proposalId: PROPOSAL.proposalId,
     visibility: 'private',
@@ -492,6 +492,10 @@ export function createDemoLogbook(owner: User, now = new Date()): LogbookBundle 
       { user: owner, role: 'owner' },
       { user: LOCAL_CONTACT, role: 'editor' },
       { user: REMOTE_COLLEAGUE, role: 'viewer' },
+      { user: TEAM.priya, role: 'editor' },
+      { user: TEAM.tomasz, role: 'viewer' },
+      { user: TEAM.elena, role: 'viewer' },
+      { user: TEAM.kenji, role: 'viewer' },
     ],
     demo: true,
     createdAt: later(day1, -60, now).toISOString(),

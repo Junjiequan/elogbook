@@ -1,3 +1,4 @@
+import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
 import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
@@ -9,6 +10,7 @@ import {
   withComponentInputBinding,
   withRouterConfig,
 } from '@angular/router';
+import { DATE_TIME_FORMAT } from './core/date-format';
 import { AppTitleStrategy } from './core/titles/app-title-strategy';
 import { ProposalRepository } from './core/data-access/proposal.repository';
 import { DemoProposalRepository } from '../demo/demo-proposals';
@@ -30,6 +32,8 @@ export const appConfig: ApplicationConfig = {
       withRouterConfig({ paramsInheritanceStrategy: 'always' }),
     ),
     { provide: TitleStrategy, useClass: AppTitleStrategy },
+    // Dates read year first, e.g. 2026-10-09 08:46.
+    { provide: DATE_PIPE_DEFAULT_OPTIONS, useValue: { dateFormat: DATE_TIME_FORMAT } },
     // TEST-ONLY sign-in. To remove: delete features/test-auth, drop these two lines and the /login route,
     // and provide an OIDC-backed AuthService instead.
     TestAuthService,

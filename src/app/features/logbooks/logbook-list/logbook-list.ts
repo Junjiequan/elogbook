@@ -20,7 +20,11 @@ import { firstValueFrom } from 'rxjs';
 import { CurrentUserService } from '../../../core/auth/current-user.service';
 import { roleOf } from '../../../core/auth/permissions';
 import type { Logbook, MemberRole, NewLogbook } from '../../../core/models/logbook.models';
+import { MemberAvatars } from '../member-avatars/member-avatars';
 import { LogbookTags } from '../../../shared/logbook-tags/logbook-tags';
+import { UserControls } from '../../../shared/user-controls/user-controls';
+import { TablePopover } from '../../../shared/table-popover/table-popover';
+import { Truncated } from '../truncated';
 import { LogbookStats } from '../logbook-stats/logbook-stats';
 import { LogbookTable } from '../logbook-table/logbook-table';
 import { NewLogbookDialog } from '../new-logbook-dialog/new-logbook-dialog';
@@ -51,8 +55,12 @@ const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
     MatPaginator,
     MatProgressBar,
     MatTooltip,
+    MemberAvatars,
     NgTemplateOutlet,
     RouterLink,
+    TablePopover,
+    Truncated,
+    UserControls,
   ],
   templateUrl: './logbook-list.html',
   styleUrl: './logbook-list.scss',

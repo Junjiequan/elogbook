@@ -68,7 +68,7 @@
             (click)="entryOpened()"
           >
             <span class="entry-title">{{ entry.title || 'Untitled entry' }}</span>
-            <span class="entry-date">{{ entry.createdAt | date: 'd MMM y, HH:mm' }}</span>
+            <span class="entry-date">{{ entry.createdAt | date }}</span>
           </a>
         } @empty {
           @if (entries.status() === 'ready') {
@@ -99,7 +99,7 @@
       }
       <header class="logbook-bar no-print" [class.has-edge-tab]="!drawerOpen()">
         <div class="titles">
-          <!-- Where you are, above the title: always visible, even with the header collapsed. -->
+          <!-- Where you are, above the title. -->
           <nav class="crumbs" aria-label="Breadcrumb">
             <a routerLink="/logbooks" title="Back to all logbooks">
               <mat-icon aria-hidden="true">chevron_left</mat-icon>Logbooks
@@ -143,6 +143,7 @@
           <mat-icon>picture_as_pdf</mat-icon>
           <span class="label">Export logbook</span>
         </a>
+        <app-user-controls class="user-controls" />
       </header>
       <div class="entry-outlet"><router-outlet /></div>
     </mat-sidenav-content>

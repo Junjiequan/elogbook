@@ -1,0 +1,210 @@
+// The anchor wraps the trigger. It stays a plain box so a cut-off title inside it can still show its ellipsis.
+:host {
+  display: flex;
+  min-width: 0;
+}
+
+.anchor {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.trigger {
+  display: inline-grid;
+  place-items: center;
+  width: var(--popover-trigger-size, 24px);
+  height: var(--popover-trigger-size, 24px);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--popover-trigger-color, var(--mat-sys-primary));
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  mat-icon {
+    width: var(--popover-trigger-icon-size, 18px);
+    height: var(--popover-trigger-icon-size, 18px);
+    font-size: var(--popover-trigger-icon-size, 18px);
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 1px;
+  }
+}
+
+// The card lives in the overlay layer, but it is declared in this template, so these styles apply.
+// It has to be unmistakable against the table or the cards it floats over, so it has: a strong shadow
+// (the highest elevation of the scale), a tinted header band, a border in the accent colour, and an
+// arrow pointing at the trigger. A pinned card gets a heavier border.
+.card {
+  --card-border: color-mix(in srgb, var(--mat-sys-primary) 45%, var(--mat-sys-outline-variant));
+  --header-bg: color-mix(in srgb, var(--mat-sys-primary) 11%, var(--mat-sys-surface));
+  --arrow-bg: var(--header-bg);
+  position: relative;
+  width: min(380px, 90vw);
+  border-radius: 12px;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  box-shadow: var(--app-shadow-pop);
+  animation: pop-in 0.14s ease-out;
+
+  .panel {
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+  }
+
+  &.pinned {
+    --card-border: var(--mat-sys-primary);
+
+    .panel {
+      border-width: 2px;
+    }
+  }
+
+  // The arrow sits on the edge that faces the trigger, near the corner that is lined up with it.
+  .arrow {
+    position: absolute;
+    top: -7px;
+    left: 14px;
+    z-index: 1;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--card-border);
+    border-width: 1px 0 0 1px;
+    background: var(--arrow-bg);
+    transform: rotate(45deg);
+  }
+
+  &.align-end .arrow {
+    left: auto;
+    right: 14px;
+  }
+
+  // Above the trigger: the arrow moves to the bottom edge (the footer, or the body, is behind it).
+  &.above {
+    --arrow-bg: var(--mat-sys-surface-container-low);
+
+    .arrow {
+      top: auto;
+      bottom: -7px;
+      border-width: 0 1px 1px 0;
+    }
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 10px 8px 14px;
+    background: var(--header-bg);
+    border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-primary) 18%, transparent);
+
+    .icon {
+      flex: none;
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+      color: var(--mat-sys-primary);
+    }
+
+    h3 {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      font: var(--mat-sys-title-small);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .pin {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--mat-sys-on-surface-variant);
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+
+    mat-icon {
+      width: 18px;
+      height: 18px;
+      font-size: 18px;
+      transform: rotate(35deg);
+      transition: transform 0.15s ease;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+      color: var(--mat-sys-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+    }
+
+    &.on {
+      background: var(--mat-sys-primary);
+      color: var(--mat-sys-on-primary);
+
+      mat-icon {
+        transform: none;
+      }
+    }
+  }
+
+  .body {
+    max-height: min(32vh, 220px);
+    padding: 12px 14px;
+    overflow-y: auto;
+    background: var(--mat-sys-surface);
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-medium);
+    line-height: 1.55;
+  }
+
+  .text {
+    margin: 0;
+    white-space: pre-line; // keeps the paragraphs of a description
+    overflow-wrap: anywhere;
+  }
+
+  footer {
+    padding: 7px 14px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    background: var(--mat-sys-surface-container-low);
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-small);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+}

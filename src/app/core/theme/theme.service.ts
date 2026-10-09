@@ -21,6 +21,10 @@ export class ThemeService {
     });
   }
 
+  set(mode: ThemeMode): void {
+    this.mode.set(mode);
+  }
+
   toggle(): void {
     this.mode.update((mode) => (mode === 'dark' ? 'light' : 'dark'));
   }

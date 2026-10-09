@@ -26,6 +26,7 @@ import { DeleteLogbook } from '../../logbooks/delete-logbook.service';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { EntriesStore } from '../entries.store';
 import { LogbookTags } from '../../../shared/logbook-tags/logbook-tags';
+import { UserControls } from '../../../shared/user-controls/user-controls';
 
 @Component({
   selector: 'app-logbook-page',
@@ -45,6 +46,7 @@ import { LogbookTags } from '../../../shared/logbook-tags/logbook-tags';
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
+    UserControls,
   ],
   templateUrl: './logbook-page.html',
   styleUrl: './logbook-page.scss',

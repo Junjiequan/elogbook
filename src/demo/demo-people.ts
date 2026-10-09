@@ -17,6 +17,26 @@ export const PRINCIPAL_INVESTIGATOR: User = {
   email: 'henrik.larsen@example.org',
 };
 
+const person = (name: string): User => {
+  const email = `${name
+    .toLowerCase()
+    .replace(/[^a-z ]/g, '')
+    .replace(/\s+/g, '.')}@example.org`;
+  return { id: email, name, email };
+};
+
+/** More fictional colleagues, so logbooks can have many members. */
+export const TEAM = {
+  priya: person('Priya Nair'),
+  tomasz: person('Tomasz Kowalski'),
+  elena: person('Elena Rossi'),
+  kenji: person('Kenji Watanabe'),
+  amara: person('Amara Okafor'),
+  lars: person('Lars Nilsson'),
+  chloe: person('Chloe Martin'),
+  diego: person('Diego Fernandez'),
+} as const;
+
 /** A moment `daysAgo` days before `now`, at the given local time (never in the future). */
 export function moment(now: Date, daysAgo: number, hours: number, minutes: number): Date {
   const date = new Date(now);

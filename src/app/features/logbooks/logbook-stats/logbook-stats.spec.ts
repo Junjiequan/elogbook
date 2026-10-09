@@ -27,7 +27,7 @@ describe('LogbookStats', () => {
       ['7', 'Logbooks'],
       ['4', 'Owned by me'],
       ['3', 'Shared with me'],
-      ['9 Oct', 'Last activity'],
+      ['2026-10-09', 'Last activity'],
     ]);
   });
 

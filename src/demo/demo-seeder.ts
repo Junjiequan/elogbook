@@ -3,6 +3,13 @@ import type { User } from '../app/core/models/logbook.models';
 import { LogbookRepository } from '../app/core/data-access/logbook.repository';
 import { createDemoLogbooks } from './demo-set';
 
+/**
+ * Bump this when the demo content changes: people who were seeded with an older version get the new
+ * logbooks, and the text and members of the ones they already have are brought up to date (their
+ * entries are left alone).
+ */
+export const DEMO_VERSION = '2';
+
 export const demoSeededKey = (user: User): string => `elogbook.demo-seeded.${user.id}`;
 
 /**
@@ -30,10 +37,19 @@ export class DemoSeeder {
     if (this.alreadySeeded(user)) {
       return;
     }
-    const existing = new Set((await this.repository.listLogbooks(user)).map((l) => l.id));
-    for (const bundle of createDemoLogbooks(user)) {
-      if (!existing.has(bundle.logbook.id)) {
-        await this.repository.importLogbook(bundle);
+    const existing = new Map((await this.repository.listLogbooks(user)).map((l) => [l.id, l]));
+    for (const { logbook, ...rest } of createDemoLogbooks(user)) {
+      const current = existing.get(logbook.id);
+      if (!current) {
+        await this.repository.importLogbook({ logbook, ...rest });
+      } else if (current.demo) {
+        const { title, description, visibility, members } = logbook;
+        await this.repository.updateLogbook(logbook.id, {
+          title,
+          description,
+          visibility,
+          members,
+        });
       }
     }
     this.markSeeded(user);
@@ -41,7 +57,7 @@ export class DemoSeeder {
 
   private alreadySeeded(user: User): boolean {
     try {
-      return localStorage.getItem(demoSeededKey(user)) === 'true';
+      return localStorage.getItem(demoSeededKey(user)) === DEMO_VERSION;
     } catch {
       return false;
     }
@@ -49,7 +65,7 @@ export class DemoSeeder {
 
   private markSeeded(user: User): void {
     try {
-      localStorage.setItem(demoSeededKey(user), 'true');
+      localStorage.setItem(demoSeededKey(user), DEMO_VERSION);
     } catch {
       // storage unavailable: demo logbooks may reappear after a reload; harmless
     }
