@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { type Data, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
@@ -108,7 +115,7 @@ const activeRouteData = (router: Router): Data => {
     >
       <mat-icon>{{ headerCollapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</mat-icon>
     </button>
-    <main><router-outlet /></main>
+    <main [class.fills-screen]="fillsScreen()"><router-outlet /></main>
     @if (showFooter()) {
       <footer class="shell-footer no-print">
         <span class="footer-brand"><mat-icon>menu_book</mat-icon> eLogbook</span>
@@ -266,6 +273,15 @@ const activeRouteData = (router: Router): Data => {
       flex: 1;
       min-height: 0;
       overflow: auto;
+      // Keep room for the scrollbar even when there is nothing to scroll. Otherwise hiding the header
+      // (which makes the page just fit) removes the scrollbar and the whole layout jumps sideways.
+      scrollbar-gutter: stable;
+
+      // Pages that fill the screen and scroll inside themselves need no scrollbar here (and no gutter).
+      &.fills-screen {
+        overflow: hidden;
+        scrollbar-gutter: auto;
+      }
     }
     .shell-footer {
       position: relative;
@@ -340,13 +356,14 @@ export class App {
   protected readonly headerCollapsed = signal(readHeaderCollapsed());
 
   /** Pages whose route says `hideFooter: true` (the logbook content view) get the whole screen. */
-  protected readonly showFooter = toSignal(
+  protected readonly fillsScreen = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
-      map(() => !activeRouteData(this.router)['hideFooter']),
+      map(() => !!activeRouteData(this.router)['hideFooter']),
     ),
-    { initialValue: false }, // hidden until the first navigation settles, so it never flashes in
+    { initialValue: true }, // no footer until the first navigation settles, so it never flashes in
   );
+  protected readonly showFooter = computed(() => !this.fillsScreen());
 
   constructor() {
     effect(() => {

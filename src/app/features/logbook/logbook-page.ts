@@ -25,6 +25,7 @@ import { ShareDialog, type ShareDialogData } from '../sharing/share-dialog';
 import { DeleteLogbook } from '../logbooks/delete-logbook.service';
 import { LogbooksStore } from '../logbooks/logbooks.store';
 import { EntriesStore } from './entries.store';
+import { LogbookTags } from './logbook-tags';
 
 export const SIDEBAR_COLLAPSED_KEY = 'elogbook.sidebarCollapsed';
 
@@ -42,6 +43,7 @@ function readCollapsedPreference(): boolean {
   providers: [EntriesStore],
   imports: [
     DatePipe,
+    LogbookTags,
     MatButton,
     MatIcon,
     MatIconButton,
@@ -74,12 +76,6 @@ export class LogbookPage {
     const logbook = this.logbook();
     return logbook ? roleOf(logbook, this.currentUser.user()) : null;
   });
-  protected readonly roleIcon = computed(
-    () =>
-      ({ owner: 'workspace_premium', editor: 'edit', viewer: 'visibility' })[
-        this.role() ?? 'viewer'
-      ],
-  );
   protected readonly mayWrite = computed(() => {
     const logbook = this.logbook();
     return !!logbook && canWrite(logbook, this.currentUser.user());

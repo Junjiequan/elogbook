@@ -119,6 +119,13 @@ describe('DeleteLogbookDialog', () => {
     expect(labels(el)).toEqual(['No', 'Yes']);
   });
 
+  it('never shows a scrollbar for its short message', async () => {
+    const el = await create(logbook('x'));
+
+    const content = el.querySelector('mat-dialog-content')!;
+    expect(getComputedStyle(content).overflowY).toBe('visible');
+  });
+
   it('explains that a demo logbook cannot be deleted, with no Yes button', async () => {
     const el = await create({ ...logbook('sample'), demo: true });
 

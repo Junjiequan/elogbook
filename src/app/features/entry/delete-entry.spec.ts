@@ -128,6 +128,12 @@ describe('DeleteEntryDialog', () => {
     expect(labels(el)).toEqual(['No', 'Yes']);
   });
 
+  it('never shows a scrollbar for its short message', () => {
+    const el = create(logbook([{ user: anna, role: 'owner' }]));
+
+    expect(getComputedStyle(el.querySelector('mat-dialog-content')!).overflowY).toBe('visible');
+  });
+
   it('calls an untitled entry "Untitled entry"', () => {
     expect(create(logbook([{ user: anna, role: 'owner' }]), '').textContent).toContain(
       'Untitled entry',

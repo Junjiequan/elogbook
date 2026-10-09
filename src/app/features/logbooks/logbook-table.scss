@@ -1,9 +1,13 @@
-.table-wrap {
-  overflow-x: auto;
+.table-panel {
+  overflow: hidden; // round the corners of the header row and of the pager footer
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 8px;
   background: var(--mat-sys-surface);
   box-shadow: var(--app-shadow-sm);
+}
+
+.table-scroll {
+  overflow-x: auto;
 }
 
 .table {

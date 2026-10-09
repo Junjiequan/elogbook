@@ -93,7 +93,9 @@
 }
 
 .first-entry {
-  margin: 4px 16px 0;
+  // Room below for the button's invisible 48px touch target, which would otherwise overflow the
+  // list by 4px and give an empty entry list a scrollbar.
+  margin: 4px 16px 8px;
 }
 
 .filter {
@@ -164,7 +166,8 @@
   }
 }
 
-nav {
+// Only the entry list scrolls, not every <nav> (the title bar has a breadcrumb nav too).
+.sidenav nav {
   overflow-y: auto;
 }
 
@@ -220,6 +223,7 @@ nav {
 }
 
 .empty {
+  margin: 0;
   padding: 8px 16px;
 }
 
@@ -265,8 +269,7 @@ nav {
   display: flex;
   align-items: center;
   gap: 8px;
-  // 16px on top leaves a clear gap under the header toggle that hangs from the top edge
-  padding: 16px 12px 8px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
   background: color-mix(in srgb, var(--mat-sys-surface) 72%, transparent);
   backdrop-filter: blur(8px);
@@ -298,66 +301,42 @@ nav {
     min-width: 0;
   }
 
+  // "‹ Logbooks" above the title in small text: a quiet way back, so the title stays the main text.
+  .crumbs {
+    margin-bottom: 1px;
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      font: var(--mat-sys-label-medium);
+      // The familiar link look: blue and underlined. Colour alone is not enough to mark a link
+      // (WCAG 1.4.1), so the underline stays on.
+      color: var(--mat-sys-primary);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+
+      &:hover,
+      &:focus-visible {
+        color: color-mix(in srgb, var(--mat-sys-primary) 70%, black);
+        text-decoration-thickness: 2px;
+      }
+    }
+
+    mat-icon {
+      width: 16px;
+      height: 16px;
+      margin-left: -4px;
+      font-size: 16px;
+    }
+  }
+
   h1 {
+    min-width: 0;
     margin: 0;
     font: var(--mat-sys-title-large);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 2px;
-  }
-
-  // Small coloured tags, each with an icon, instead of tall Material chips.
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    height: 22px;
-    padding: 0 9px 0 6px;
-    border-radius: 11px;
-    font: 500 0.75rem/1 var(--mat-sys-label-small-font, inherit);
-    letter-spacing: 0.01em;
-    white-space: nowrap;
-
-    mat-icon {
-      width: 14px;
-      height: 14px;
-      font-size: 14px;
-    }
-  }
-
-  // Instrument: ESS Cyan family. Proposal: ESS Forest. Role: navy (owner) / navy tint (editor) / grey.
-  .tag--instrument {
-    background: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
-    color: var(--mat-sys-primary);
-  }
-
-  .tag--proposal {
-    background: color-mix(in srgb, var(--mat-sys-tertiary) 14%, transparent);
-    color: var(--mat-sys-tertiary);
-  }
-
-  .tag--role {
-    text-transform: capitalize;
-    background: var(--mat-sys-surface-container-highest);
-    color: var(--mat-sys-on-surface-variant);
-
-    &[data-role='editor'] {
-      background: color-mix(in srgb, var(--mat-sys-secondary) 14%, transparent);
-      color: var(--mat-sys-secondary);
-    }
-
-    // The owner gets the brand colours, since it is the most powerful role.
-    &[data-role='owner'] {
-      background: var(--ess-navy);
-      color: #fff;
-    }
   }
 }
 

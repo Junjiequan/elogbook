@@ -158,6 +158,28 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+// ── Pagination ───────────────────────────────────────────────────────────
+.pager {
+  --mat-paginator-container-background-color: transparent;
+  --mat-paginator-container-size: 48px;
+
+  // A small "10 ▾" box: Material's default page-size field is as tall and wide as a full form field.
+  --mat-form-field-container-height: 32px;
+  --mat-form-field-container-vertical-padding: 4px;
+  --mat-select-trigger-text-size: 14px;
+
+  // Material only exposes the width of that box through its internal class.
+  ::ng-deep .mat-mdc-paginator-page-size-select {
+    width: 64px;
+  }
+}
+
+// Under the table the pager is its footer, divided from the rows by a line. Under the cards it just
+// sits on the page background.
+app-logbook-table .pager {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
 // ── Cards ────────────────────────────────────────────────────────────────
 .cards {
   display: grid;

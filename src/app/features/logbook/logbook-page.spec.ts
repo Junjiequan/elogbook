@@ -209,6 +209,13 @@ describe('LogbookPage sidebar', () => {
       expect(el().textContent).toContain('Create the first entry');
     });
 
+    it('gives an empty entry list no scrollbar', async () => {
+      await create();
+
+      const list = el().querySelector<HTMLElement>('.sidenav nav')!;
+      expect(list.scrollHeight).toBeLessThanOrEqual(list.clientHeight);
+    });
+
     it('shows neither to someone who can only read', async () => {
       TestBed.overrideProvider(LogbooksStore, {
         useValue: {
@@ -222,6 +229,25 @@ describe('LogbookPage sidebar', () => {
 
       expect(addButton()).toBeNull();
       expect(el().textContent).not.toContain('Create the first entry');
+    });
+  });
+
+  describe('getting back to the list of logbooks', () => {
+    it('shows a breadcrumb above the title, which keeps working with the header collapsed', async () => {
+      await create();
+
+      const crumbs = el().querySelector('nav[aria-label="Breadcrumb"]')!;
+      const link = crumbs.querySelector<HTMLAnchorElement>('a')!;
+      expect(link.getAttribute('href')).toBe('/logbooks');
+      expect(link.textContent).toContain('Logbooks');
+      expect(el().querySelector('.logbook-bar .back')).toBeNull(); // the old button is gone
+
+      const title = el().querySelector('.logbook-bar h1')!;
+      expect(crumbs.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        title.getBoundingClientRect().top + 1,
+      ); // above the title
+      expect(title.textContent).toContain('Test logbook');
+      expect(getComputedStyle(crumbs).overflowY).toBe('visible'); // no stray scrollbar next to the title
     });
   });
 });

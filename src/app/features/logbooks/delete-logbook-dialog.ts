@@ -56,6 +56,9 @@ export interface DeleteLogbookDialogData {
   styles: `
     .content {
       width: min(480px, 80vw);
+      // A two-line message must never get its own scrollbar (on some screen scalings the text is a pixel
+      // taller than its box). If the window is ever too small, the dialog itself scrolls.
+      overflow: visible;
     }
     .danger {
       --mat-button-filled-container-color: var(--mat-sys-error);

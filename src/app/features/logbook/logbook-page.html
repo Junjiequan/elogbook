@@ -99,23 +99,18 @@
       }
       <header class="logbook-bar no-print" [class.has-edge-tab]="!drawerOpen()">
         <div class="titles">
+          <!-- Where you are, above the title: always visible, even with the header collapsed. -->
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a routerLink="/logbooks" title="Back to all logbooks">
+              <mat-icon aria-hidden="true">chevron_left</mat-icon>Logbooks
+            </a>
+          </nav>
           <h1>{{ book.title }}</h1>
-          <div class="tags">
-            @if (book.instrument) {
-              <span class="tag tag--instrument" title="Instrument">
-                <mat-icon>sensors</mat-icon>{{ book.instrument }}
-              </span>
-            }
-            @if (book.proposalId) {
-              <span class="tag tag--proposal" [attr.title]="'Proposal ' + book.proposalId">
-                <mat-icon>description</mat-icon>{{ book.proposalId }}
-              </span>
-            }
-            <span class="tag tag--role" [attr.data-role]="role()" title="Your role in this logbook">
-              <mat-icon>{{ roleIcon() }}</mat-icon
-              >{{ role() }}
-            </span>
-          </div>
+          <app-logbook-tags
+            [instrument]="book.instrument"
+            [proposalId]="book.proposalId"
+            [role]="role()"
+          />
         </div>
         <button
           mat-button

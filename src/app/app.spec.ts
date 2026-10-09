@@ -67,6 +67,24 @@ describe('App shell', () => {
     });
   });
 
+  describe('page scrollbar', () => {
+    const main = () => el().querySelector<HTMLElement>('main')!;
+
+    it('always keeps room for it on ordinary pages, so hiding the header cannot shift the layout', async () => {
+      await go('/logbooks');
+
+      expect(getComputedStyle(main()).scrollbarGutter).toContain('stable');
+    });
+
+    it('is left out of the logbook content view, which scrolls inside itself', async () => {
+      await go('/logbooks/abc');
+
+      expect(main().classList).toContain('fills-screen');
+      expect(getComputedStyle(main()).overflowY).toBe('hidden');
+      expect(getComputedStyle(main()).scrollbarGutter).toBe('auto');
+    });
+  });
+
   describe('header', () => {
     it('starts open, with the toggle already in place', () => {
       expect(header().classList).not.toContain('collapsed');
