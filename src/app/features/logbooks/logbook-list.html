@@ -98,24 +98,13 @@
                 @if (logbook.description) {
                   <p class="description">{{ logbook.description }}</p>
                 }
-                <div class="chips">
-                  @if (logbook.instrument) {
-                    <mat-chip>{{ logbook.instrument }}</mat-chip>
-                  }
-                  @if (logbook.proposalId) {
-                    <mat-chip>Proposal {{ logbook.proposalId }}</mat-chip>
-                  }
-                  @if (logbook.demo) {
-                    <mat-chip>Demo</mat-chip>
-                  }
-                  <mat-chip>{{ roleLabel(logbook) }}</mat-chip>
-                  <mat-chip>
-                    <mat-icon matChipAvatar>{{
-                      logbook.visibility === 'private' ? 'lock' : 'public'
-                    }}</mat-icon>
-                    {{ logbook.visibility === 'private' ? 'Private' : 'Facility-wide read' }}
-                  </mat-chip>
-                </div>
+                <app-logbook-tags
+                  [instrument]="logbook.instrument"
+                  [proposalId]="logbook.proposalId"
+                  [demo]="!!logbook.demo"
+                  [role]="roleLabel(logbook) || null"
+                  [visibility]="logbook.visibility"
+                />
                 <p class="meta">Updated {{ logbook.updatedAt | date: 'd MMM y, HH:mm' }}</p>
               </a>
             </li>

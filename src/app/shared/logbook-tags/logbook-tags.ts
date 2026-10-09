@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
-import type { MemberRole } from '../../core/models/logbook.models';
+import type { Visibility, MemberRole } from '../../core/models/logbook.models';
 
 const ROLE_ICONS: Record<MemberRole, string> = {
   owner: 'workspace_premium',
@@ -9,8 +9,9 @@ const ROLE_ICONS: Record<MemberRole, string> = {
 };
 
 /**
- * The small coloured tags under a logbook's title: instrument, proposal and the user's role.
- * Instrument uses ESS Cyan, proposal ESS Forest; the role is navy (owner), navy tint (editor) or grey.
+ * The small coloured tags describing a logbook: instrument, proposal and the user's role, and on the
+ * list also "Demo" and who can read it. Instrument uses ESS Cyan, proposal ESS Forest, demo ESS Orange;
+ * the role is navy (owner), navy tint (editor) or grey.
  */
 @Component({
   selector: 'app-logbook-tags',
@@ -27,10 +28,19 @@ const ROLE_ICONS: Record<MemberRole, string> = {
         <mat-icon>description</mat-icon>{{ proposalId() }}
       </span>
     }
+    @if (demo()) {
+      <span class="tag tag--demo" title="Demo logbook, it cannot be deleted">Demo</span>
+    }
     @if (role(); as currentRole) {
       <span class="tag tag--role" [attr.data-role]="currentRole" title="Your role in this logbook">
         <mat-icon>{{ roleIcon() }}</mat-icon
         >{{ currentRole }}
+      </span>
+    }
+    @if (visibility(); as access) {
+      <span class="tag tag--access" [attr.title]="accessTitle()">
+        <mat-icon>{{ access === 'private' ? 'lock' : 'public' }}</mat-icon>
+        {{ access === 'private' ? 'Private' : 'Facility-wide read' }}
       </span>
     }
   `,
@@ -70,6 +80,19 @@ const ROLE_ICONS: Record<MemberRole, string> = {
       color: var(--mat-sys-tertiary);
     }
 
+    // Orange text is too light on a pale tint, so it is darkened (lightened in dark mode) via the text colour.
+    .tag--demo {
+      padding-left: 9px;
+      background: color-mix(in srgb, var(--ess-orange) 18%, transparent);
+      color: color-mix(in srgb, var(--ess-orange) 55%, var(--mat-sys-on-surface));
+    }
+
+    .tag--access {
+      background: transparent;
+      box-shadow: inset 0 0 0 1px var(--mat-sys-outline-variant);
+      color: var(--mat-sys-on-surface-variant);
+    }
+
     .tag--role {
       text-transform: capitalize;
       background: var(--mat-sys-surface-container-highest);
@@ -92,6 +115,14 @@ export class LogbookTags {
   readonly instrument = input<string | null>(null);
   readonly proposalId = input<string | null>(null);
   readonly role = input<MemberRole | null>(null);
+  readonly demo = input(false);
+  readonly visibility = input<Visibility | null>(null);
+
+  protected readonly accessTitle = computed(() =>
+    this.visibility() === 'private'
+      ? 'Private: only the members can read it'
+      : 'Facility-wide read: everyone at the facility can read it',
+  );
 
   protected readonly roleIcon = computed(() => ROLE_ICONS[this.role() ?? 'viewer']);
 }

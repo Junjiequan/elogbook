@@ -266,12 +266,6 @@ app-logbook-table .pager {
     color: var(--mat-sys-on-surface-variant);
   }
 
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
   .meta {
     margin: auto 0 0;
     font: var(--mat-sys-label-small);

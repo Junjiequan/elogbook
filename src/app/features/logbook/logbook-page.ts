@@ -25,7 +25,7 @@ import { ShareDialog, type ShareDialogData } from '../sharing/share-dialog';
 import { DeleteLogbook } from '../logbooks/delete-logbook.service';
 import { LogbooksStore } from '../logbooks/logbooks.store';
 import { EntriesStore } from './entries.store';
-import { LogbookTags } from './logbook-tags';
+import { LogbookTags } from '../../shared/logbook-tags/logbook-tags';
 
 export const SIDEBAR_COLLAPSED_KEY = 'elogbook.sidebarCollapsed';
 

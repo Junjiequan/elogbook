@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import type { MemberRole } from '../../core/models/logbook.models';
+import type { MemberRole, Visibility } from '../../core/models/logbook.models';
 import { LogbookTags } from './logbook-tags';
 
 describe('LogbookTags', () => {
@@ -8,6 +8,8 @@ describe('LogbookTags', () => {
     instrument?: string | null;
     proposalId?: string | null;
     role?: MemberRole | null;
+    demo?: boolean;
+    visibility?: Visibility | null;
   }) => {
     TestBed.resetTestingModule(); // each call renders a fresh component
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
@@ -30,6 +32,14 @@ describe('LogbookTags', () => {
 
   it('leaves out what a logbook does not have', () => {
     expect(tags(render({ role: 'viewer' }))).toEqual(['visibilityviewer']);
+  });
+
+  it('can also show "Demo" and who can read the logbook, for the list', () => {
+    expect(
+      tags(render({ instrument: 'LoKI', demo: true, role: 'owner', visibility: 'private' })),
+    ).toEqual(['sensorsLoKI', 'Demo', 'workspace_premiumowner', 'lock Private']);
+
+    expect(tags(render({ visibility: 'facility-read' }))).toEqual(['public Facility-wide read']);
   });
 
   it('marks the role so it can be coloured, and gives each role its own icon', () => {

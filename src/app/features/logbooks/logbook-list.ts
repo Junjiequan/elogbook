@@ -11,7 +11,6 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
-import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatPaginator, type PageEvent } from '@angular/material/paginator';
@@ -21,6 +20,7 @@ import { firstValueFrom } from 'rxjs';
 import { CurrentUserService } from '../../core/auth/current-user.service';
 import { roleOf } from '../../core/auth/permissions';
 import type { Logbook, MemberRole, NewLogbook } from '../../core/models/logbook.models';
+import { LogbookTags } from '../../shared/logbook-tags/logbook-tags';
 import { LogbookStats } from './logbook-stats';
 import { LogbookTable } from './logbook-table';
 import { NewLogbookDialog } from './new-logbook-dialog';
@@ -41,11 +41,11 @@ const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
   imports: [
     DatePipe,
     LogbookStats,
+    LogbookTags,
     LogbookTable,
     MatButton,
     MatButtonToggle,
     MatButtonToggleGroup,
-    MatChip,
     MatIcon,
     MatIconButton,
     MatPaginator,
