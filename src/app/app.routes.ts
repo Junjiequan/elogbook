@@ -1,30 +1,42 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'logbooks' },
   {
-    path: 'logbooks',
-    title: 'Logbooks',
-    loadComponent: () => import('./features/logbooks/logbook-list').then((m) => m.LogbookList),
+    path: 'login',
+    title: 'Sign in',
+    loadComponent: () => import('./features/test-auth/login-page').then((m) => m.LoginPage),
   },
   {
-    path: 'logbooks/:logbookId/print',
-    title: 'Export logbook',
-    loadComponent: () => import('./features/print/print-page').then((m) => m.PrintPage),
-  },
-  {
-    path: 'logbooks/:logbookId',
-    loadComponent: () => import('./features/logbook/logbook-page').then((m) => m.LogbookPage),
+    path: '',
+    canActivateChild: [authGuard],
     children: [
       {
-        path: '',
-        pathMatch: 'full',
-        loadComponent: () =>
-          import('./features/logbook/no-entry-selected').then((m) => m.NoEntrySelected),
+        path: 'logbooks',
+        title: 'Logbooks',
+        loadComponent: () => import('./features/logbooks/logbook-list').then((m) => m.LogbookList),
       },
       {
-        path: 'entries/:entryId',
-        loadComponent: () => import('./features/entry/entry-page').then((m) => m.EntryPage),
+        path: 'logbooks/:logbookId/print',
+        title: 'Export logbook',
+        loadComponent: () => import('./features/print/print-page').then((m) => m.PrintPage),
+      },
+      {
+        path: 'logbooks/:logbookId',
+        loadComponent: () => import('./features/logbook/logbook-page').then((m) => m.LogbookPage),
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./features/logbook/no-entry-selected').then((m) => m.NoEntrySelected),
+          },
+          {
+            path: 'entries/:entryId',
+            loadComponent: () => import('./features/entry/entry-page').then((m) => m.EntryPage),
+          },
+        ],
       },
     ],
   },

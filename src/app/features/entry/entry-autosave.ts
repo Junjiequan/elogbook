@@ -1,7 +1,7 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { CurrentUserService } from '../../core/auth/current-user.service';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
-import type { Entry, EntryChanges } from '../../core/models/logbook.models';
+import type { Entry, EntryChanges, User } from '../../core/models/logbook.models';
 import { EntriesStore } from '../logbook/entries.store';
 
 export type SaveStatus = 'saved' | 'dirty' | 'saving' | 'error';
@@ -40,6 +40,8 @@ export class EntryAutosave {
   });
 
   private pending: EntryChanges = {};
+  /** Who made the pending edits; captured at edit time so signing out cannot change the author. */
+  private author: User = this.currentUser.user();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private queue: Promise<void> = Promise.resolve();
   private destroyed = false;
@@ -69,6 +71,7 @@ export class EntryAutosave {
     if (!this._entry()) {
       return;
     }
+    this.author = this.currentUser.user();
     this.pending = { ...this.pending, ...changes };
     this._entry.update((entry) => entry && { ...entry, ...changes });
     this._status.set('dirty');
@@ -83,7 +86,8 @@ export class EntryAutosave {
       const changes = this.pending;
       this.pending = {};
       this._status.set('saving');
-      this.queue = this.queue.then(() => this.persist(entry.id, changes));
+      const author = this.author;
+      this.queue = this.queue.then(() => this.persist(entry.id, changes, author));
     }
     return this.queue;
   }
@@ -120,9 +124,9 @@ export class EntryAutosave {
     this.timer = setTimeout(() => void this.flush(), delayMs);
   }
 
-  private async persist(entryId: string, changes: EntryChanges): Promise<void> {
+  private async persist(entryId: string, changes: EntryChanges, author: User): Promise<void> {
     try {
-      const saved = await this.repository.saveEntry(entryId, changes, this.currentUser.user());
+      const saved = await this.repository.saveEntry(entryId, changes, author);
       this.entries.replace(saved);
       this._savedCount.update((n) => n + 1);
       this._status.set(Object.keys(this.pending).length > 0 ? 'dirty' : 'saved');

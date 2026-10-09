@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -14,7 +14,6 @@ import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatRadioButton, MatRadioGroup } from '@angular/material/radio';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { CurrentUserService } from '../../core/auth/current-user.service';
 import type {
   Logbook,
   LogbookMember,
@@ -60,7 +59,6 @@ export class ShareDialog {
   protected readonly data = inject<ShareDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject<MatDialogRef<ShareDialog>>(MatDialogRef);
   private readonly store = inject(LogbooksStore);
-  private readonly directory = inject(CurrentUserService).users;
 
   protected readonly members = signal<LogbookMember[]>(this.data.logbook.members);
   protected readonly visibility = signal<Visibility>(this.data.logbook.visibility);
@@ -76,7 +74,7 @@ export class ShareDialog {
     role: ['editor' as GrantableRole],
   });
 
-  protected addMember(): void {
+  protected addMember(form: FormGroupDirective): void {
     if (this.invite.invalid) {
       return;
     }
@@ -87,7 +85,7 @@ export class ShareDialog {
       return;
     }
     this.members.update((all) => [...all, { user, role }]);
-    this.invite.reset({ email: '', role });
+    form.resetForm({ email: '', role });
   }
 
   protected setRole(member: LogbookMember, role: GrantableRole): void {
@@ -111,16 +109,14 @@ export class ShareDialog {
     }
   }
 
+  /** A user's id is their lower-case email, so access granted here matches them once they sign in. */
   private resolveUser(email: string): User {
-    const known = this.directory.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (known) {
-      return known;
-    }
     const name = email
       .split('@')[0]
       .split(/[._-]/)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
-    return { id: `ext-${email.toLowerCase()}`, name, email };
+    const normalised = email.toLowerCase();
+    return { id: normalised, name, email: normalised };
   }
 }

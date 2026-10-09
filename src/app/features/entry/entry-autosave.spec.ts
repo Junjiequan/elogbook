@@ -1,8 +1,9 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from '../../core/auth/current-user.service';
+import { DEMO_USERS } from '../../core/data-access/demo-data';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
 import type { Entry } from '../../core/models/logbook.models';
+import { provideFakeAuth } from '../../testing/fake-auth';
 import { EntriesStore } from '../logbook/entries.store';
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_RETRY_MS, EntryAutosave } from './entry-autosave';
 
@@ -29,6 +30,7 @@ describe('EntryAutosave', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideFakeAuth(),
         EntryAutosave,
         EntriesStore,
         { provide: LogbookRepository, useValue: repo },

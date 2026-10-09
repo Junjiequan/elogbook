@@ -1,7 +1,12 @@
 <h2 mat-dialog-title>Share “{{ data.logbook.title }}”</h2>
 <mat-dialog-content class="content">
   @if (data.canManage) {
-    <form class="invite" [formGroup]="invite" (ngSubmit)="addMember()">
+    <form
+      class="invite"
+      [formGroup]="invite"
+      #inviteForm="ngForm"
+      (ngSubmit)="addMember(inviteForm)"
+    >
       <mat-form-field class="grow">
         <mat-label>Add person by email</mat-label>
         <input matInput type="email" formControlName="email" autocomplete="off" />

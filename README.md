@@ -17,8 +17,9 @@ npm run test:ci    # single headless run
 npm run lint
 ```
 
-First start seeds a demo logbook. The user menu (top right) switches between three demo users so you
-can try owner / editor / viewer behaviour.
+First start seeds a demo logbook. Sign in with one of the demo accounts on the login page (password
+`demo1234`): Anna Lindqvist (owner), Jon Carter (editor) or Mei Tanaka (viewer), or create your own account.
+Share a logbook with another account's email address to try the permissions.
 
 ## What the MVP covers
 
@@ -38,7 +39,7 @@ can try owner / editor / viewer behaviour.
 - **Live collaboration / "see updates at home".** Plan: Yjs with the Tiptap collaboration extension and a
   Hocuspocus (or NestJS WebSocket) server. The editor is already isolated in `RichTextEditor`, so this changes
   that component and the repository, not the pages.
-- **Authentication / no-VPN access.** Plan: OIDC against the facility identity provider; `CurrentUserService` is the seam.
+- **Real authentication / no-VPN access.** Plan: OIDC against the facility identity provider. See "Test sign-in" below for what exists today and how to replace it.
 - **Real proposal / sample data.** Implement `ExperimentContext` against the proposal system or SciCat.
 - **Instrument scan macros.** Plan: a second structured node (like `sampleInfo`) created from control-software
   events, e.g. a "scan" block with run number and a link to the data.
@@ -78,6 +79,39 @@ Conventions
   also clears undo history so Ctrl+Z cannot cross entries.
 - Document schema is defined in one place: `features/editor/extensions/editor-extensions.ts`.
 - Access rules live in `core/auth/permissions.ts` as pure functions, so the backend can mirror them and tests stay simple.
+
+## Test sign-in (temporary)
+
+Sign up / sign in exists only so the app can be tried by several people. It is **not secure**: accounts
+live in the browser's localStorage (passwords are salted + hashed with PBKDF2, but there is no server, no
+email verification, and anyone can edit their own browser storage). A user's id is their lower-case email,
+so sharing by email works before that person has signed up.
+
+Everything is in `src/app/features/test-auth/`. The rest of the app only knows the abstract `AuthService`
+(`core/auth`), a route guard, and `CurrentUserService`.
+
+**To remove it later**
+
+1. Delete `src/app/features/test-auth/`.
+2. In `app.config.ts`, delete the `TestAuthService` provider lines and provide your own `AuthService`
+   (e.g. an OIDC client that exposes `user: Signal<User | null>` and `signOut()`).
+3. In `app.routes.ts`, point the `login` route at your login/redirect page (or remove it; `authGuard`
+   redirects signed-out visitors to `/login` with a `returnUrl`).
+4. Optionally drop `DEMO_USERS` from `core/data-access/demo-data.ts` if you no longer want the demo logbook.
+
+**Sign in with Google (optional)**
+
+The Google button appears only when a client ID is set. Google must be told which sites may use it, so
+this needs a one-off setup in your own Google Cloud project:
+
+1. Google Cloud Console → *APIs & Services* → *OAuth consent screen* (External, test mode is fine), then
+   *Credentials* → *Create credentials* → *OAuth client ID* → *Web application*.
+2. Under *Authorized JavaScript origins* add `http://localhost:4200` and `https://junjiequan.github.io`
+   (no redirect URI is needed).
+3. Paste the client ID into `GOOGLE_CLIENT_ID_VALUE` in `features/test-auth/test-auth.config.ts`.
+
+The ID token is decoded in the browser and its signature is **not** verified (that needs a server), so
+treat Google sign-in here as a convenience for testing too.
 
 ## Notes
 

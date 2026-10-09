@@ -19,8 +19,16 @@ export class LogbooksStore {
 
   constructor() {
     effect(() => {
+      const signedIn = this.currentUser.isSignedIn();
       this.currentUser.user();
-      untracked(() => void this.load());
+      untracked(() => {
+        if (signedIn) {
+          void this.load();
+        } else {
+          this._logbooks.set([]);
+          this._status.set('loading');
+        }
+      });
     });
   }
 

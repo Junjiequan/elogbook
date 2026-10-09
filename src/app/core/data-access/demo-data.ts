@@ -1,6 +1,12 @@
 import type { JSONContent } from '@tiptap/core';
-import { DEMO_USERS } from '../auth/current-user.service';
-import type { Entry, Logbook } from '../models/logbook.models';
+import type { Entry, Logbook, User } from '../models/logbook.models';
+
+/** Fictional people used by the demo logbook. A user's id is their lower-case email address. */
+export const DEMO_USERS: readonly User[] = [
+  { id: 'anna.lindqvist@example.org', name: 'Anna Lindqvist', email: 'anna.lindqvist@example.org' },
+  { id: 'jon.carter@example.org', name: 'Jon Carter', email: 'jon.carter@example.org' },
+  { id: 'mei.tanaka@example.org', name: 'Mei Tanaka', email: 'mei.tanaka@example.org' },
+];
 
 const [anna, jon, mei] = DEMO_USERS;
 

@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
+import { AuthService } from './core/auth/auth.service';
 import { CurrentUserService } from './core/auth/current-user.service';
 import { ThemeService } from './core/theme/theme.service';
 
@@ -38,25 +39,32 @@ import { ThemeService } from './core/theme/theme.service';
       >
         <mat-icon>{{ theme.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
-      <span class="user-name">{{ currentUser.user().name }}</span>
-      <button
-        mat-icon-button
-        [matMenuTriggerFor]="userMenu"
-        matTooltip="Switch demo user"
-        aria-label="Switch demo user"
-      >
-        <mat-icon>account_circle</mat-icon>
-      </button>
-      <mat-menu #userMenu="matMenu">
-        @for (user of currentUser.users; track user.id) {
-          <button mat-menu-item (click)="currentUser.switchTo(user.id)">
-            <mat-icon>{{
-              user.id === currentUser.user().id ? 'radio_button_checked' : 'radio_button_unchecked'
-            }}</mat-icon>
-            <span>{{ user.name }}</span>
+      @if (currentUser.isSignedIn()) {
+        <span class="user-name">{{ currentUser.user().name }}</span>
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="userMenu"
+          matTooltip="Account"
+          aria-label="Account"
+        >
+          <mat-icon>account_circle</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <div
+            class="account"
+            (click)="$event.stopPropagation()"
+            (keydown)="$event.stopPropagation()"
+            tabindex="-1"
+          >
+            <strong>{{ currentUser.user().name }}</strong>
+            <span>{{ currentUser.user().email }}</span>
+          </div>
+          <button mat-menu-item (click)="signOut()">
+            <mat-icon>logout</mat-icon>
+            <span>Sign out</span>
           </button>
-        }
-      </mat-menu>
+        </mat-menu>
+      }
     </mat-toolbar>
     <main><router-outlet /></main>
   `,
@@ -80,6 +88,18 @@ import { ThemeService } from './core/theme/theme.service';
     }
     .spacer {
       flex: 1;
+    }
+    .account {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 16px 12px;
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
+
+      strong {
+        font: var(--mat-sys-title-small);
+        color: var(--mat-sys-on-surface);
+      }
     }
     .user-name {
       font-size: 0.875rem;
@@ -108,4 +128,11 @@ import { ThemeService } from './core/theme/theme.service';
 export class App {
   protected readonly currentUser = inject(CurrentUserService);
   protected readonly theme = inject(ThemeService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  protected signOut(): void {
+    this.auth.signOut();
+    void this.router.navigate(['/login']);
+  }
 }

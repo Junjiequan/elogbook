@@ -1,0 +1,87 @@
+<div class="wrap">
+  <section class="card" aria-labelledby="login-title">
+    <h1 id="login-title">Welcome to ESS eLogbook</h1>
+
+    <p class="notice" role="note">
+      <mat-icon>science</mat-icon>
+      <span>
+        Test sign-in only. Accounts are stored in this browser, with no server and no email
+        verification. Do not use a password you use elsewhere.
+      </span>
+    </p>
+
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+
+    <mat-button-toggle-group
+      class="mode"
+      aria-label="Sign in or sign up"
+      [value]="mode()"
+      (change)="setMode($event.value)"
+    >
+      <mat-button-toggle value="signin">Sign in</mat-button-toggle>
+      <mat-button-toggle value="signup">Sign up</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    @if (mode() === 'signin') {
+      <form class="form" [formGroup]="signInForm" (ngSubmit)="signIn()">
+        <mat-form-field>
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="username" />
+          @if (signInForm.controls.email.hasError('email')) {
+            <mat-error>Enter a valid email address</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+        </mat-form-field>
+        <button mat-flat-button type="submit" [disabled]="signInForm.invalid || busy()">
+          Sign in
+        </button>
+      </form>
+    } @else {
+      <form class="form" [formGroup]="signUpForm" (ngSubmit)="signUp()">
+        <mat-form-field>
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="name" autocomplete="name" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="username" />
+          @if (signUpForm.controls.email.hasError('email')) {
+            <mat-error>Enter a valid email address</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="new-password" />
+          <mat-hint>At least 8 characters</mat-hint>
+        </mat-form-field>
+        <button mat-flat-button type="submit" [disabled]="signUpForm.invalid || busy()">
+          Create account
+        </button>
+      </form>
+    }
+
+    @if (googleEnabled) {
+      <div class="divider"><span>or</span></div>
+      <div class="google" #googleButton></div>
+    }
+
+    <div class="divider"><span>demo accounts</span></div>
+    <div class="demo">
+      @for (user of demoUsers; track user.id) {
+        <button mat-stroked-button type="button" [disabled]="busy()" (click)="useDemo(user.email)">
+          {{ user.name }}
+        </button>
+      }
+    </div>
+  </section>
+</div>
