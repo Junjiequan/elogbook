@@ -1,7 +1,7 @@
 import { effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { CurrentUserService } from '../../core/auth/current-user.service';
 import { canDelete } from '../../core/auth/permissions';
-import { DemoSeeder } from '../../core/data-access/demo/demo-seeder';
+import { DemoSeeder } from '../../demo/demo-seeder';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
 import type { Logbook, LogbookSettingsPatch, NewLogbook } from '../../core/models/logbook.models';
 

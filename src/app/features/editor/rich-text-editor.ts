@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { Editor, type JSONContent } from '@tiptap/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ImageService } from '../../core/images/image.service';
+import { ImageService } from './image.service';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { EditorToolbar } from './toolbar/editor-toolbar';
 

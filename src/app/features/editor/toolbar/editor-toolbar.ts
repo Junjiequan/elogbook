@@ -7,7 +7,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { ImageService } from '../../../core/images/image.service';
+import { ImageService } from '../image.service';
 import { PromptDialog, type PromptDialogData } from '../../../shared/prompt-dialog/prompt-dialog';
 import type { SampleInfoAttrs } from '../extensions/sample-info';
 import { InsertSampleDialog } from './insert-sample-dialog';

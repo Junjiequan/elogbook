@@ -1,10 +1,13 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Editor, type JSONContent } from '@tiptap/core';
-import { createEditorExtensions } from '../../../features/editor/extensions/editor-extensions';
-import { roleOf } from '../../auth/permissions';
-import { IndexedDbLogbookRepository, LOGBOOK_DB_OPTIONS } from '../indexeddb-logbook.repository';
-import { LogbookRepository } from '../logbook.repository';
+import { createEditorExtensions } from '../features/editor/extensions/editor-extensions';
+import { roleOf } from '../core/auth/permissions';
+import {
+  IndexedDbLogbookRepository,
+  LOGBOOK_DB_OPTIONS,
+} from '../core/data-access/indexeddb-logbook.repository';
+import { LogbookRepository } from '../core/data-access/logbook.repository';
 import { createDemoLogbook } from './demo-logbook';
 import { DemoSeeder, demoSeededKey } from './demo-seeder';
 import { createDemoLogbooks } from './demo-set';

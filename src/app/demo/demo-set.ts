@@ -1,4 +1,4 @@
-import type { LogbookBundle, User } from '../../models/logbook.models';
+import type { LogbookBundle, User } from '../core/models/logbook.models';
 import { createDemoLogbook } from './demo-logbook';
 import { createExtraDemoLogbooks } from './demo-extras';
 

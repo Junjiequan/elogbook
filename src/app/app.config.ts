@@ -9,7 +9,7 @@ import {
   StaticExperimentContext,
 } from './core/experiment-context/experiment-context';
 import { IndexedDbLogbookRepository } from './core/data-access/indexeddb-logbook.repository';
-import { DemoSeeder } from './core/data-access/demo/demo-seeder';
+import { DemoSeeder } from './demo/demo-seeder';
 import { LogbookRepository } from './core/data-access/logbook.repository';
 import { AuthService } from './core/auth/auth.service';
 import { TestAuthService } from './features/test-auth/test-auth.service';

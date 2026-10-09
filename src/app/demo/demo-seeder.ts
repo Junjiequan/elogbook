@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import type { User } from '../../models/logbook.models';
-import { LogbookRepository } from '../logbook.repository';
+import type { User } from '../core/models/logbook.models';
+import { LogbookRepository } from '../core/data-access/logbook.repository';
 import { createDemoLogbooks } from './demo-set';
 
 export const demoSeededKey = (user: User): string => `elogbook.demo-seeded.${user.id}`;

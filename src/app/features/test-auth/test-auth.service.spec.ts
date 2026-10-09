@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from '../../core/data-access/demo/demo-users';
+import { DEMO_USERS } from '../../demo/demo-users';
 import { decodeGoogleCredential } from './google-identity';
 import { DEMO_PASSWORD, GOOGLE_CLIENT_ID } from './test-auth.config';
 import { AuthError, TestAuthService } from './test-auth.service';

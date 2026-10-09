@@ -6,7 +6,7 @@ import { InjectionToken } from '@angular/core';
  * Google OAuth *web client ID* (public, safe to commit). Leave empty to hide the Google button.
  * Create one at https://console.cloud.google.com/apis/credentials → "OAuth client ID" → "Web application"
  * and add these under "Authorized JavaScript origins":
- *   http://localhost:4200
+ *   http://localhost:4300
  *   https://junjiequan.github.io
  */
 export const GOOGLE_CLIENT_ID_VALUE =

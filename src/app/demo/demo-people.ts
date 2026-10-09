@@ -1,4 +1,4 @@
-import type { User } from '../../models/logbook.models';
+import type { User } from '../core/models/logbook.models';
 
 /** Fictional colleagues who appear in the demo logbooks. */
 export const LOCAL_CONTACT: User = {

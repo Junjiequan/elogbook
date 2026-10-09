@@ -1,4 +1,4 @@
-import type { User } from '../../models/logbook.models';
+import type { User } from '../core/models/logbook.models';
 
 /** Fictional people. A user's id is their lower-case email address. */
 export const DEMO_USERS: readonly User[] = [
