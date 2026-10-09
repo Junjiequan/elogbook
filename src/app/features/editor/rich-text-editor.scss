@@ -165,16 +165,85 @@
 
     .sample-info {
       display: flex;
-      flex-wrap: wrap;
-      gap: 4px 12px;
-      align-items: baseline;
-      padding: 10px 14px;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px 8px 6px;
       border-left: 4px solid var(--mat-sys-tertiary);
       border-radius: 4px;
       background: var(--mat-sys-surface-container-high);
 
       &.ProseMirror-selectednode {
         outline: 2px solid var(--mat-sys-primary);
+      }
+
+      .sample-info__body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 12px;
+        align-items: baseline;
+      }
+
+      .sample-info__grip {
+        flex: none;
+        font-size: 20px;
+        color: var(--mat-sys-outline);
+        cursor: grab;
+        user-select: none;
+      }
+
+      .sample-info__tools {
+        flex: none;
+        display: flex;
+        gap: 2px;
+        opacity: 0;
+        transition: opacity 0.12s ease;
+      }
+
+      &:hover .sample-info__tools,
+      &:focus-within .sample-info__tools,
+      &.ProseMirror-selectednode .sample-info__tools {
+        opacity: 1;
+      }
+
+      .sample-info__button {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        color: var(--mat-sys-on-surface-variant);
+        cursor: pointer;
+
+        .material-icons {
+          font-size: 18px;
+        }
+
+        &:hover,
+        &:focus-visible {
+          background: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
+          color: var(--mat-sys-primary);
+        }
+
+        &[data-action='remove']:hover,
+        &[data-action='remove']:focus-visible {
+          background: color-mix(in srgb, var(--mat-sys-error) 14%, transparent);
+          color: var(--mat-sys-error);
+        }
+      }
+    }
+
+    // Read-only documents (viewers, history preview, export) show the block without any controls.
+    &[contenteditable='false'] .sample-info {
+      padding-left: 14px;
+
+      .sample-info__grip,
+      .sample-info__tools {
+        display: none;
       }
     }
   }

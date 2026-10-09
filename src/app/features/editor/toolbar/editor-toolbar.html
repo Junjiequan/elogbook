@@ -68,13 +68,16 @@
     <mat-icon>photo_camera</mat-icon>
   </button>
   <button
-    mat-icon-button
+    mat-button
     type="button"
-    matTooltip="Insert sample information"
+    class="sample-button"
+    matTooltip="Insert sample information (proposal, sample and instrument)"
     aria-label="Insert sample information"
+    (mousedown)="$event.preventDefault()"
     (click)="insertSample()"
   >
     <mat-icon>science</mat-icon>
+    Sample
   </button>
 
   <input

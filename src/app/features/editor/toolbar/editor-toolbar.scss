@@ -31,3 +31,9 @@ button.is-active {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
 }
+
+.sample-button {
+  --mat-button-text-container-height: 36px;
+  --mat-button-text-horizontal-padding: 10px;
+  --mat-button-text-with-icon-horizontal-padding: 10px;
+}

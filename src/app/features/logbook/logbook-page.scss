@@ -36,22 +36,71 @@
   padding: 12px 16px 4px;
 
   h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
     font: var(--mat-sys-title-medium);
   }
+
+  .count {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--mat-sys-surface-container-high);
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-small);
+    line-height: 18px;
+  }
 }
 
-.head-actions {
+// Filter box and the "new entry" button share one row.
+.search-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  margin: 8px 16px 12px;
+
+  .filter {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
+.add {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+  --mat-icon-button-icon-color: var(--mat-sys-on-primary);
+  --mat-icon-button-state-layer-size: 40px;
+  box-shadow: 0 1px 3px rgb(10 30 80 / 25%);
+
+  mat-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-primary) 88%, black);
+  }
+}
+
+.first-entry {
+  margin: 4px 16px 0;
 }
 
 .filter {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 8px 16px 12px;
+  margin: 0;
   padding: 0 4px 0 12px;
   height: 38px;
   border: 1px solid var(--mat-sys-outline-variant);
@@ -222,7 +271,58 @@ nav {
   .tags {
     display: flex;
     flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  // Small coloured tags, each with an icon, instead of tall Material chips.
+  .tag {
+    display: inline-flex;
+    align-items: center;
     gap: 4px;
+    height: 22px;
+    padding: 0 9px 0 6px;
+    border-radius: 11px;
+    font: 500 0.75rem/1 var(--mat-sys-label-small-font, inherit);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+
+    mat-icon {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+  }
+
+  .tag--instrument {
+    background: color-mix(in srgb, var(--mat-sys-tertiary) 14%, transparent);
+    color: var(--mat-sys-tertiary);
+  }
+
+  .tag--proposal {
+    --tag-accent: light-dark(
+      #0f766e,
+      #5eead4
+    ); // teal, to tell it apart from the blue instrument tag
+    background: color-mix(in srgb, var(--tag-accent) 14%, transparent);
+    color: var(--tag-accent);
+  }
+
+  .tag--role {
+    text-transform: capitalize;
+    background: var(--mat-sys-surface-container-highest);
+    color: var(--mat-sys-on-surface-variant);
+
+    &[data-role='editor'] {
+      background: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
+      color: var(--mat-sys-primary);
+    }
+
+    // The owner gets the brand colours, since it is the most powerful role.
+    &[data-role='owner'] {
+      background: var(--app-brand-bg);
+      color: #fff;
+    }
   }
 }
 

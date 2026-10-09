@@ -13,7 +13,6 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButton, MatIconButton } from '@angular/material/button';
-import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -44,7 +43,6 @@ function readCollapsedPreference(): boolean {
   imports: [
     DatePipe,
     MatButton,
-    MatChip,
     MatIcon,
     MatIconButton,
     MatProgressBar,
@@ -76,6 +74,12 @@ export class LogbookPage {
     const logbook = this.logbook();
     return logbook ? roleOf(logbook, this.currentUser.user()) : null;
   });
+  protected readonly roleIcon = computed(
+    () =>
+      ({ owner: 'workspace_premium', editor: 'edit', viewer: 'visibility' })[
+        this.role() ?? 'viewer'
+      ],
+  );
   protected readonly mayWrite = computed(() => {
     const logbook = this.logbook();
     return !!logbook && canWrite(logbook, this.currentUser.user());

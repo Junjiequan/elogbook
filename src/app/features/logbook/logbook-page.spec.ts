@@ -174,4 +174,39 @@ describe('LogbookPage sidebar', () => {
       expect(link.contains(hit)).withContext(`tap landed on ${hit?.className}`).toBeTrue();
     });
   });
+
+  describe('creating entries', () => {
+    const addButton = () => el().querySelector('button[aria-label="New entry"]');
+
+    it('puts a compact New entry button next to the filter for people who can write', async () => {
+      await create();
+
+      const row = el().querySelector('.search-row');
+      expect(row?.querySelector('.filter')).not.toBeNull();
+      expect(row?.contains(addButton())).toBeTrue();
+      expect(addButton()!.getBoundingClientRect().width).toBeLessThanOrEqual(40);
+    });
+
+    it('offers to create the first entry when the logbook is empty', async () => {
+      await create();
+
+      expect(el().textContent).toContain('No entries yet.');
+      expect(el().textContent).toContain('Create the first entry');
+    });
+
+    it('shows neither to someone who can only read', async () => {
+      TestBed.overrideProvider(LogbooksStore, {
+        useValue: {
+          logbooks: signal([
+            { ...logbook, members: [{ user: DEMO_USERS[0], role: 'viewer' as const }] },
+          ]),
+          status: signal('ready'),
+        },
+      });
+      await create();
+
+      expect(addButton()).toBeNull();
+      expect(el().textContent).not.toContain('Create the first entry');
+    });
+  });
 });

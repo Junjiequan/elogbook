@@ -69,7 +69,7 @@ export const TOOLBAR_GROUPS: ToolbarGroup[] = [
       },
       {
         id: 'highlight',
-        icon: 'ink_highlighter',
+        icon: 'border_color',
         label: 'Highlight',
         isActive: (e) => e.isActive('highlight'),
         run: (e) => e.chain().focus().toggleHighlight().run(),
