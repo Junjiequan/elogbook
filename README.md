@@ -10,6 +10,7 @@ This is the **frontend-only MVP**: data is stored in the browser (IndexedDB). A 
 planned; the code is arranged so that adding it does not touch the UI.
 
 ```bash
+nvm use            # Node 24 (see .nvmrc); Angular 22 needs Node ^22.22.3 or ^24.15
 npm install
 npm start          # http://localhost:4200
 npm test           # Karma + Jasmine in watch mode (needs Chrome; set CHROME_BIN if it is not found)

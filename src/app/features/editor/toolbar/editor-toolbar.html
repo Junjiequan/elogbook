@@ -27,7 +27,7 @@
           [attr.aria-label]="action.label"
           [attr.aria-pressed]="action.isActive ? action.isActive(ed) : null"
           [class.is-active]="action.isActive?.(ed)"
-          [disabled]="action.isDisabled?.(ed)"
+          [disabled]="!!action.isDisabled?.(ed)"
           (mousedown)="$event.preventDefault()"
           (click)="action.run(ed)"
         >
