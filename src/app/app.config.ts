@@ -5,9 +5,9 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withRouterConfig } from '@angular/router';
 import { ProposalRepository } from './core/data-access/proposal.repository';
-import { DemoProposalRepository } from './demo/demo-proposals';
+import { DemoProposalRepository } from '../demo/demo-proposals';
 import { IndexedDbLogbookRepository } from './core/data-access/indexeddb-logbook.repository';
-import { DemoSeeder } from './demo/demo-seeder';
+import { DemoSeeder } from '../demo/demo-seeder';
 import { LogbookRepository } from './core/data-access/logbook.repository';
 import { AuthService } from './core/auth/auth.service';
 import { TestAuthService } from './features/test-auth/test-auth.service';

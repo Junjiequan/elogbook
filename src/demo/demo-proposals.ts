@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { ProposalRepository } from '../core/data-access/proposal.repository';
-import type { Proposal } from '../core/models/proposal.models';
+import { ProposalRepository } from '../app/core/data-access/proposal.repository';
+import type { Proposal } from '../app/core/models/proposal.models';
 
 /** Demo stand-in for the proposal system: fixed proposals and samples. */
 @Injectable()

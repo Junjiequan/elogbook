@@ -3,7 +3,7 @@ import { Component, provideZonelessChangeDetection, signal } from '@angular/core
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { Entry, Logbook } from '../../../core/models/logbook.models';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { LogbooksStore } from '../../logbooks/logbooks.store';

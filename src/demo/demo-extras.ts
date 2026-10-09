@@ -6,7 +6,7 @@ import type {
   MemberRole,
   User,
   Visibility,
-} from '../core/models/logbook.models';
+} from '../app/core/models/logbook.models';
 import {
   bold,
   bullets,

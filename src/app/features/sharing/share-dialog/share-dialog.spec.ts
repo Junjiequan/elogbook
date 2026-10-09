@@ -7,7 +7,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { MatRadioGroupHarness } from '@angular/material/radio/testing';
 import type { Logbook } from '../../../core/models/logbook.models';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { ShareDialog } from './share-dialog';
 

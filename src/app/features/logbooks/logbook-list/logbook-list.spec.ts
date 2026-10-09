@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { Logbook } from '../../../core/models/logbook.models';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { HarnessLoader } from '@angular/cdk/testing';

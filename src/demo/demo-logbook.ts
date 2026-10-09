@@ -6,7 +6,7 @@ import type {
   LogbookBundle,
   User,
   VersionReason,
-} from '../core/models/logbook.models';
+} from '../app/core/models/logbook.models';
 import {
   bold,
   bullets,

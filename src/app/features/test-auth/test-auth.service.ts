@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
-import { DEMO_USERS } from '../../demo/demo-users';
+import { DEMO_USERS } from '../../../demo/demo-users';
 import type { User } from '../../core/models/logbook.models';
 import { decodeGoogleCredential } from './google-identity';
 import { hashPassword, newSalt } from './password-hasher';

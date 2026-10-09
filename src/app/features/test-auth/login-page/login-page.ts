@@ -17,7 +17,7 @@ import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/for
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import { renderGoogleButton } from '../google-identity';
 import { AuthError, TestAuthService } from '../test-auth.service';
 import { DEMO_PASSWORD, GOOGLE_CLIENT_ID } from '../test-auth.config';

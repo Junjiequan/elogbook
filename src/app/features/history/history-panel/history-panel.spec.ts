@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { EntryVersion } from '../../../core/models/logbook.models';
 import { EntryAutosave } from '../../entry/entry-autosave';
 import { HistoryPanel } from './history-panel';

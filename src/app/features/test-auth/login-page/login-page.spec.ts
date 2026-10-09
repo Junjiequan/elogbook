@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { User } from '../../../core/models/logbook.models';
 import { DEMO_PASSWORD, GOOGLE_CLIENT_ID } from '../test-auth.config';
 import { AuthError, TestAuthService } from '../test-auth.service';

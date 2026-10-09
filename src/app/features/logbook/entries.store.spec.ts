@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from '../../demo/demo-users';
+import { DEMO_USERS } from '../../../demo/demo-users';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
 import type { Entry, Logbook, MemberRole, User } from '../../core/models/logbook.models';
 import { provideFakeAuth } from '../../testing/fake-auth';

@@ -7,7 +7,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../demo/demo-proposals';
+import { DemoProposalRepository } from '../../../../demo/demo-proposals';
 import { NewLogbookDialog } from './new-logbook-dialog';
 
 describe('NewLogbookDialog', () => {

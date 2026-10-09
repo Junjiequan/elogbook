@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from '../../demo/demo-users';
+import { DEMO_USERS } from '../../../demo/demo-users';
 import {
   AUTO_VERSION_INTERVAL_MS,
   IndexedDbLogbookRepository,

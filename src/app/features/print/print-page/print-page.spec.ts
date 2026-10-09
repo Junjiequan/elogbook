@@ -4,8 +4,8 @@ import { provideRouter } from '@angular/router';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
 import type { Entry, Logbook } from '../../../core/models/logbook.models';
-import { DemoProposalRepository } from '../../../demo/demo-proposals';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DemoProposalRepository } from '../../../../demo/demo-proposals';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { PrintPage } from './print-page';
 

@@ -6,7 +6,7 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSelectHarness } from '@angular/material/select/testing';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../demo/demo-proposals';
+import { DemoProposalRepository } from '../../../../demo/demo-proposals';
 import { InsertSampleDialog } from './insert-sample-dialog';
 
 describe('InsertSampleDialog', () => {

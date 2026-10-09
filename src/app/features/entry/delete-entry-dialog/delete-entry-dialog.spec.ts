@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { Entry, Logbook, MemberRole, User } from '../../../core/models/logbook.models';
 import { DeleteEntryDialog } from './delete-entry-dialog';
 
