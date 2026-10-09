@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { Logbook } from '../../../core/models/logbook.models';
+import { LogbookRepository } from '../../../core/data-access/logbook.repository';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { HarnessLoader } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
@@ -49,6 +50,10 @@ describe('LogbookList', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         provideFakeAuth(),
+        {
+          provide: LogbookRepository,
+          useValue: { listRecentEntries: () => Promise.resolve([]) },
+        },
         {
           provide: LogbooksStore,
           useValue: {
@@ -142,13 +147,17 @@ describe('LogbookList', () => {
     expect(localStorage.getItem(LIST_VIEW_STORAGE_KEY)).toBe('table');
   });
 
-  it('summarises the logbooks in overview tiles', () => {
-    const tiles = Array.from(el().querySelectorAll('.stat')).map((t) =>
-      t.textContent?.replace(/\s+/g, ' ').trim(),
-    );
-    expect(tiles[0]).toContain('3');
-    expect(tiles[0]).toContain('Logbooks');
-    expect(tiles[1]).toContain('Owned by me');
+  it('has no tiles of counts: the filters and the pager already say how many there are', () => {
+    expect(el().querySelector('.stat')).toBeNull();
+    expect(el().querySelector('app-logbook-stats')).toBeNull();
+  });
+
+  it('offers to continue where you left off, above the search', () => {
+    const strip = el().querySelector('app-recent-entries')!;
+    const search = el().querySelector('.toolbar')!;
+
+    expect(strip).not.toBeNull();
+    expect(strip.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('filters by the role the user has', async () => {
@@ -185,6 +194,10 @@ describe('LogbookList pagination', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         provideFakeAuth(),
+        {
+          provide: LogbookRepository,
+          useValue: { listRecentEntries: () => Promise.resolve([]) },
+        },
         {
           provide: LogbooksStore,
           useValue: {

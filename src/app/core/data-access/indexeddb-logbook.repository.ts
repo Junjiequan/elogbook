@@ -9,6 +9,7 @@ import type {
   LogbookBundle,
   LogbookSettingsPatch,
   NewLogbook,
+  RecentEntry,
   User,
   VersionReason,
 } from '../models/logbook.models';
@@ -96,6 +97,29 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
   override async listEntries(logbookId: string): Promise<Entry[]> {
     const entries = await (await this.db()).getAllFromIndex('entries', 'byLogbook', logbookId);
     return entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  override async listRecentEntries(user: User, limit: number): Promise<RecentEntry[]> {
+    const db = await this.db();
+    const readable = new Map(
+      (await db.getAll('logbooks')).filter((l) => canRead(l, user)).map((l) => [l.id, l]),
+    );
+    return (await db.getAll('entries'))
+      .filter((e) => readable.has(e.logbookId))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, limit)
+      .map((e) => {
+        const logbook = readable.get(e.logbookId)!;
+        return {
+          entryId: e.id,
+          entryTitle: e.title,
+          logbookId: logbook.id,
+          logbookTitle: logbook.title,
+          instrument: logbook.instrument,
+          updatedAt: e.updatedAt,
+          updatedBy: e.updatedBy,
+        };
+      });
   }
 
   override async getEntry(id: string): Promise<Entry | undefined> {

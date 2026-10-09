@@ -13,9 +13,7 @@
     </div>
   </header>
 
-  @if (store.status() === 'ready' && store.logbooks().length > 0) {
-    <app-logbook-stats class="stats" [data]="stats()" />
-  }
+  <app-recent-entries class="recent" />
 
   <div class="toolbar" role="search">
     <label class="search">

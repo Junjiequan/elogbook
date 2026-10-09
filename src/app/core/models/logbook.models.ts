@@ -36,6 +36,17 @@ export type LogbookSettingsPatch = Partial<
   Pick<Logbook, 'title' | 'description' | 'visibility' | 'members'>
 >;
 
+/** An entry as the "continue where you left off" strip needs it: where it is and when it was last touched. */
+export interface RecentEntry {
+  entryId: string;
+  entryTitle: string;
+  logbookId: string;
+  logbookTitle: string;
+  instrument: string | null;
+  updatedAt: string;
+  updatedBy: User;
+}
+
 export interface Entry {
   id: string;
   logbookId: string;

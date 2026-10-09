@@ -145,4 +145,57 @@ describe('IndexedDbLogbookRepository', () => {
     expect((await repo.listEntries(logbook.id)).map((e) => e.id)).toEqual([kept.id]);
     expect((await repo.listVersions(kept.id)).length).toBe(1);
   });
+
+  describe('recent entries', () => {
+    const makeLogbook = (owner = anna) =>
+      repo.createLogbook(
+        { title: 'L', description: '', instrument: 'LoKI', proposalId: null },
+        owner,
+      );
+    const pause = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+    it('lists the most recently edited entries first, across logbooks, with where they are', async () => {
+      const first = await makeLogbook();
+      const second = await makeLogbook();
+      const a = await repo.createEntry(first.id, anna);
+      await pause();
+      const b = await repo.createEntry(second.id, anna);
+      await pause();
+      await repo.saveEntry(a.id, { title: 'Edited last' }, jon);
+
+      const recent = await repo.listRecentEntries(anna, 10);
+
+      expect(recent.map((r) => r.entryId)).toEqual([a.id, b.id]);
+      expect(recent[0]).toEqual(
+        jasmine.objectContaining({
+          entryTitle: 'Edited last',
+          logbookId: first.id,
+          instrument: 'LoKI',
+          updatedBy: jon,
+        }),
+      );
+    });
+
+    it('stops at the limit', async () => {
+      const logbook = await makeLogbook();
+      for (let i = 0; i < 5; i++) {
+        await repo.createEntry(logbook.id, anna);
+        await pause();
+      }
+
+      expect((await repo.listRecentEntries(anna, 3)).length).toBe(3);
+    });
+
+    it('never includes entries of logbooks the user may not read', async () => {
+      const mine = await makeLogbook();
+      const theirs = await makeLogbook(jon);
+      await repo.createEntry(mine.id, anna);
+      await pause();
+      await repo.createEntry(theirs.id, jon);
+
+      const recent = await repo.listRecentEntries(anna, 10);
+
+      expect(recent.map((r) => r.logbookId)).toEqual([mine.id]);
+    });
+  });
 });

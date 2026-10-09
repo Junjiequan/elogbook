@@ -6,6 +6,7 @@ import type {
   LogbookBundle,
   LogbookSettingsPatch,
   NewLogbook,
+  RecentEntry,
   User,
   VersionReason,
 } from '../models/logbook.models';
@@ -27,6 +28,8 @@ export abstract class LogbookRepository {
 
   abstract listEntries(logbookId: string): Promise<Entry[]>;
   abstract getEntry(id: string): Promise<Entry | undefined>;
+  /** The entries most recently edited, newest first, across every logbook the user may read. */
+  abstract listRecentEntries(user: User, limit: number): Promise<RecentEntry[]>;
   /** Permanently removes an entry together with its version history. */
   abstract deleteEntry(id: string): Promise<void>;
   abstract createEntry(logbookId: string, author: User): Promise<Entry>;

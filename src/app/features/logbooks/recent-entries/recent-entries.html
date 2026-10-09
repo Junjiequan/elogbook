@@ -1,0 +1,24 @@
+@if (recent.value(); as entries) {
+  @if (entries.length > 0) {
+    <section aria-labelledby="recent-title">
+      <h2 id="recent-title">Continue where you left off</h2>
+      <ul class="tiles">
+        @for (item of entries; track item.entryId) {
+          <li>
+            <a class="tile" [routerLink]="['/logbooks', item.logbookId, 'entries', item.entryId]">
+              <mat-icon aria-hidden="true">edit_note</mat-icon>
+              <span class="text">
+                <span class="entry">{{ item.entryTitle || 'Untitled entry' }}</span>
+                <span class="logbook">{{ item.logbookTitle }}</span>
+                <span class="when">
+                  {{ item.updatedAt | date }} ·
+                  {{ item.updatedBy.id === currentUser.user().id ? 'you' : item.updatedBy.name }}
+                </span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

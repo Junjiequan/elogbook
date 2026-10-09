@@ -25,7 +25,7 @@ import { LogbookTags } from '../../../shared/logbook-tags/logbook-tags';
 import { UserControls } from '../../../shared/user-controls/user-controls';
 import { TablePopover } from '../../../shared/table-popover/table-popover';
 import { Truncated } from '../truncated';
-import { LogbookStats } from '../logbook-stats/logbook-stats';
+import { RecentEntries } from '../recent-entries/recent-entries';
 import { LogbookTable } from '../logbook-table/logbook-table';
 import { NewLogbookDialog } from '../new-logbook-dialog/new-logbook-dialog';
 import { LogbooksStore } from '../logbooks.store';
@@ -44,7 +44,6 @@ const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
-    LogbookStats,
     LogbookTags,
     LogbookTable,
     MatButton,
@@ -57,6 +56,7 @@ const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
     MatTooltip,
     MemberAvatars,
     NgTemplateOutlet,
+    RecentEntries,
     RouterLink,
     TablePopover,
     Truncated,
@@ -84,18 +84,6 @@ export class LogbookList {
     { value: 'editor', label: 'I can edit' },
     { value: 'viewer', label: 'View only' },
   ];
-
-  /** Overview numbers for the tiles; always about every logbook, not the filtered view. */
-  protected readonly stats = computed(() => {
-    const all = this.store.logbooks();
-    const owned = all.filter((l) => this.roleLabel(l) === 'owner').length;
-    const latest =
-      all
-        .map((l) => l.updatedAt)
-        .sort()
-        .at(-1) ?? null;
-    return { total: all.length, owned, shared: all.length - owned, latest };
-  });
 
   protected readonly roleCounts = computed(() => {
     const counts: Record<RoleFilter, number> = { all: 0, owner: 0, editor: 0, viewer: 0 };
