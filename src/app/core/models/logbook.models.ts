@@ -24,6 +24,8 @@ export interface Logbook {
   proposalId: string | null;
   visibility: Visibility;
   members: LogbookMember[];
+  /** Sample content generated for new users; shown with a "Demo" label. */
+  demo?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,4 +60,11 @@ export interface EntryVersion {
   savedAt: string;
   savedBy: User;
   reason: VersionReason;
+}
+
+/** A whole logbook with its entries and history, e.g. for import, backup or demo content. */
+export interface LogbookBundle {
+  logbook: Logbook;
+  entries: Entry[];
+  versions: EntryVersion[];
 }

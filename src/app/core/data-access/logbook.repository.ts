@@ -3,6 +3,7 @@ import type {
   EntryChanges,
   EntryVersion,
   Logbook,
+  LogbookBundle,
   LogbookSettingsPatch,
   NewLogbook,
   User,
@@ -19,9 +20,15 @@ export abstract class LogbookRepository {
   abstract listLogbooks(user: User): Promise<Logbook[]>;
   abstract createLogbook(input: NewLogbook, owner: User): Promise<Logbook>;
   abstract updateLogbook(id: string, patch: LogbookSettingsPatch): Promise<Logbook>;
+  /** Permanently removes a logbook together with its entries and version history. */
+  abstract deleteLogbook(id: string): Promise<void>;
+  /** Stores a complete logbook (entries and versions included) exactly as given. */
+  abstract importLogbook(bundle: LogbookBundle): Promise<void>;
 
   abstract listEntries(logbookId: string): Promise<Entry[]>;
   abstract getEntry(id: string): Promise<Entry | undefined>;
+  /** Permanently removes an entry together with its version history. */
+  abstract deleteEntry(id: string): Promise<void>;
   abstract createEntry(logbookId: string, author: User): Promise<Entry>;
   /** Saves the entry and, when the auto-version interval has elapsed, snapshots a version. */
   abstract saveEntry(id: string, changes: EntryChanges, author: User): Promise<Entry>;

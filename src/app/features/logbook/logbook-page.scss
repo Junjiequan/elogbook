@@ -5,6 +5,9 @@
 
 .container {
   height: 100%;
+  // let the tinted app canvas show through the content area
+  --mat-sidenav-content-background-color: transparent;
+  --mat-sidenav-container-background-color: transparent;
 }
 
 .sidenav {
@@ -12,6 +15,12 @@
   max-width: 85vw;
   display: flex;
   flex-direction: column;
+  // A distinct white panel next to the tinted content area, with a soft edge between them.
+  --mat-sidenav-container-background-color: var(--mat-sys-surface);
+  --mat-sidenav-container-shape: 0; // square edges; Material's default rounds the outer corners
+  z-index: 2; // keep the soft shadow above the editor content
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: 4px 0 16px rgb(10 30 80 / 10%);
 }
 
 .sidenav-head {
@@ -26,14 +35,78 @@
   }
 }
 
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .filter {
-  margin: 8px 16px;
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 16px 12px;
+  padding: 0 4px 0 12px;
+  height: 38px;
   border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-small);
-  background: var(--mat-sys-surface);
-  color: inherit;
-  font: inherit;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface-variant);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+
+  mat-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: none;
+    color: var(--mat-sys-on-surface);
+    font: var(--mat-sys-body-medium);
+
+    &::placeholder {
+      color: var(--mat-sys-outline);
+    }
+
+    // We draw our own clear button.
+    &::-webkit-search-cancel-button {
+      appearance: none;
+      display: none;
+    }
+  }
+
+  &:focus-within {
+    background: var(--mat-sys-surface);
+    border-color: var(--mat-sys-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-primary) 20%, transparent);
+    color: var(--mat-sys-primary);
+  }
+
+  .clear {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    --mat-icon-button-state-layer-size: 30px;
+
+    mat-icon {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+    }
+  }
 }
 
 nav {
@@ -41,12 +114,24 @@ nav {
 }
 
 .entry-link {
+  position: relative;
   display: flex;
   flex-direction: column;
-  padding: 10px 16px;
+  padding: 11px 16px;
   color: inherit;
   text-decoration: none;
   border-left: 3px solid transparent;
+
+  // Inset divider between entries (not flush with the edges, so it stays light).
+  & + &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    background: var(--mat-sys-outline-variant);
+  }
 
   &:hover {
     background: var(--mat-sys-surface-container);
@@ -55,6 +140,14 @@ nav {
   &.active {
     background: var(--mat-sys-secondary-container);
     border-left-color: var(--mat-sys-primary);
+  }
+
+  // Hide the lines touching the highlighted or hovered entry so the highlight looks clean.
+  &:hover::before,
+  &.active::before,
+  &:hover + &::before,
+  &.active + &::before {
+    opacity: 0;
   }
 }
 
@@ -86,6 +179,26 @@ nav {
   gap: 8px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background: color-mix(in srgb, var(--mat-sys-surface) 72%, transparent);
+  backdrop-filter: blur(8px);
+
+  .delete-button {
+    --mat-button-text-label-text-color: var(--mat-sys-error);
+    --mat-button-text-state-layer-color: var(--mat-sys-error);
+
+    // Smaller than the neighbouring buttons: the colour already makes it stand out.
+    --mat-button-text-container-height: 30px;
+    --mat-button-text-label-text-size: 0.8125rem;
+    --mat-button-text-horizontal-padding: 8px;
+    --mat-button-text-with-icon-horizontal-padding: 8px;
+    --mat-button-text-icon-spacing: 4px;
+
+    mat-icon {
+      width: 18px;
+      height: 18px;
+      font-size: 18px;
+    }
+  }
 
   .titles {
     flex: 1;
@@ -119,6 +232,13 @@ nav {
   gap: 8px;
   padding: 64px 16px;
   text-align: center;
+}
+
+// Below this width the bar keeps only icons; names stay available as tooltips and accessible labels.
+@media (max-width: 1100px) {
+  .logbook-bar .label {
+    display: none;
+  }
 }
 
 @media print {

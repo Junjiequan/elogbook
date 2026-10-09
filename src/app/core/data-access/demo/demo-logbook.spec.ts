@@ -1,0 +1,189 @@
+import { provideZonelessChangeDetection } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { Editor, type JSONContent } from '@tiptap/core';
+import { createEditorExtensions } from '../../../features/editor/extensions/editor-extensions';
+import { roleOf } from '../../auth/permissions';
+import { IndexedDbLogbookRepository, LOGBOOK_DB_OPTIONS } from '../indexeddb-logbook.repository';
+import { LogbookRepository } from '../logbook.repository';
+import { createDemoLogbook } from './demo-logbook';
+import { DemoSeeder, demoSeededKey } from './demo-seeder';
+import { createDemoLogbooks } from './demo-set';
+import { DEMO_USERS } from './demo-users';
+
+const [anna, jon] = DEMO_USERS;
+
+const collectTypes = (node: JSONContent, found = new Set<string>()): Set<string> => {
+  if (node.type) {
+    found.add(node.type);
+  }
+  node.content?.forEach((child) => collectTypes(child, found));
+  return found;
+};
+
+describe('demo logbook set', () => {
+  const bundles = createDemoLogbooks(anna);
+
+  it('gives the user several logbooks with a realistic spread', () => {
+    expect(bundles.length).toBeGreaterThanOrEqual(6);
+    const logbooks = bundles.map((b) => b.logbook);
+    const roles = new Set(logbooks.map((l) => roleOf(l, anna)));
+    expect(roles).toEqual(new Set(['owner', 'editor', 'viewer']));
+    expect(new Set(logbooks.map((l) => l.visibility))).toEqual(
+      new Set(['private', 'facility-read']),
+    );
+    expect(new Set(logbooks.map((l) => l.instrument)).size).toBeGreaterThanOrEqual(5);
+    expect(logbooks.every((l) => l.demo)).toBeTrue();
+  });
+
+  it('uses stable ids per user, different between users', () => {
+    const ids = bundles.map((b) => b.logbook.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(createDemoLogbooks(anna).map((b) => b.logbook.id)).toEqual(ids);
+    expect(
+      createDemoLogbooks(jon)
+        .map((b) => b.logbook.id)
+        .some((id) => ids.includes(id)),
+    ).toBeFalse();
+  });
+
+  it('is internally consistent and never dated in the future', () => {
+    const now = Date.now();
+    for (const { logbook, entries, versions } of bundles) {
+      expect(entries.length).withContext(logbook.title).toBeGreaterThan(0);
+      expect(entries.every((e) => e.logbookId === logbook.id)).toBeTrue();
+      const entryIds = new Set(entries.map((e) => e.id));
+      expect(versions.every((v) => entryIds.has(v.entryId))).toBeTrue();
+      const stamps = [
+        logbook.updatedAt,
+        ...entries.map((e) => e.updatedAt),
+        ...versions.map((v) => v.savedAt),
+      ];
+      expect(stamps.every((s) => Date.parse(s) <= now))
+        .withContext(logbook.title)
+        .toBeTrue();
+    }
+  });
+
+  it('every logbook includes the signed-in user as a member', () => {
+    expect(bundles.every((b) => b.logbook.members.some((m) => m.user.id === anna.id))).toBeTrue();
+  });
+
+  describe('the detailed logbook', () => {
+    const detailed = createDemoLogbook(anna);
+
+    it('makes the user the owner and has history', () => {
+      expect(detailed.logbook.members.find((m) => m.role === 'owner')?.user.id).toBe(anna.id);
+      expect(detailed.versions.length).toBeGreaterThan(0);
+    });
+
+    it('exercises the rich features the editor offers', () => {
+      const types = new Set(detailed.entries.flatMap((e) => [...collectTypes(e.content)]));
+      for (const type of [
+        'table',
+        'taskList',
+        'image',
+        'sampleInfo',
+        'codeBlock',
+        'blockquote',
+        'orderedList',
+        'bulletList',
+      ]) {
+        expect(types.has(type)).withContext(type).toBeTrue();
+      }
+    });
+  });
+
+  describe('against the editor schema', () => {
+    beforeEach(() =>
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] }),
+    );
+
+    it('every entry and version is a valid document', () => {
+      const editor = new Editor({
+        extensions: createEditorExtensions({
+          placeholder: '',
+          upload: () => Promise.reject(),
+          onError: () => undefined,
+        }),
+      });
+      for (const { content } of bundles.flatMap((b) => [...b.entries, ...b.versions])) {
+        expect(() => editor.schema.nodeFromJSON(content).check()).not.toThrow();
+      }
+      editor.destroy();
+    });
+  });
+});
+
+describe('DemoSeeder', () => {
+  let repo: IndexedDbLogbookRepository;
+  let seeder: DemoSeeder;
+  let dbName: string;
+  const total = createDemoLogbooks(anna).length;
+
+  const clearMarkers = () => DEMO_USERS.forEach((u) => localStorage.removeItem(demoSeededKey(u)));
+
+  beforeEach(() => {
+    clearMarkers();
+    dbName = `elogbook-test-${crypto.randomUUID()}`;
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        IndexedDbLogbookRepository,
+        { provide: LogbookRepository, useExisting: IndexedDbLogbookRepository },
+        { provide: LOGBOOK_DB_OPTIONS, useValue: { name: dbName } },
+        DemoSeeder,
+      ],
+    });
+    repo = TestBed.inject(IndexedDbLogbookRepository);
+    seeder = TestBed.inject(DemoSeeder);
+  });
+
+  afterEach(() => {
+    clearMarkers();
+    indexedDB.deleteDatabase(dbName);
+  });
+
+  it('creates every demo logbook with entries, and history for the detailed one', async () => {
+    await seeder.ensureFor(anna);
+    const logbooks = await repo.listLogbooks(anna);
+
+    expect(logbooks.length).toBe(total);
+    const detailed = logbooks.find((l) => l.title.startsWith('LoKI'))!;
+    const runs = (await repo.listEntries(detailed.id)).find((e) => e.title.startsWith('Runs'))!;
+    expect((await repo.listVersions(runs.id)).length).toBe(3);
+  });
+
+  it('does not duplicate anything, even when asked concurrently or again later', async () => {
+    await Promise.all([seeder.ensureFor(anna), seeder.ensureFor(anna)]);
+    await seeder.ensureFor(anna);
+
+    expect((await repo.listLogbooks(anna)).length).toBe(total);
+  });
+
+  it('does not bring back a demo logbook the user deleted', async () => {
+    await seeder.ensureFor(anna);
+    const [first] = await repo.listLogbooks(anna);
+    await repo.deleteLogbook(first.id);
+
+    await seeder.ensureFor(anna);
+
+    expect((await repo.listLogbooks(anna)).length).toBe(total - 1);
+  });
+
+  it('completes a partial seed without duplicating what exists', async () => {
+    await repo.importLogbook(createDemoLogbooks(anna)[0]);
+    await seeder.ensureFor(anna);
+
+    expect((await repo.listLogbooks(anna)).length).toBe(total);
+  });
+
+  it('keeps users separate, including shared-access demo logbooks', async () => {
+    await seeder.ensureFor(anna);
+    await seeder.ensureFor(jon);
+
+    expect((await repo.listLogbooks(anna)).length).toBe(total);
+    expect((await repo.listLogbooks(jon)).length).toBe(total);
+    const annaIds = new Set((await repo.listLogbooks(anna)).map((l) => l.id));
+    expect((await repo.listLogbooks(jon)).some((l) => annaIds.has(l.id))).toBeFalse();
+  });
+});

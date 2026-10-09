@@ -1,11 +1,77 @@
 <div class="page">
   <header class="page-header">
-    <h1>Logbooks</h1>
+    <div>
+      <h1>Logbooks</h1>
+      <p class="subtitle">Your experiment records, and the ones shared with you.</p>
+    </div>
     <button mat-flat-button (click)="create()">
       <mat-icon>add</mat-icon>
       New logbook
     </button>
   </header>
+
+  @if (store.status() === 'ready' && store.logbooks().length > 0) {
+    <app-logbook-stats class="stats" [data]="stats()" />
+  }
+
+  <div class="toolbar" role="search">
+    <label class="search">
+      <mat-icon aria-hidden="true">search</mat-icon>
+      <input
+        type="search"
+        placeholder="Search by title, instrument or proposal"
+        aria-label="Search logbooks"
+        [value]="query()"
+        (input)="setQuery($event)"
+      />
+      @if (query()) {
+        <button
+          mat-icon-button
+          type="button"
+          class="clear"
+          aria-label="Clear search"
+          (click)="query.set('')"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </label>
+
+    <mat-button-toggle-group
+      class="view-toggle"
+      aria-label="Layout"
+      hideSingleSelectionIndicator
+      [value]="view()"
+      (change)="view.set($event.value)"
+    >
+      <mat-button-toggle value="cards" aria-label="Cards" matTooltip="Cards">
+        <mat-icon>grid_view</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle value="table" aria-label="Compact table" matTooltip="Compact table">
+        <mat-icon>table_rows</mat-icon>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <div class="filters" role="group" aria-label="Filter by your role">
+    @for (filter of roleFilters; track filter.value) {
+      <button
+        type="button"
+        class="filter"
+        [class.active]="roleFilter() === filter.value"
+        [attr.aria-pressed]="roleFilter() === filter.value"
+        (click)="roleFilter.set(filter.value)"
+      >
+        {{ filter.label }}
+        <span class="count">{{ roleCounts()[filter.value] }}</span>
+      </button>
+    }
+    @if (store.status() === 'ready') {
+      <span class="result-note"
+        >Showing {{ visible().length }} of {{ store.logbooks().length }}</span
+      >
+    }
+  </div>
 
   @switch (store.status()) {
     @case ('loading') {
@@ -20,35 +86,43 @@
     @default {
       @if (store.logbooks().length === 0) {
         <p class="message">No logbooks yet. Create one to get started.</p>
+      } @else if (visible().length === 0) {
+        <p class="message">No logbooks match your search or filter.</p>
+      } @else if (view() === 'cards') {
+        <ul class="cards">
+          @for (logbook of visible(); track logbook.id) {
+            <li>
+              <a class="card" [routerLink]="['/logbooks', logbook.id]">
+                <h2>{{ logbook.title }}</h2>
+                @if (logbook.description) {
+                  <p class="description">{{ logbook.description }}</p>
+                }
+                <div class="chips">
+                  @if (logbook.instrument) {
+                    <mat-chip>{{ logbook.instrument }}</mat-chip>
+                  }
+                  @if (logbook.proposalId) {
+                    <mat-chip>Proposal {{ logbook.proposalId }}</mat-chip>
+                  }
+                  @if (logbook.demo) {
+                    <mat-chip>Demo</mat-chip>
+                  }
+                  <mat-chip>{{ roleLabel(logbook) }}</mat-chip>
+                  <mat-chip>
+                    <mat-icon matChipAvatar>{{
+                      logbook.visibility === 'private' ? 'lock' : 'public'
+                    }}</mat-icon>
+                    {{ logbook.visibility === 'private' ? 'Private' : 'Facility-wide read' }}
+                  </mat-chip>
+                </div>
+                <p class="meta">Updated {{ logbook.updatedAt | date: 'd MMM y, HH:mm' }}</p>
+              </a>
+            </li>
+          }
+        </ul>
+      } @else {
+        <app-logbook-table [logbooks]="visible()" />
       }
-      <ul class="cards">
-        @for (logbook of store.logbooks(); track logbook.id) {
-          <li>
-            <a class="card" [routerLink]="['/logbooks', logbook.id]">
-              <h2>{{ logbook.title }}</h2>
-              @if (logbook.description) {
-                <p class="description">{{ logbook.description }}</p>
-              }
-              <div class="chips">
-                @if (logbook.instrument) {
-                  <mat-chip>{{ logbook.instrument }}</mat-chip>
-                }
-                @if (logbook.proposalId) {
-                  <mat-chip>Proposal {{ logbook.proposalId }}</mat-chip>
-                }
-                <mat-chip>{{ roleLabel(logbook) }}</mat-chip>
-                <mat-chip>
-                  <mat-icon matChipAvatar>{{
-                    logbook.visibility === 'private' ? 'lock' : 'public'
-                  }}</mat-icon>
-                  {{ logbook.visibility === 'private' ? 'Private' : 'Facility-wide read' }}
-                </mat-chip>
-              </div>
-              <p class="meta">Updated {{ logbook.updatedAt | date: 'd MMM y, HH:mm' }}</p>
-            </a>
-          </li>
-        }
-      </ul>
     }
   }
 </div>

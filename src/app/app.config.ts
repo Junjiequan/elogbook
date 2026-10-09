@@ -9,6 +9,7 @@ import {
   StaticExperimentContext,
 } from './core/experiment-context/experiment-context';
 import { IndexedDbLogbookRepository } from './core/data-access/indexeddb-logbook.repository';
+import { DemoSeeder } from './core/data-access/demo/demo-seeder';
 import { LogbookRepository } from './core/data-access/logbook.repository';
 import { AuthService } from './core/auth/auth.service';
 import { TestAuthService } from './features/test-auth/test-auth.service';
@@ -31,5 +32,7 @@ export const appConfig: ApplicationConfig = {
     // Swap these two for HTTP-backed implementations once the NestJS backend exists.
     { provide: LogbookRepository, useClass: IndexedDbLogbookRepository },
     { provide: ExperimentContext, useClass: StaticExperimentContext },
+    // Realistic demo logbook for every new user. Remove this line to turn it off.
+    DemoSeeder,
   ],
 };

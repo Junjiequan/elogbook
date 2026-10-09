@@ -9,7 +9,8 @@ export function roleOf(logbook: Logbook, user: User): MemberRole | null {
   if (member) {
     return member.role;
   }
-  return logbook.visibility === 'facility-read' ? 'viewer' : null;
+  // Demo logbooks are personal copies, so the facility-wide rule does not apply to them.
+  return logbook.visibility === 'facility-read' && !logbook.demo ? 'viewer' : null;
 }
 
 export function canRead(logbook: Logbook, user: User): boolean {
@@ -23,4 +24,9 @@ export function canWrite(logbook: Logbook, user: User): boolean {
 
 export function canManage(logbook: Logbook, user: User): boolean {
   return roleOf(logbook, user) === 'owner';
+}
+
+/** Owners and administrators may delete a logbook. Destructive, so editors and viewers may not. */
+export function canDelete(logbook: Logbook, user: User, isAdmin: boolean): boolean {
+  return isAdmin || canManage(logbook, user);
 }

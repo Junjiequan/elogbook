@@ -1,7 +1,8 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { CurrentUserService } from '../../core/auth/current-user.service';
+import { canDelete } from '../../core/auth/permissions';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
-import type { Entry } from '../../core/models/logbook.models';
+import type { Entry, Logbook } from '../../core/models/logbook.models';
 import type { LoadStatus } from '../logbooks/logbooks.store';
 
 /** Entries of the logbook currently open. Provided by the logbook page, so it dies with it. */
@@ -30,6 +31,22 @@ export class EntriesStore {
     const entry = await this.repository.createEntry(logbookId, this.currentUser.user());
     this._entries.update((all) => [entry, ...all]);
     return entry;
+  }
+
+  /**
+   * Permanently deletes an entry. Allowed for the logbook's owner or an administrator, and never in a
+   * demo logbook (whose content is protected).
+   */
+  async delete(entry: Entry, logbook: Logbook): Promise<void> {
+    const user = this.currentUser.user();
+    if (entry.logbookId !== logbook.id || !canDelete(logbook, user, this.currentUser.isAdmin())) {
+      throw new Error('You are not allowed to delete this entry.');
+    }
+    if (logbook.demo) {
+      throw new Error('Entries of a demo logbook cannot be deleted.');
+    }
+    await this.repository.deleteEntry(entry.id);
+    this._entries.update((all) => all.filter((e) => e.id !== entry.id));
   }
 
   /** Reflect a saved entry (new title, timestamps) in the list without reloading it. */

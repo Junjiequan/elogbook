@@ -1,10 +1,10 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
-import { DEMO_USERS } from '../../core/data-access/demo-data';
+import { DEMO_USERS } from '../../core/data-access/demo/demo-users';
 import type { User } from '../../core/models/logbook.models';
 import { decodeGoogleCredential } from './google-identity';
 import { hashPassword, newSalt } from './password-hasher';
-import { DEMO_PASSWORD, GOOGLE_CLIENT_ID } from './test-auth.config';
+import { ADMIN_EMAILS, DEMO_PASSWORD, GOOGLE_CLIENT_ID } from './test-auth.config';
 
 const ACCOUNTS_KEY = 'elogbook.test-auth.accounts';
 const SESSION_KEY = 'elogbook.test-auth.session';
@@ -33,6 +33,7 @@ export class TestAuthService extends AuthService {
   private seeding?: Promise<void>;
 
   override readonly user = this._user.asReadonly();
+  override readonly isAdmin = computed(() => ADMIN_EMAILS.includes(this._user()?.email ?? ''));
 
   async signUp(name: string, email: string, password: string): Promise<void> {
     await this.ensureDemoAccounts();

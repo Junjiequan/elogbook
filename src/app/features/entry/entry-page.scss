@@ -17,6 +17,7 @@
 }
 
 .entry-bar {
+  background: color-mix(in srgb, var(--mat-sys-surface) 72%, transparent);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -40,6 +41,25 @@
 
   .on {
     background: var(--mat-sys-secondary-container);
+  }
+
+  // Orange, so it reads as a different action from the logbook's red "Delete logbook" above.
+  .delete-button {
+    --entry-delete: light-dark(#b45309, #fdba74);
+    --mat-button-text-label-text-color: var(--entry-delete);
+    --mat-button-text-state-layer-color: var(--entry-delete);
+    // Smaller than the neighbouring buttons: the colour already makes it stand out.
+    --mat-button-text-container-height: 30px;
+    --mat-button-text-label-text-size: 0.8125rem;
+    --mat-button-text-horizontal-padding: 8px;
+    --mat-button-text-with-icon-horizontal-padding: 8px;
+    --mat-button-text-icon-spacing: 4px;
+
+    mat-icon {
+      width: 18px;
+      height: 18px;
+      font-size: 18px;
+    }
   }
 }
 
@@ -74,6 +94,13 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  // The document is the page itself: no card, no gap. The toolbar sticks right under the title.
+  background: var(--mat-sys-surface);
+}
+
+.editor-scroll app-rich-text-editor {
+  display: block;
+  width: 100%;
 }
 
 .state {
@@ -103,5 +130,6 @@
     display: block;
     height: auto;
     overflow: visible;
+    padding: 0;
   }
 }

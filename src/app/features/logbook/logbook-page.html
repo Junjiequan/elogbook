@@ -9,18 +9,42 @@
     >
       <div class="sidenav-head">
         <h2>Entries</h2>
-        @if (mayWrite()) {
-          <button mat-flat-button (click)="newEntry()"><mat-icon>add</mat-icon>New</button>
-        }
+        <span class="head-actions">
+          @if (mayWrite()) {
+            <button mat-flat-button (click)="newEntry()"><mat-icon>add</mat-icon>New</button>
+          }
+          <button
+            mat-icon-button
+            type="button"
+            aria-label="Collapse entry list"
+            matTooltip="Collapse"
+            (click)="toggleDrawer(false)"
+          >
+            <mat-icon>keyboard_double_arrow_left</mat-icon>
+          </button>
+        </span>
       </div>
-      <input
-        class="filter"
-        type="search"
-        placeholder="Filter by title"
-        aria-label="Filter entries by title"
-        [value]="filter()"
-        (input)="setFilter($event)"
-      />
+      <label class="filter">
+        <mat-icon aria-hidden="true">search</mat-icon>
+        <input
+          type="search"
+          placeholder="Filter entries"
+          aria-label="Filter entries by title"
+          [value]="filter()"
+          (input)="setFilter($event)"
+        />
+        @if (filter()) {
+          <button
+            mat-icon-button
+            type="button"
+            class="clear"
+            aria-label="Clear filter"
+            (click)="filter.set('')"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </label>
       @if (entries.status() === 'loading') {
         <mat-progress-bar mode="indeterminate" />
       }
@@ -47,7 +71,7 @@
       <header class="logbook-bar no-print">
         <button
           mat-icon-button
-          (click)="drawerOpen.set(!drawerOpen())"
+          (click)="toggleDrawer(!drawerOpen())"
           aria-label="Toggle entry list"
           matTooltip="Entries"
         >
@@ -65,13 +89,36 @@
             <mat-chip>{{ role() }}</mat-chip>
           </div>
         </div>
-        <button mat-button (click)="openSharing()">
+        <button
+          mat-button
+          aria-label="Share logbook"
+          matTooltip="Share this logbook"
+          (click)="openSharing()"
+        >
           <mat-icon>{{ book.visibility === 'private' ? 'lock' : 'public' }}</mat-icon>
-          Share
+          <span class="label">Share logbook</span>
         </button>
-        <a mat-button [routerLink]="['/logbooks', book.id, 'print']">
+        @if (mayDelete()) {
+          <button
+            mat-button
+            type="button"
+            class="delete-button"
+            aria-label="Delete logbook"
+            matTooltip="Delete this whole logbook"
+            (click)="deleteLogbook()"
+          >
+            <mat-icon>delete</mat-icon>
+            <span class="label">Delete logbook</span>
+          </button>
+        }
+        <a
+          mat-button
+          aria-label="Export logbook"
+          matTooltip="Export the whole logbook as PDF"
+          [routerLink]="['/logbooks', book.id, 'print']"
+        >
           <mat-icon>picture_as_pdf</mat-icon>
-          Export logbook
+          <span class="label">Export logbook</span>
         </a>
       </header>
       <div class="entry-outlet"><router-outlet /></div>

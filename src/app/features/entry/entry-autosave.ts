@@ -92,6 +92,14 @@ export class EntryAutosave {
     return this.queue;
   }
 
+  /** Throws away unsaved edits (used when the entry is about to be deleted) and waits for any write in flight. */
+  discard(): Promise<void> {
+    clearTimeout(this.timer);
+    this.pending = {};
+    this._status.set('saved');
+    return this.queue;
+  }
+
   async saveVersion(): Promise<void> {
     const entry = this._entry();
     if (entry) {

@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from './demo-data';
+import { DEMO_USERS } from './demo/demo-users';
 import {
   AUTO_VERSION_INTERVAL_MS,
   IndexedDbLogbookRepository,
@@ -23,7 +23,7 @@ describe('IndexedDbLogbookRepository', () => {
       providers: [
         provideZonelessChangeDetection(),
         IndexedDbLogbookRepository,
-        { provide: LOGBOOK_DB_OPTIONS, useValue: { name: dbName, seed: false } },
+        { provide: LOGBOOK_DB_OPTIONS, useValue: { name: dbName } },
       ],
     });
     repo = TestBed.inject(IndexedDbLogbookRepository);
@@ -106,5 +106,43 @@ describe('IndexedDbLogbookRepository', () => {
     const [versionOfA] = await repo.listVersions(a.id);
 
     await expectAsync(repo.restoreVersion(b.id, versionOfA.id, anna)).toBeRejected();
+  });
+
+  it('deletes a logbook with its entries and version history, and nothing else', async () => {
+    const keep = await newEntry();
+    await repo.saveEntry(keep.id, { content: doc('keep me') }, anna);
+    const gone = await repo.createLogbook(
+      { title: 'Gone', description: '', instrument: null, proposalId: null },
+      anna,
+    );
+    const goneEntry = await repo.createEntry(gone.id, anna);
+    await repo.saveEntry(goneEntry.id, { content: doc('delete me') }, anna);
+    expect((await repo.listVersions(goneEntry.id)).length).toBe(1);
+
+    await repo.deleteLogbook(gone.id);
+
+    expect((await repo.listLogbooks(anna)).map((l) => l.id)).not.toContain(gone.id);
+    expect(await repo.getEntry(goneEntry.id)).toBeUndefined();
+    expect(await repo.listVersions(goneEntry.id)).toEqual([]);
+    expect(await repo.getEntry(keep.id)).toBeDefined();
+    expect((await repo.listVersions(keep.id)).length).toBe(1);
+  });
+
+  it('deletes one entry with its versions and leaves the others alone', async () => {
+    const logbook = await repo.createLogbook(
+      { title: 'L', description: '', instrument: null, proposalId: null },
+      anna,
+    );
+    const doomed = await repo.createEntry(logbook.id, anna);
+    const kept = await repo.createEntry(logbook.id, anna);
+    await repo.saveEntry(doomed.id, { content: doc('bye') }, anna);
+    await repo.saveEntry(kept.id, { content: doc('stay') }, anna);
+
+    await repo.deleteEntry(doomed.id);
+
+    expect(await repo.getEntry(doomed.id)).toBeUndefined();
+    expect(await repo.listVersions(doomed.id)).toEqual([]);
+    expect((await repo.listEntries(logbook.id)).map((e) => e.id)).toEqual([kept.id]);
+    expect((await repo.listVersions(kept.id)).length).toBe(1);
   });
 });

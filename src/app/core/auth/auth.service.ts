@@ -7,5 +7,7 @@ import type { User } from '../models/logbook.models';
  */
 export abstract class AuthService {
   abstract readonly user: Signal<User | null>;
+  /** Facility administrators may delete any logbook they can open. */
+  abstract readonly isAdmin: Signal<boolean>;
   abstract signOut(): void;
 }

@@ -10,6 +10,7 @@ export class CurrentUserService {
   private readonly auth = inject(AuthService);
 
   readonly isSignedIn = computed(() => this.auth.user() !== null);
+  readonly isAdmin = computed(() => this.auth.isAdmin());
   /** The signed-in user. Only meaningful behind `authGuard`. */
   readonly user = computed(() => this.auth.user() ?? ANONYMOUS_USER);
 }

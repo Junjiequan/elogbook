@@ -37,6 +37,18 @@
             ><mat-icon>visibility</mat-icon><span class="status-text">View only</span></span
           >
         }
+        @if (mayDelete()) {
+          <button
+            mat-button
+            class="delete-button"
+            matTooltip="Delete only this entry"
+            aria-label="Delete entry"
+            (click)="deleteEntry()"
+          >
+            <mat-icon>delete</mat-icon>
+            <span class="label">Delete</span>
+          </button>
+        }
         <button
           mat-button
           [class.on]="historyOpen()"
@@ -56,7 +68,7 @@
           aria-label="Export entry"
         >
           <mat-icon>picture_as_pdf</mat-icon>
-          <span class="label">Export entry</span>
+          <span class="label">Export</span>
         </a>
       </header>
 

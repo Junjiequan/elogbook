@@ -24,8 +24,15 @@ html {
     )
   );
 
+  // App-level look: a soft tinted canvas (cards stay white) and a branded header / footer.
+  --app-bg: linear-gradient(160deg, #f4f8ff 0%, #e8f0fd 52%, #f2f7ff 100%);
+  --app-brand-bg: linear-gradient(100deg, #0a2f73 0%, #1456c9 58%, #2f80ed 100%);
+  --app-brand-text: #ffffff;
+
   &[data-theme='dark'] {
     color-scheme: dark;
+    --app-bg: linear-gradient(160deg, #0d1220 0%, #121a2e 55%, #0d1220 100%);
+    --app-brand-bg: linear-gradient(100deg, #081633 0%, #10306b 60%, #1a4a9c 100%);
   }
 }
 
@@ -37,6 +44,8 @@ body {
 
 body {
   background: var(--mat-sys-surface);
+  background-image: var(--app-bg);
+  background-attachment: fixed;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-large);
 }

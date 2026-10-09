@@ -1,12 +1,12 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb';
-import { createDemoData } from './demo-data';
 import { LogbookRepository } from './logbook.repository';
 import type {
   Entry,
   EntryChanges,
   EntryVersion,
   Logbook,
+  LogbookBundle,
   LogbookSettingsPatch,
   NewLogbook,
   User,
@@ -16,12 +16,10 @@ import { canRead } from '../auth/permissions';
 
 export interface LogbookDbOptions {
   name: string;
-  /** Insert demo content the first time the database is created. */
-  seed: boolean;
 }
 
 export const LOGBOOK_DB_OPTIONS = new InjectionToken<LogbookDbOptions>('LOGBOOK_DB_OPTIONS', {
-  factory: () => ({ name: 'elogbook', seed: true }),
+  factory: () => ({ name: 'elogbook' }),
 });
 
 /** An automatic version is taken at most this often per entry. */
@@ -69,6 +67,32 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
     return updated;
   }
 
+  override async deleteLogbook(id: string): Promise<void> {
+    const db = await this.db();
+    const tx = db.transaction(['logbooks', 'entries', 'versions'], 'readwrite');
+    const entryIds = await tx.objectStore('entries').index('byLogbook').getAllKeys(id);
+    for (const entryId of entryIds) {
+      const versionIds = await tx.objectStore('versions').index('byEntry').getAllKeys(entryId);
+      await Promise.all(
+        versionIds.map((versionId) => tx.objectStore('versions').delete(versionId)),
+      );
+      await tx.objectStore('entries').delete(entryId);
+    }
+    await tx.objectStore('logbooks').delete(id);
+    await tx.done;
+  }
+
+  override async importLogbook(bundle: LogbookBundle): Promise<void> {
+    const db = await this.db();
+    const tx = db.transaction(['logbooks', 'entries', 'versions'], 'readwrite');
+    await Promise.all([
+      tx.objectStore('logbooks').put(bundle.logbook),
+      ...bundle.entries.map((entry) => tx.objectStore('entries').put(entry)),
+      ...bundle.versions.map((version) => tx.objectStore('versions').put(version)),
+      tx.done,
+    ]);
+  }
+
   override async listEntries(logbookId: string): Promise<Entry[]> {
     const entries = await (await this.db()).getAllFromIndex('entries', 'byLogbook', logbookId);
     return entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -76,6 +100,15 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
 
   override async getEntry(id: string): Promise<Entry | undefined> {
     return (await this.db()).get('entries', id);
+  }
+
+  override async deleteEntry(id: string): Promise<void> {
+    const db = await this.db();
+    const tx = db.transaction(['entries', 'versions'], 'readwrite');
+    const versionIds = await tx.objectStore('versions').index('byEntry').getAllKeys(id);
+    await Promise.all(versionIds.map((versionId) => tx.objectStore('versions').delete(versionId)));
+    await tx.objectStore('entries').delete(id);
+    await tx.done;
   }
 
   override async createEntry(logbookId: string, author: User): Promise<Entry> {
@@ -156,11 +189,8 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
   }
 
   private async open(): Promise<IDBPDatabase<LogbookDb>> {
-    const { name, seed } = this.options;
-    let created = false;
-    const db = await openDB<LogbookDb>(name, 1, {
+    return openDB<LogbookDb>(this.options.name, 1, {
       upgrade(database) {
-        created = true;
         database.createObjectStore('logbooks', { keyPath: 'id' });
         database
           .createObjectStore('entries', { keyPath: 'id' })
@@ -168,16 +198,6 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
         database.createObjectStore('versions', { keyPath: 'id' }).createIndex('byEntry', 'entryId');
       },
     });
-    if (created && seed) {
-      const data = createDemoData();
-      const tx = db.transaction(['logbooks', 'entries'], 'readwrite');
-      await Promise.all([
-        ...data.logbooks.map((l) => tx.objectStore('logbooks').put(l)),
-        ...data.entries.map((e) => tx.objectStore('entries').put(e)),
-        tx.done,
-      ]);
-    }
-    return db;
   }
 }
 

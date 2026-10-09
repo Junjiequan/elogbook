@@ -25,9 +25,9 @@ import { ThemeService } from './core/theme/theme.service';
   ],
   template: `
     <mat-toolbar class="shell-bar no-print">
-      <a class="brand" routerLink="/logbooks">
-        <mat-icon>menu_book</mat-icon>
-        <span>ESS eLogbook</span>
+      <a class="brand" routerLink="/logbooks" aria-label="eLogbook home">
+        <span class="logo"><mat-icon>menu_book</mat-icon></span>
+        <span class="brand-text"><strong>eLogbook</strong></span>
       </a>
       <span class="spacer"></span>
       <button
@@ -58,6 +58,9 @@ import { ThemeService } from './core/theme/theme.service';
           >
             <strong>{{ currentUser.user().name }}</strong>
             <span>{{ currentUser.user().email }}</span>
+            @if (currentUser.isAdmin()) {
+              <span class="admin-badge">Administrator</span>
+            }
           </div>
           <button mat-menu-item (click)="signOut()">
             <mat-icon>logout</mat-icon>
@@ -67,6 +70,19 @@ import { ThemeService } from './core/theme/theme.service';
       }
     </mat-toolbar>
     <main><router-outlet /></main>
+    <footer class="shell-footer no-print">
+      <span class="footer-brand"><mat-icon>menu_book</mat-icon> eLogbook</span>
+      <span class="footer-note">Closed-source MVP · your demo data stays in this browser</span>
+      <nav class="footer-links" aria-label="Project links">
+        <a href="https://github.com/Junjiequan/elogbook" target="_blank" rel="noopener">Source</a>
+        <a
+          href="https://github.com/Junjiequan/elogbook/blob/main/LICENSE"
+          target="_blank"
+          rel="noopener"
+          >MIT licence</a
+        >
+      </nav>
+    </footer>
   `,
   styles: `
     :host {
@@ -75,16 +91,38 @@ import { ThemeService } from './core/theme/theme.service';
       height: 100dvh;
     }
     .shell-bar {
+      position: relative;
+      z-index: 3;
       flex: none;
-      background: var(--mat-sys-surface-container-low);
+      background: var(--app-brand-bg);
+      color: var(--app-brand-text);
+      box-shadow: 0 2px 10px rgb(10 30 80 / 28%);
+      --mat-toolbar-container-background-color: transparent;
+      --mat-toolbar-container-text-color: var(--app-brand-text);
+      --mat-icon-button-icon-color: var(--app-brand-text);
+      --mat-icon-button-state-layer-color: #fff;
     }
     .brand {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       color: inherit;
       text-decoration: none;
-      font-weight: 500;
+      font-size: 1.15rem;
+      letter-spacing: 0.01em;
+
+      strong {
+        font-weight: 700;
+      }
+    }
+    .logo {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgb(255 255 255 / 18%);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 30%);
     }
     .spacer {
       flex: 1;
@@ -101,17 +139,75 @@ import { ThemeService } from './core/theme/theme.service';
         color: var(--mat-sys-on-surface);
       }
     }
+    .admin-badge {
+      align-self: flex-start;
+      margin-top: 6px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: var(--mat-sys-primary);
+      color: var(--mat-sys-on-primary);
+      font: var(--mat-sys-label-small);
+    }
     .user-name {
       font-size: 0.875rem;
+      margin-left: 4px;
     }
     main {
       flex: 1;
       min-height: 0;
       overflow: auto;
     }
-    @media (max-width: 600px) {
-      .user-name {
+    .shell-footer {
+      position: relative;
+      z-index: 3;
+      flex: none;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 20px;
+      padding: 10px 20px;
+      background: var(--app-brand-bg);
+      color: rgb(255 255 255 / 86%);
+      font: var(--mat-sys-label-medium);
+
+      a {
+        color: #fff;
+        text-decoration: none;
+        border-bottom: 1px solid rgb(255 255 255 / 40%);
+
+        &:hover,
+        &:focus-visible {
+          border-bottom-color: #fff;
+        }
+      }
+    }
+    .footer-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: #fff;
+
+      mat-icon {
+        width: 18px;
+        height: 18px;
+        font-size: 18px;
+      }
+    }
+    .footer-note {
+      flex: 1;
+    }
+    .footer-links {
+      display: flex;
+      gap: 16px;
+    }
+    @media (max-width: 700px) {
+      .user-name,
+      .footer-note {
         display: none;
+      }
+      .footer-brand {
+        flex: 1;
       }
     }
     @media print {

@@ -1,0 +1,86 @@
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Title</th>
+        <th scope="col" class="wide-only">Description</th>
+        <th scope="col">Instrument</th>
+        <th scope="col" class="narrow-hide">Proposal</th>
+        <th scope="col" class="narrow-hide">Members</th>
+        <th scope="col">Your role</th>
+        <th scope="col">Access</th>
+        <th scope="col" class="narrow-hide">Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (logbook of logbooks(); track logbook.id) {
+        <tr (click)="open(logbook)">
+          <td class="title-cell">
+            <a [routerLink]="['/logbooks', logbook.id]" (click)="$event.stopPropagation()">{{
+              logbook.title
+            }}</a>
+            @if (logbook.demo) {
+              <span class="badge">Demo</span>
+            }
+          </td>
+          <td class="wide-only description-cell">
+            <div class="description-wrap">
+              <span
+                class="description-text"
+                appTruncated
+                #text="appTruncated"
+                [class.expanded]="isExpanded(logbook)"
+                >{{ logbook.description || '–' }}</span
+              >
+              @if (text.truncated() || isExpanded(logbook)) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="expand"
+                  [attr.aria-expanded]="isExpanded(logbook)"
+                  [attr.aria-label]="
+                    (isExpanded(logbook) ? 'Collapse' : 'Show full') +
+                    ' description of ' +
+                    logbook.title
+                  "
+                  [matTooltip]="isExpanded(logbook) ? 'Show less' : 'Show full description'"
+                  (click)="toggleExpanded(logbook, $event)"
+                >
+                  <mat-icon>{{ isExpanded(logbook) ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+              }
+            </div>
+          </td>
+          <td>{{ logbook.instrument ?? '–' }}</td>
+          <td class="narrow-hide">{{ logbook.proposalId ?? '–' }}</td>
+          <td class="narrow-hide">
+            <span class="avatars">
+              @for (member of avatars(logbook); track member.user.id) {
+                <span class="avatar" [matTooltip]="member.user.name + ' (' + member.role + ')'">{{
+                  initials(member.user.name)
+                }}</span>
+              }
+              @if (extraMembers(logbook) > 0) {
+                <span class="avatar more">+{{ extraMembers(logbook) }}</span>
+              }
+            </span>
+          </td>
+          <td>
+            <span class="role" [attr.data-role]="roleLabel(logbook)">{{ roleLabel(logbook) }}</span>
+          </td>
+          <td>
+            <span class="access">
+              <mat-icon aria-hidden="true">{{
+                logbook.visibility === 'private' ? 'lock' : 'public'
+              }}</mat-icon>
+              {{ logbook.visibility === 'private' ? 'Private' : 'Facility' }}
+            </span>
+          </td>
+          <td class="narrow-hide nowrap">
+            {{ logbook.updatedAt | date: 'd MMM y, HH:mm' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

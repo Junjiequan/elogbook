@@ -21,10 +21,21 @@ import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/mat
 import { MatTooltip } from '@angular/material/tooltip';
 import { map } from 'rxjs';
 import { CurrentUserService } from '../../core/auth/current-user.service';
-import { canManage, canWrite, roleOf } from '../../core/auth/permissions';
+import { canDelete, canManage, canWrite, roleOf } from '../../core/auth/permissions';
 import { ShareDialog, type ShareDialogData } from '../sharing/share-dialog';
+import { DeleteLogbook } from '../logbooks/delete-logbook.service';
 import { LogbooksStore } from '../logbooks/logbooks.store';
 import { EntriesStore } from './entries.store';
+
+export const SIDEBAR_COLLAPSED_KEY = 'elogbook.sidebarCollapsed';
+
+function readCollapsedPreference(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
 
 @Component({
   selector: 'app-logbook-page',
@@ -56,6 +67,7 @@ export class LogbookPage {
   private readonly currentUser = inject(CurrentUserService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly deleter = inject(DeleteLogbook);
 
   protected readonly logbook = computed(() =>
     this.logbooks.logbooks().find((l) => l.id === this.logbookId()),
@@ -67,6 +79,11 @@ export class LogbookPage {
   protected readonly mayWrite = computed(() => {
     const logbook = this.logbook();
     return !!logbook && canWrite(logbook, this.currentUser.user());
+  });
+
+  protected readonly mayDelete = computed(() => {
+    const logbook = this.logbook();
+    return !!logbook && canDelete(logbook, this.currentUser.user(), this.currentUser.isAdmin());
   });
 
   protected readonly filter = signal('');
@@ -83,14 +100,27 @@ export class LogbookPage {
       .pipe(map((state) => state.matches)),
     { initialValue: false },
   );
-  protected readonly drawerOpen = signal(true);
+  /** Desktop preference, remembered between visits. On small screens the list always starts closed. */
+  private readonly collapsedPreference = signal(readCollapsedPreference());
+  protected readonly drawerOpen = signal(!this.collapsedPreference());
 
   constructor() {
     effect(() => {
       const id = this.logbookId();
       untracked(() => void this.entries.load(id));
     });
-    effect(() => this.drawerOpen.set(!this.narrow()));
+    effect(() => {
+      const open = !this.narrow() && !this.collapsedPreference();
+      untracked(() => this.drawerOpen.set(open));
+    });
+    effect(() => {
+      const collapsed = this.collapsedPreference();
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+      } catch {
+        // storage unavailable: the choice just won't survive a reload
+      }
+    });
   }
 
   protected async newEntry(): Promise<void> {
@@ -98,8 +128,23 @@ export class LogbookPage {
     await this.router.navigate(['/logbooks', this.logbookId(), 'entries', entry.id]);
   }
 
+  protected async deleteLogbook(): Promise<void> {
+    const logbook = this.logbook();
+    if (logbook && (await this.deleter.confirmAndDelete(logbook))) {
+      await this.router.navigate(['/logbooks']);
+    }
+  }
+
   protected setFilter(event: Event): void {
     this.filter.set((event.target as HTMLInputElement).value);
+  }
+
+  /** The user opened or closed the entry list on purpose; on desktop the choice is remembered. */
+  protected toggleDrawer(open: boolean): void {
+    this.drawerOpen.set(open);
+    if (!this.narrow()) {
+      this.collapsedPreference.set(!open);
+    }
   }
 
   protected entryOpened(): void {

@@ -18,3 +18,9 @@ export const GOOGLE_CLIENT_ID = new InjectionToken<string>('GOOGLE_CLIENT_ID', {
 
 /** Password of the three seeded demo accounts. */
 export const DEMO_PASSWORD = 'demo1234';
+
+/**
+ * Emails that count as administrators in this test sign-in (they may delete any logbook they can open).
+ * Add your own address here to try the admin features.
+ */
+export const ADMIN_EMAILS: readonly string[] = ['anna.lindqvist@example.org'];

@@ -9,18 +9,22 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatButton } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { CurrentUserService } from '../../core/auth/current-user.service';
-import { canWrite } from '../../core/auth/permissions';
+import { canDelete, canWrite } from '../../core/auth/permissions';
 import type { EntryVersion } from '../../core/models/logbook.models';
+import { firstValueFrom } from 'rxjs';
 import { RichTextEditor } from '../editor/rich-text-editor';
 import { HistoryPanel } from '../history/history-panel';
 import { LogbooksStore } from '../logbooks/logbooks.store';
+import { EntriesStore } from '../logbook/entries.store';
+import { DeleteEntryDialog, type DeleteEntryDialogData } from './delete-entry-dialog';
 import { EntryAutosave, type SaveStatus } from './entry-autosave';
 
 const STATUS_TEXT: Record<SaveStatus, string> = {
@@ -66,10 +70,18 @@ export class EntryPage {
   private readonly logbooks = inject(LogbooksStore);
   private readonly currentUser = inject(CurrentUserService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+  private readonly entries = inject(EntriesStore);
 
   protected readonly mayWrite = computed(() => {
     const logbook = this.logbooks.logbooks().find((l) => l.id === this.logbookId());
     return !!logbook && canWrite(logbook, this.currentUser.user());
+  });
+
+  protected readonly mayDelete = computed(() => {
+    const logbook = this.logbooks.logbooks().find((l) => l.id === this.logbookId());
+    return !!logbook && canDelete(logbook, this.currentUser.user(), this.currentUser.isAdmin());
   });
 
   protected readonly historyOpen = signal(false);
@@ -109,6 +121,35 @@ export class EntryPage {
         { duration: 4000 },
       );
     }
+  }
+
+  protected async deleteEntry(): Promise<void> {
+    const entry = this.autosave.entry();
+    const logbook = this.logbooks.logbooks().find((l) => l.id === this.logbookId());
+    if (!entry || !logbook) {
+      return;
+    }
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open<DeleteEntryDialog, DeleteEntryDialogData, boolean>(DeleteEntryDialog, {
+          data: { entry, logbook },
+        })
+        .afterClosed(),
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await this.autosave.discard(); // never write to an entry that is about to disappear
+      await this.entries.delete(entry, logbook);
+    } catch {
+      this.snackBar.open('Could not delete the entry.', 'Dismiss', { duration: 6000 });
+      return;
+    }
+    this.snackBar.open(`Deleted “${entry.title || 'Untitled entry'}”.`, undefined, {
+      duration: 4000,
+    });
+    await this.router.navigate(['/logbooks', logbook.id]);
   }
 
   protected toggleHistory(): void {

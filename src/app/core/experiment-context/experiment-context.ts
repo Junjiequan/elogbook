@@ -43,6 +43,8 @@ export class StaticExperimentContext extends ExperimentContext {
       samples: [
         { id: 'S-0031', name: 'SDS 5 wt% in D2O', formula: 'C12H25NaO4S' },
         { id: 'S-0032', name: 'SDS 10 wt% in D2O', formula: 'C12H25NaO4S' },
+        { id: 'S-0033', name: 'D2O solvent background', formula: 'D2O' },
+        { id: 'S-0034', name: 'SDS 5 wt% + 100 mM NaCl in D2O', formula: 'C12H25NaO4S' },
       ],
     },
     {

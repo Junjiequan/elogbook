@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from '../../core/data-access/demo-data';
+import { DEMO_USERS } from '../../core/data-access/demo/demo-users';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
 import type { Entry } from '../../core/models/logbook.models';
 import { provideFakeAuth } from '../../testing/fake-auth';
@@ -87,5 +87,15 @@ describe('EntryAutosave', () => {
     await autosave.open('e2');
 
     expect(repo.saveEntry).toHaveBeenCalledWith('e1', { title: 'unsaved' }, jasmine.anything());
+  });
+
+  it('discards unsaved edits without writing them', async () => {
+    autosave.edit({ title: 'about to be deleted' });
+    await autosave.discard();
+    jasmine.clock().tick(AUTOSAVE_DEBOUNCE_MS * 2);
+    await autosave.flush();
+
+    expect(repo.saveEntry).not.toHaveBeenCalled();
+    expect(autosave.status()).toBe('saved');
   });
 });

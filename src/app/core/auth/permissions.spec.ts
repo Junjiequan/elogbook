@@ -1,5 +1,5 @@
 import type { Logbook, User } from '../models/logbook.models';
-import { canManage, canRead, canWrite, roleOf } from './permissions';
+import { canDelete, canManage, canRead, canWrite, roleOf } from './permissions';
 
 const user = (id: string): User => ({ id, name: id, email: `${id}@example.org` });
 const [owner, editor, viewer, stranger] = ['owner', 'editor', 'viewer', 'stranger'].map(user);
@@ -34,9 +34,22 @@ describe('permissions', () => {
     expect(canRead(logbook('private'), stranger)).toBeFalse();
   });
 
+  it('does not apply the facility-wide rule to personal demo logbooks', () => {
+    expect(canRead({ ...logbook('facility-read'), demo: true }, stranger)).toBeFalse();
+  });
+
   it('lets anyone read, but not write, a facility-read logbook', () => {
     const book = logbook('facility-read');
     expect(canRead(book, stranger)).toBeTrue();
     expect(canWrite(book, stranger)).toBeFalse();
+  });
+
+  it('lets only the owner or an administrator delete a logbook', () => {
+    const book = logbook('private');
+    expect(canDelete(book, owner, false)).toBeTrue();
+    expect(canDelete(book, editor, false)).toBeFalse();
+    expect(canDelete(book, viewer, false)).toBeFalse();
+    expect(canDelete(book, stranger, false)).toBeFalse();
+    expect(canDelete(book, stranger, true)).toBeTrue();
   });
 });
