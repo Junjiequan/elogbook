@@ -1,0 +1,108 @@
+@let entry = autosave.entry();
+@let key = autosave.docKey();
+@if (entry && key) {
+  <div class="layout">
+    <section class="main">
+      <header class="entry-bar no-print">
+        <input
+          class="title"
+          type="text"
+          placeholder="Untitled entry"
+          aria-label="Entry title"
+          [value]="preview()?.title ?? entry.title"
+          [readonly]="!mayWrite() || !!preview()"
+          (input)="onTitle($event)"
+        />
+        @if (mayWrite()) {
+          <span
+            class="status"
+            [class.error]="autosave.status() === 'error'"
+            role="status"
+            aria-live="polite"
+          >
+            <mat-icon>{{ statusIcon() }}</mat-icon>
+            <span class="status-text">{{ statusText() }}</span>
+          </span>
+          <button
+            mat-button
+            (click)="saveVersion()"
+            matTooltip="Save a checkpoint in the history"
+            aria-label="Save version"
+          >
+            <mat-icon>bookmark_add</mat-icon>
+            <span class="label">Save version</span>
+          </button>
+        } @else {
+          <span class="status"
+            ><mat-icon>visibility</mat-icon><span class="status-text">View only</span></span
+          >
+        }
+        <button
+          mat-button
+          [class.on]="historyOpen()"
+          (click)="toggleHistory()"
+          matTooltip="Version history"
+          aria-label="Version history"
+          [attr.aria-pressed]="historyOpen()"
+        >
+          <mat-icon>history</mat-icon>
+          <span class="label">History</span>
+        </button>
+        <a
+          mat-button
+          [routerLink]="['/logbooks', logbookId(), 'print']"
+          [queryParams]="{ entry: entry.id }"
+          matTooltip="Export this entry as PDF"
+          aria-label="Export entry"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span class="label">Export entry</span>
+        </a>
+      </header>
+
+      @let version = preview();
+      @if (version) {
+        <div class="preview-banner no-print" role="status">
+          <span
+            >Viewing the version from {{ version.savedAt | date: 'd MMM y, HH:mm' }} by
+            {{ version.savedBy.name }}.</span
+          >
+          <span class="spacer"></span>
+          @if (mayWrite()) {
+            <button mat-flat-button (click)="restorePreview()">Restore this version</button>
+          }
+          <button mat-button (click)="preview.set(null)">Back to current</button>
+        </div>
+        <div class="editor-scroll">
+          <app-rich-text-editor
+            [docKey]="'version:' + version.id"
+            [content]="version.content"
+            [editable]="false"
+          />
+        </div>
+      } @else {
+        <div class="editor-scroll">
+          <app-rich-text-editor
+            [docKey]="key"
+            [content]="entry.content"
+            [editable]="mayWrite()"
+            (contentChange)="autosave.edit({ content: $event })"
+          />
+        </div>
+      }
+    </section>
+
+    @if (historyOpen()) {
+      <app-history-panel
+        class="no-print"
+        [selectedId]="preview()?.id ?? null"
+        (selected)="preview.set($event)"
+        (closed)="toggleHistory()"
+      />
+    }
+  </div>
+} @else if (autosave.loadFailed()) {
+  <p class="state" role="alert">This entry could not be found.</p>
+} @else {
+  <div class="state"><mat-progress-spinner mode="indeterminate" diameter="32" /></div>
+}

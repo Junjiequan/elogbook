@@ -1,0 +1,88 @@
+@let book = logbook();
+@if (book) {
+  <mat-sidenav-container class="container">
+    <mat-sidenav
+      class="sidenav"
+      [mode]="narrow() ? 'over' : 'side'"
+      [opened]="drawerOpen()"
+      (openedChange)="drawerOpen.set($event)"
+    >
+      <div class="sidenav-head">
+        <h2>Entries</h2>
+        @if (mayWrite()) {
+          <button mat-flat-button (click)="newEntry()"><mat-icon>add</mat-icon>New</button>
+        }
+      </div>
+      <input
+        class="filter"
+        type="search"
+        placeholder="Filter by title"
+        aria-label="Filter entries by title"
+        [value]="filter()"
+        (input)="setFilter($event)"
+      />
+      @if (entries.status() === 'loading') {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      <nav aria-label="Entries">
+        @for (entry of visibleEntries(); track entry.id) {
+          <a
+            class="entry-link"
+            [routerLink]="['/logbooks', book.id, 'entries', entry.id]"
+            routerLinkActive="active"
+            (click)="entryOpened()"
+          >
+            <span class="entry-title">{{ entry.title || 'Untitled entry' }}</span>
+            <span class="entry-date">{{ entry.createdAt | date: 'd MMM y, HH:mm' }}</span>
+          </a>
+        } @empty {
+          @if (entries.status() === 'ready') {
+            <p class="empty">{{ filter() ? 'No matching entries.' : 'No entries yet.' }}</p>
+          }
+        }
+      </nav>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="content">
+      <header class="logbook-bar no-print">
+        <button
+          mat-icon-button
+          (click)="drawerOpen.set(!drawerOpen())"
+          aria-label="Toggle entry list"
+          matTooltip="Entries"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+        <div class="titles">
+          <h1>{{ book.title }}</h1>
+          <div class="tags">
+            @if (book.instrument) {
+              <mat-chip>{{ book.instrument }}</mat-chip>
+            }
+            @if (book.proposalId) {
+              <mat-chip>Proposal {{ book.proposalId }}</mat-chip>
+            }
+            <mat-chip>{{ role() }}</mat-chip>
+          </div>
+        </div>
+        <button mat-button (click)="openSharing()">
+          <mat-icon>{{ book.visibility === 'private' ? 'lock' : 'public' }}</mat-icon>
+          Share
+        </button>
+        <a mat-button [routerLink]="['/logbooks', book.id, 'print']">
+          <mat-icon>picture_as_pdf</mat-icon>
+          Export logbook
+        </a>
+      </header>
+      <div class="entry-outlet"><router-outlet /></div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+} @else if (logbooks.status() === 'loading') {
+  <mat-progress-bar mode="indeterminate" />
+} @else {
+  <div class="denied" role="alert">
+    <mat-icon>lock</mat-icon>
+    <p>This logbook does not exist, or you do not have access to it.</p>
+    <a mat-button routerLink="/logbooks">Back to logbooks</a>
+  </div>
+}

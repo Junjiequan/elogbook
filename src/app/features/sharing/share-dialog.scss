@@ -1,0 +1,68 @@
+.content {
+  width: min(560px, 85vw);
+}
+
+h3 {
+  margin: 16px 0 8px;
+  font: var(--mat-sys-title-small);
+}
+
+.invite {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .grow {
+    flex: 1 1 220px;
+  }
+
+  button {
+    margin-top: 8px;
+  }
+}
+
+.role {
+  width: 140px;
+}
+
+.note,
+.email,
+.role-label {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+  }
+
+  .who {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .name {
+    font-weight: 500;
+  }
+
+  .role-label {
+    text-transform: capitalize;
+    padding-right: 8px;
+  }
+}
+
+.visibility {
+  display: flex;
+  flex-direction: column;
+}

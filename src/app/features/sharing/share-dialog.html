@@ -1,0 +1,81 @@
+<h2 mat-dialog-title>Share “{{ data.logbook.title }}”</h2>
+<mat-dialog-content class="content">
+  @if (data.canManage) {
+    <form class="invite" [formGroup]="invite" (ngSubmit)="addMember()">
+      <mat-form-field class="grow">
+        <mat-label>Add person by email</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="off" />
+        @if (invite.controls.email.hasError('duplicate')) {
+          <mat-error>Already has access</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="role">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          <mat-option value="editor">Can edit</mat-option>
+          <mat-option value="viewer">Can view</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-flat-button type="submit" [disabled]="invite.invalid">Add</button>
+    </form>
+  } @else {
+    <p class="note">Only the owner can change who has access.</p>
+  }
+
+  <h3>People with access</h3>
+  <ul class="members">
+    @for (member of members(); track member.user.id) {
+      <li>
+        <mat-icon class="avatar">person</mat-icon>
+        <span class="who">
+          <span class="name">{{ member.user.name }}</span>
+          <span class="email">{{ member.user.email }}</span>
+        </span>
+        @if (member.role === 'owner' || !data.canManage) {
+          <span class="role-label">{{ member.role }}</span>
+        } @else {
+          <mat-form-field class="role" subscriptSizing="dynamic">
+            <mat-select
+              [value]="member.role"
+              (selectionChange)="setRole(member, $event.value)"
+              [attr.aria-label]="'Role of ' + member.user.name"
+            >
+              <mat-option value="editor">Can edit</mat-option>
+              <mat-option value="viewer">Can view</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-icon-button
+            type="button"
+            (click)="remove(member)"
+            [attr.aria-label]="'Remove ' + member.user.name"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </li>
+    }
+  </ul>
+
+  <h3>General access</h3>
+  <mat-radio-group
+    class="visibility"
+    [value]="visibility()"
+    [disabled]="!data.canManage"
+    (change)="visibility.set($event.value)"
+    aria-label="General access"
+  >
+    <mat-radio-button value="private">
+      <strong>Private</strong> – only the people listed above
+    </mat-radio-button>
+    <mat-radio-button value="facility-read">
+      <strong>Facility</strong> – anyone signed in at ESS can read; only listed people can edit
+    </mat-radio-button>
+  </mat-radio-group>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>{{ data.canManage ? 'Cancel' : 'Close' }}</button>
+  @if (data.canManage) {
+    <button mat-flat-button [disabled]="!dirty() || saving()" (click)="save()">Save</button>
+  }
+</mat-dialog-actions>

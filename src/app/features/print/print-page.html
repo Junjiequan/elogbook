@@ -1,0 +1,43 @@
+<div class="toolbar no-print">
+  <a mat-button [routerLink]="['/logbooks', logbookId()]"><mat-icon>arrow_back</mat-icon>Back</a>
+  <span class="hint">Choose “Save as PDF” as the destination in the print dialog.</span>
+  <button mat-flat-button (click)="print()"><mat-icon>print</mat-icon>Print / Save as PDF</button>
+</div>
+
+@let book = logbook();
+@if (book) {
+  <article class="document">
+    <header class="cover">
+      <h1>{{ book.title }}</h1>
+      @if (book.description) {
+        <p>{{ book.description }}</p>
+      }
+      <p class="meta">
+        @if (book.instrument) {
+          <span>Instrument: {{ book.instrument }}</span>
+        }
+        @if (book.proposalId) {
+          <span>Proposal: {{ book.proposalId }}</span>
+        }
+        <span>Exported {{ exportedAt | date: 'd MMM y, HH:mm' }}</span>
+      </p>
+    </header>
+
+    @if (entries.isLoading()) {
+      <mat-progress-bar mode="indeterminate" class="no-print" />
+    }
+    @for (entry of entries.value() ?? []; track entry.id) {
+      <section class="entry">
+        <h2>{{ entry.title || 'Untitled entry' }}</h2>
+        <p class="meta">
+          <span>Created {{ entry.createdAt | date: 'd MMM y, HH:mm' }}</span>
+          <span
+            >Last edited {{ entry.updatedAt | date: 'd MMM y, HH:mm' }} by
+            {{ entry.updatedBy.name }}</span
+          >
+        </p>
+        <app-rich-text-editor [docKey]="entry.id" [content]="entry.content" [editable]="false" />
+      </section>
+    }
+  </article>
+}

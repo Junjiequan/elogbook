@@ -1,0 +1,54 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Logbooks</h1>
+    <button mat-flat-button (click)="create()">
+      <mat-icon>add</mat-icon>
+      New logbook
+    </button>
+  </header>
+
+  @switch (store.status()) {
+    @case ('loading') {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @case ('error') {
+      <p class="message" role="alert">
+        Could not load logbooks.
+        <button mat-button (click)="store.load()">Retry</button>
+      </p>
+    }
+    @default {
+      @if (store.logbooks().length === 0) {
+        <p class="message">No logbooks yet. Create one to get started.</p>
+      }
+      <ul class="cards">
+        @for (logbook of store.logbooks(); track logbook.id) {
+          <li>
+            <a class="card" [routerLink]="['/logbooks', logbook.id]">
+              <h2>{{ logbook.title }}</h2>
+              @if (logbook.description) {
+                <p class="description">{{ logbook.description }}</p>
+              }
+              <div class="chips">
+                @if (logbook.instrument) {
+                  <mat-chip>{{ logbook.instrument }}</mat-chip>
+                }
+                @if (logbook.proposalId) {
+                  <mat-chip>Proposal {{ logbook.proposalId }}</mat-chip>
+                }
+                <mat-chip>{{ roleLabel(logbook) }}</mat-chip>
+                <mat-chip>
+                  <mat-icon matChipAvatar>{{
+                    logbook.visibility === 'private' ? 'lock' : 'public'
+                  }}</mat-icon>
+                  {{ logbook.visibility === 'private' ? 'Private' : 'Facility-wide read' }}
+                </mat-chip>
+              </div>
+              <p class="meta">Updated {{ logbook.updatedAt | date: 'd MMM y, HH:mm' }}</p>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>

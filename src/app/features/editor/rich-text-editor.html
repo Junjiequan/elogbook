@@ -1,0 +1,7 @@
+@if (editable()) {
+  @let ed = editor();
+  @if (ed) {
+    <app-editor-toolbar [editor]="ed" />
+  }
+}
+<div #surface class="rt-surface"></div>

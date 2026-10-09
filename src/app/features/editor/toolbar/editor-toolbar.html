@@ -1,0 +1,96 @@
+@let ed = state();
+<div class="toolbar" role="toolbar" aria-label="Formatting">
+  <button
+    mat-button
+    type="button"
+    class="block-style"
+    [matMenuTriggerFor]="blockMenu"
+    (mousedown)="$event.preventDefault()"
+  >
+    {{ currentBlockLabel() }}
+    <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+  </button>
+  <mat-menu #blockMenu="matMenu">
+    @for (style of blockStyles; track style.id) {
+      <button mat-menu-item type="button" (click)="style.run(ed)">{{ style.label }}</button>
+    }
+  </mat-menu>
+
+  @for (group of groups; track group.id) {
+    @if (!group.isVisible || group.isVisible(ed)) {
+      <span class="separator" aria-hidden="true"></span>
+      @for (action of group.actions; track action.id) {
+        <button
+          mat-icon-button
+          type="button"
+          [matTooltip]="action.label"
+          [attr.aria-label]="action.label"
+          [attr.aria-pressed]="action.isActive ? action.isActive(ed) : null"
+          [class.is-active]="action.isActive?.(ed)"
+          [disabled]="action.isDisabled?.(ed)"
+          (mousedown)="$event.preventDefault()"
+          (click)="action.run(ed)"
+        >
+          <mat-icon>{{ action.icon }}</mat-icon>
+        </button>
+      }
+    }
+  }
+
+  <span class="separator" aria-hidden="true"></span>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Link"
+    aria-label="Link"
+    [class.is-active]="ed.isActive('link')"
+    (mousedown)="$event.preventDefault()"
+    (click)="editLink()"
+  >
+    <mat-icon>link</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Insert image"
+    aria-label="Insert image"
+    (click)="imageInput.click()"
+  >
+    <mat-icon>image</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Take photo"
+    aria-label="Take photo"
+    (click)="cameraInput.click()"
+  >
+    <mat-icon>photo_camera</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Insert sample information"
+    aria-label="Insert sample information"
+    (click)="insertSample()"
+  >
+    <mat-icon>science</mat-icon>
+  </button>
+
+  <input
+    #imageInput
+    type="file"
+    accept="image/*"
+    multiple
+    hidden
+    (change)="insertImages(imageInput)"
+  />
+  <input
+    #cameraInput
+    type="file"
+    accept="image/*"
+    capture="environment"
+    hidden
+    (change)="insertImages(cameraInput)"
+  />
+</div>

@@ -1,0 +1,33 @@
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--mat-sys-surface-container);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+}
+
+.separator {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: var(--mat-sys-outline-variant);
+}
+
+.block-style {
+  min-width: 128px;
+  justify-content: space-between;
+}
+
+button.is-active {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
