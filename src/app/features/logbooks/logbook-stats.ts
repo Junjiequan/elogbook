@@ -61,7 +61,7 @@ export interface LogbookStatsData {
       border: 1px solid var(--mat-sys-outline-variant);
       border-radius: 8px;
       background: var(--mat-sys-surface);
-      box-shadow: 0 1px 3px rgb(10 30 80 / 8%);
+      box-shadow: var(--app-shadow-sm);
     }
     .icon {
       display: grid;
@@ -70,7 +70,7 @@ export interface LogbookStatsData {
       width: 44px;
       height: 44px;
       border-radius: 8px;
-      background: var(--app-brand-bg);
+      background: var(--app-brand-accent);
       color: #fff;
     }
     .text {

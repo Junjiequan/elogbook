@@ -19,7 +19,7 @@
   --mat-sidenav-container-background-color: var(--mat-sys-surface);
   --mat-sidenav-container-shape: 0; // square edges; Material's default rounds the outer corners
   border-right: 1px solid var(--mat-sys-outline-variant);
-  box-shadow: 4px 0 16px rgb(10 30 80 / 10%);
+  box-shadow: var(--app-shadow-side);
 
   // Desktop (docked panel): sit above the editor so the soft shadow shows over it.
   // Do NOT raise it in "over" mode (phones): there Material stacks it above its own backdrop,
@@ -79,7 +79,7 @@
   background: var(--mat-sys-primary);
   --mat-icon-button-icon-color: var(--mat-sys-on-primary);
   --mat-icon-button-state-layer-size: 40px;
-  box-shadow: 0 1px 3px rgb(10 30 80 / 25%);
+  box-shadow: var(--app-shadow-sm);
 
   mat-icon {
     width: 22px;
@@ -224,8 +224,41 @@ nav {
 }
 
 .content {
+  position: relative;
   display: flex;
   flex-direction: column;
+}
+
+// Shows the entry list again. It sits at the same height as the « button that hides the list
+// (top padding 12px, 40px tall), on the left edge the list slid back to.
+.edge-tab {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-primary);
+  cursor: pointer;
+  box-shadow: var(--app-shadow-sm);
+
+  mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--mat-sys-secondary-container);
+  }
 }
 
 .logbook-bar {
@@ -253,6 +286,10 @@ nav {
       height: 18px;
       font-size: 18px;
     }
+  }
+
+  &.has-edge-tab {
+    padding-left: 32px;
   }
 
   .titles {
@@ -294,18 +331,15 @@ nav {
     }
   }
 
+  // Instrument: ESS Cyan family. Proposal: ESS Forest. Role: navy (owner) / navy tint (editor) / grey.
   .tag--instrument {
-    background: color-mix(in srgb, var(--mat-sys-tertiary) 14%, transparent);
-    color: var(--mat-sys-tertiary);
+    background: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
+    color: var(--mat-sys-primary);
   }
 
   .tag--proposal {
-    --tag-accent: light-dark(
-      #0f766e,
-      #5eead4
-    ); // teal, to tell it apart from the blue instrument tag
-    background: color-mix(in srgb, var(--tag-accent) 14%, transparent);
-    color: var(--tag-accent);
+    background: color-mix(in srgb, var(--mat-sys-tertiary) 14%, transparent);
+    color: var(--mat-sys-tertiary);
   }
 
   .tag--role {
@@ -314,13 +348,13 @@ nav {
     color: var(--mat-sys-on-surface-variant);
 
     &[data-role='editor'] {
-      background: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
-      color: var(--mat-sys-primary);
+      background: color-mix(in srgb, var(--mat-sys-secondary) 14%, transparent);
+      color: var(--mat-sys-secondary);
     }
 
     // The owner gets the brand colours, since it is the most powerful role.
     &[data-role='owner'] {
-      background: var(--app-brand-bg);
+      background: var(--ess-navy);
       color: #fff;
     }
   }

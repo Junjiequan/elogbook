@@ -52,7 +52,7 @@
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--mat-sys-corner-large);
   background: color-mix(in srgb, var(--mat-sys-surface-container-low) 94%, transparent);
-  box-shadow: var(--mat-sys-level2);
+  box-shadow: var(--app-shadow-md);
 
   h1 {
     margin: 0 0 16px;

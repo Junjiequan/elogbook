@@ -33,7 +33,7 @@
     "@angular/material": "^22.2.2",
     "@angular/platform-browser": "^22.2.2",
     "@angular/router": "^22.2.2",
-    "@fontsource/roboto": "^5.3.0",
+    "@fontsource/titillium-web": "^5.3.0",
     "@tiptap/core": "^3.31.4",
     "@tiptap/extension-highlight": "^3.31.4",
     "@tiptap/extension-image": "^3.31.4",

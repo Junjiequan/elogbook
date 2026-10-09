@@ -24,6 +24,8 @@ export const routes: Routes = [
       },
       {
         path: 'logbooks/:logbookId',
+        // The content view uses the whole screen: no footer.
+        data: { hideFooter: true },
         loadComponent: () => import('./features/logbook/logbook-page').then((m) => m.LogbookPage),
         children: [
           {

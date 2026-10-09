@@ -85,15 +85,19 @@
     </mat-sidenav>
 
     <mat-sidenav-content class="content">
-      <header class="logbook-bar no-print">
+      @if (!drawerOpen()) {
+        <!-- Mirrors the « button in the list's header: same height, on the edge the list slid back to. -->
         <button
-          mat-icon-button
-          (click)="toggleDrawer(!drawerOpen())"
-          aria-label="Toggle entry list"
-          matTooltip="Entries"
+          type="button"
+          class="edge-tab no-print"
+          aria-label="Show entry list"
+          matTooltip="Show entry list"
+          (click)="toggleDrawer(true)"
         >
-          <mat-icon>menu</mat-icon>
+          <mat-icon>keyboard_double_arrow_right</mat-icon>
         </button>
+      }
+      <header class="logbook-bar no-print" [class.has-edge-tab]="!drawerOpen()">
         <div class="titles">
           <h1>{{ book.title }}</h1>
           <div class="tags">

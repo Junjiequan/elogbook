@@ -126,6 +126,26 @@ this needs a one-off setup in your own Google Cloud project:
 The ID token is decoded in the browser and its signature is **not** verified (that needs a server), so
 treat Google sign-in here as a convenience for testing too.
 
+## Colours, typography and shadows
+
+Colours and fonts follow the **ESS Visual Identity guide (version 1.0, December 2019)**:
+
+- **Colours:** ESS Cyan `#0099dc` is the primary colour (accent line, tiles, links, selection); ESS Navy
+  `#003366` is the header and footer; Forest `#006646`, Orange `#ff7d00`, Grass `#99be00` and Purple `#821482`
+  complete the set and are defined as `--ess-*` variables in `src/styles.scss`. The Material palettes in
+  `src/theme/_ess-colors.scss` were generated from them with `ng generate @angular/material:m3-theme`.
+  **Open question:** the guide lists ESS Cyan inconsistently (page 2.5: RGB 0,153,200 / hex `0099dc`;
+  page 2.6: RGB 0,153,220 / hex `0099c8`). `#0099dc` (0,153,220) is used; confirm with ESS and change
+  `--ess-cyan` and regenerate the palette if needed.
+- **Typography:** Titillium Web (the open-source Titillium, bundled with `@fontsource/titillium-web`). Main
+  headlines are Light, titles Regular or Semibold, body text Regular, as the guide prescribes. Segoe UI is the
+  guide's _office_ typeface; it is proprietary and cannot be bundled, so it is only a fallback.
+- **Shadows:** three soft tokens in `src/styles.scss` (`--app-shadow-sm`, `-md`, `-lg`, plus `-side` for the
+  sidebar edge), low-opacity and tinted with ESS Navy, automatically stronger in dark mode. Use them instead of
+  writing new `box-shadow` values.
+- **Not used:** the ESS logo. The app shows its own name in text; official ESS branding of a tool may need
+  approval from ESS communications.
+
 ## Image credit
 
 `public/images/login-bg.jpg` is a downscaled copy (1024 px wide, 68 KB) of an aerial photo of the ESS site
@@ -135,6 +155,6 @@ that ESS permits redistribution before keeping it in a public repository.
 
 ## Notes
 
-- Fonts and icons are bundled from npm (`@fontsource/roboto`, `material-icons`), so the app works without
+- Fonts and icons are bundled from npm (`@fontsource/titillium-web`, `material-icons`), so the app works without
   external network access.
 - `resource()` (Angular 20) is used for a few read-only loads; it is still marked experimental.

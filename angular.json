@@ -27,9 +27,11 @@
               }
             ],
             "styles": [
-              "@fontsource/roboto/300.css",
-              "@fontsource/roboto/400.css",
-              "@fontsource/roboto/500.css",
+              "@fontsource/titillium-web/300.css",
+              "@fontsource/titillium-web/400.css",
+              "@fontsource/titillium-web/400-italic.css",
+              "@fontsource/titillium-web/600.css",
+              "@fontsource/titillium-web/700.css",
               "material-icons/iconfont/material-icons.css",
               "src/styles.scss"
             ]
@@ -84,14 +86,19 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"],
+            "styles": [
+              "src/styles.scss"
+            ],
             "karmaConfig": "karma.conf.js"
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
           }
         }
       }

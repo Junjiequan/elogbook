@@ -45,7 +45,7 @@
 
   // Orange, so it reads as a different action from the logbook's red "Delete logbook" above.
   .delete-button {
-    --entry-delete: light-dark(#b45309, #fdba74);
+    --entry-delete: light-dark(#b35600, #ffb066); // ESS Orange, darkened for readable text
     --mat-button-text-label-text-color: var(--entry-delete);
     --mat-button-text-state-layer-color: var(--entry-delete);
     // Smaller than the neighbouring buttons: the colour already makes it stand out.
@@ -83,7 +83,7 @@
   gap: 8px;
   padding: 8px 24px;
   background: var(--mat-sys-surface-container-highest);
-  border-bottom: 2px solid var(--mat-sys-tertiary);
+  border-bottom: 2px solid var(--app-brand-accent);
 
   .spacer {
     flex: 1;

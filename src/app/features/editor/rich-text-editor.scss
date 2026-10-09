@@ -34,6 +34,11 @@
     h3 {
       line-height: 1.25;
       margin-top: 1.2em;
+      font-weight: 600; // Titillium Semibold for headings, per the ESS guide
+    }
+
+    h1 {
+      font-weight: 300; // main headline: Light
     }
 
     img {

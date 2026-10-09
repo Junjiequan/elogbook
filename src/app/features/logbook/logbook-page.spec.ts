@@ -101,12 +101,27 @@ describe('LogbookPage sidebar', () => {
     expect(localStorage.getItem(SIDEBAR_COLLAPSED_KEY)).not.toBe('true');
   });
 
-  it('reopens from the menu button', async () => {
+  it('shows the list again with a tab at the same height as the button that hid it', async () => {
+    await create();
+    const centreY = (selector: string) => {
+      const box = el().querySelector(selector)!.getBoundingClientRect();
+      return box.top + box.height / 2;
+    };
+    const hideY = centreY('button[aria-label="Collapse entry list"]');
+    expect(el().querySelector('.edge-tab')).toBeNull();
+
+    await click('button[aria-label="Collapse entry list"]');
+
+    expect(Math.abs(centreY('.edge-tab') - hideY)).toBeLessThan(2);
+    expect(el().querySelector('button[aria-label="Toggle entry list"]')).toBeNull(); // the old title-bar button is gone
+  });
+
+  it('reopens from the edge tab', async () => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true');
     await create();
     expect(drawer().classList).not.toContain('mat-drawer-opened');
 
-    await click('button[aria-label="Toggle entry list"]');
+    await click('button[aria-label="Show entry list"]');
     expect(drawer().classList).toContain('mat-drawer-opened');
     expect(localStorage.getItem(SIDEBAR_COLLAPSED_KEY)).toBe('false');
   });
@@ -165,7 +180,7 @@ describe('LogbookPage sidebar', () => {
         },
       });
       await create();
-      await click('button[aria-label="Toggle entry list"]');
+      await click('button[aria-label="Show entry list"]');
 
       const link = el().querySelector<HTMLElement>('.entry-link')!;
       const box = link.getBoundingClientRect();

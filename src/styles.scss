@@ -1,38 +1,99 @@
 @use '@angular/material' as mat;
+@use './theme/ess-colors' as ess;
 
+// Colours and typography follow the ESS Visual Identity guide (version 1.0, December 2019):
+// ESS Cyan is the primary colour; Navy, Grass, Forest, Orange and Purple complement it;
+// Titillium is the brand typeface (Light for main headlines, Regular/Semibold below, Regular for text).
 html {
   color-scheme: light;
+
+  // Brand colours, screen values from the guide.
+  // NB: the guide lists ESS Cyan inconsistently (page 2.5: RGB 0,153,200 / hex 0099dc;
+  // page 2.6: RGB 0,153,220 / hex 0099c8). #0099dc (0,153,220) is used here: confirm with ESS.
+  --ess-cyan: #0099dc;
+  --ess-navy: #003366;
+  --ess-grass: #99be00;
+  --ess-forest: #006646;
+  --ess-orange: #ff7d00;
+  --ess-purple: #821482;
+
   @include mat.theme(
     (
       color: (
-        primary: mat.$blue-palette,
-        tertiary: mat.$azure-palette,
+        primary: ess.$primary-palette,
+        tertiary: ess.$tertiary-palette,
       ),
-      typography: Roboto,
+      typography: (
+        plain-family: (
+          'Titillium Web',
+          'Segoe UI',
+          system-ui,
+          sans-serif,
+        ),
+        brand-family: (
+          'Titillium Web',
+          'Segoe UI',
+          system-ui,
+          sans-serif,
+        ),
+        bold-weight: 700,
+        medium-weight: 600,
+        regular-weight: 400,
+      ),
       density: 0,
     )
   );
-  // White canvas in light mode; dark keeps the Material default surfaces.
+
+  // Headlines in Titillium Light, as the guide prescribes for main headlines. (Material bakes the weight
+  // into each composite token, so the whole token is restated; titles already use Regular / Semibold.)
+  --mat-sys-headline-large: 300 2rem / 2.5rem var(--mat-sys-headline-large-font);
+  --mat-sys-headline-medium: 300 1.75rem / 2.25rem var(--mat-sys-headline-medium-font);
+  --mat-sys-headline-small: 300 1.5rem / 2rem var(--mat-sys-headline-small-font);
+
+  // Neutral panels in light mode; deep navy-tinted surfaces in dark mode.
   @include mat.theme-overrides(
     (
-      surface: light-dark(#ffffff, #111318),
-      background: light-dark(#ffffff, #111318),
-      surface-container-low: light-dark(#f5f8fe, #191c22),
-      surface-container: light-dark(#eef3fc, #1d2026),
-      surface-container-high: light-dark(#e6eefb, #282a30),
-      surface-container-highest: light-dark(#dde8f9, #32353b),
+      surface: light-dark(#ffffff, #0b1522),
+      background: light-dark(#ffffff, #0b1522),
+      surface-container-low: light-dark(#f5f6f8, #101c2c),
+      surface-container: light-dark(#edf0f4, #152438),
+      surface-container-high: light-dark(#e6eaef, #1c2e45),
+      surface-container-highest: light-dark(#e1e4ea, #25394f),
     )
   );
 
-  // App-level look: a soft tinted canvas (cards stay white) and a branded header / footer.
-  --app-bg: linear-gradient(160deg, #f4f8ff 0%, #e8f0fd 52%, #f2f7ff 100%);
-  --app-brand-bg: linear-gradient(100deg, #0a2f73 0%, #1456c9 58%, #2f80ed 100%);
+  // App-level look: a very light cyan tint on the canvas (cards stay white), a navy header and footer
+  // with the cyan as the accent line.
+  --app-bg: linear-gradient(
+    160deg,
+    #f5f6f8 0%,
+    color-mix(in srgb, var(--ess-cyan) 8%, white) 55%,
+    #f5f6f8 100%
+  );
+  --app-brand-bg: var(--ess-navy);
+  --app-brand-accent: var(--ess-cyan);
   --app-brand-text: #ffffff;
+
+  // Shadows: one small scale, soft and tinted with ESS Navy, instead of dark one-off values.
+  // Low opacity + generous blur reads as depth without looking heavy; borders do the rest.
+  --app-shadow-rgb: 0 51 102;
+  --app-shadow-strength: 1;
+  --app-shadow-sm: 0 1px 2px rgb(var(--app-shadow-rgb) / calc(6% * var(--app-shadow-strength)));
+  --app-shadow-md:
+    0 1px 3px rgb(var(--app-shadow-rgb) / calc(5% * var(--app-shadow-strength))),
+    0 4px 12px rgb(var(--app-shadow-rgb) / calc(6% * var(--app-shadow-strength)));
+  --app-shadow-lg:
+    0 2px 6px rgb(var(--app-shadow-rgb) / calc(5% * var(--app-shadow-strength))),
+    0 10px 24px rgb(var(--app-shadow-rgb) / calc(8% * var(--app-shadow-strength)));
+  --app-shadow-side: 2px 0 10px rgb(var(--app-shadow-rgb) / calc(6% * var(--app-shadow-strength)));
 
   &[data-theme='dark'] {
     color-scheme: dark;
-    --app-bg: linear-gradient(160deg, #0d1220 0%, #121a2e 55%, #0d1220 100%);
-    --app-brand-bg: linear-gradient(100deg, #081633 0%, #10306b 60%, #1a4a9c 100%);
+    --app-bg: linear-gradient(160deg, #08111c 0%, #0c1a2b 55%, #08111c 100%);
+    --app-brand-bg: #001f3d;
+    // Shadows are barely visible on dark surfaces, so they are black and a little stronger.
+    --app-shadow-rgb: 0 0 0;
+    --app-shadow-strength: 3;
   }
 }
 
