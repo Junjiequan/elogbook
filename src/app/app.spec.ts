@@ -98,7 +98,7 @@ describe('App shell', () => {
       expect(after.top).toBe(before.top);
     });
 
-    it('is a small tab at the top right, and the page gets the whole height', async () => {
+    it('is a small tab at the top centre, and the page gets the whole height', async () => {
       await click('Hide header');
 
       const handle = el().querySelector<HTMLElement>('.header-handle')!;
@@ -106,8 +106,11 @@ describe('App shell', () => {
       expect(getComputedStyle(handle).position).toBe('fixed');
       expect(box.top).toBe(0);
       expect(box.width).toBeLessThanOrEqual(80);
-      expect(box.height).toBeLessThanOrEqual(24);
-      expect(box.left).toBeGreaterThan(window.innerWidth / 2); // right half: clear of titles on the left
+      expect(box.height).toBeLessThanOrEqual(24); // small enough to sit above the title text
+      // centred in the visible area (innerWidth would include a scrollbar)
+      expect(
+        Math.abs(box.left + box.width / 2 - document.documentElement.clientWidth / 2),
+      ).toBeLessThan(2);
       expect(el().querySelector('.shell-header')!.getBoundingClientRect().height).toBe(0);
     });
 

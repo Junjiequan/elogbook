@@ -265,7 +265,8 @@ nav {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  // 16px on top leaves a clear gap under the header toggle that hangs from the top edge
+  padding: 16px 12px 8px;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
   background: color-mix(in srgb, var(--mat-sys-surface) 72%, transparent);
   backdrop-filter: blur(8px);

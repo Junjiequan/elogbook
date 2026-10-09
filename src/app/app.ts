@@ -150,20 +150,22 @@ const activeRouteData = (router: Router): Data => {
       min-height: 0;
       overflow: hidden;
     }
-    // The header toggle stays put in both states: a small tab on the top edge, top right. Open, it blends
-    // into the navy header (just a chevron); collapsed, it hangs over the page. It sits at the right
-    // because titles are on the left and the action buttons start lower, so it never covers text.
-    // The transparent ::before widens the click target beyond what is drawn.
+    // The header toggle stays put in both states: a small tab on the top edge, centred. Open, it blends
+    // into the navy header (just a chevron); collapsed, it hangs over the page. It is small enough to sit
+    // above the title text without covering it (20px tall; the title bar leaves 16px above its text). The transparent ::before widens the click target
+    // beyond what is drawn.
     .header-handle {
       position: fixed;
       top: 0;
-      right: 8px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 5;
       display: grid;
       place-items: center;
-      width: 52px;
-      height: 18px;
+      width: 64px;
+      height: 20px;
       padding: 0;
+      overflow: hidden;
       border: none;
       border-radius: 0 0 10px 10px;
       background: var(--app-brand-bg);
@@ -185,9 +187,9 @@ const activeRouteData = (router: Router): Data => {
       }
 
       mat-icon {
-        width: 20px;
-        height: 20px;
-        font-size: 20px;
+        width: 22px;
+        height: 22px;
+        font-size: 22px;
       }
 
       &:hover,
