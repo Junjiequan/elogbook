@@ -1,0 +1,28 @@
+@if (data.logbook.demo) {
+  <h2 mat-dialog-title>Demo cannot be deleted</h2>
+  <mat-dialog-content class="content">
+    <p>
+      <strong>{{ data.logbook.title }}</strong> is a demo logbook. Demo logbooks cannot be deleted.
+    </p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-flat-button mat-dialog-close cdkFocusInitial>OK</button>
+  </mat-dialog-actions>
+} @else {
+  <h2 mat-dialog-title>Are you sure you want to delete this logbook?</h2>
+  <mat-dialog-content class="content">
+    <p>
+      <strong>{{ data.logbook.title }}</strong> will be permanently deleted
+      @if (entries.hasValue()) {
+        together with its {{ entries.value().length }}
+        {{ entries.value().length === 1 ? 'entry' : 'entries' }}
+      }
+      and their version history. <strong>This cannot be undone.</strong>
+    </p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <!-- "No" has initial focus so a stray Enter keypress cannot delete anything. -->
+    <button mat-button mat-dialog-close cdkFocusInitial>No</button>
+    <button mat-flat-button class="danger" [mat-dialog-close]="true">Yes</button>
+  </mat-dialog-actions>
+}

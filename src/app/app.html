@@ -1,0 +1,77 @@
+<div class="shell-header no-print" [class.collapsed]="headerCollapsed()">
+  <div class="shell-header-inner" [attr.inert]="headerCollapsed() ? '' : null">
+    <mat-toolbar class="shell-bar">
+      <a class="brand" routerLink="/logbooks" aria-label="eLogbook home">
+        <span class="logo"><mat-icon>menu_book</mat-icon></span>
+        <span class="brand-text"><strong>eLogbook</strong></span>
+      </a>
+      <span class="spacer"></span>
+      <button
+        mat-icon-button
+        (click)="theme.toggle()"
+        [matTooltip]="theme.mode() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+        [attr.aria-label]="theme.mode() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+        [attr.aria-pressed]="theme.mode() === 'dark'"
+      >
+        <mat-icon>{{ theme.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+      @if (currentUser.isSignedIn()) {
+        <span class="user-name">{{ currentUser.user().name }}</span>
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="userMenu"
+          matTooltip="Account"
+          aria-label="Account"
+        >
+          <mat-icon>account_circle</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <div
+            class="account"
+            (click)="$event.stopPropagation()"
+            (keydown)="$event.stopPropagation()"
+            tabindex="-1"
+          >
+            <strong>{{ currentUser.user().name }}</strong>
+            <span>{{ currentUser.user().email }}</span>
+            @if (currentUser.isAdmin()) {
+              <span class="admin-badge">Administrator</span>
+            }
+          </div>
+          <button mat-menu-item (click)="signOut()">
+            <mat-icon>logout</mat-icon>
+            <span>Sign out</span>
+          </button>
+        </mat-menu>
+      }
+    </mat-toolbar>
+  </div>
+</div>
+<!-- One button, always in the same spot (top right): it hides the header and it shows it again. -->
+<button
+  type="button"
+  class="header-handle no-print"
+  [class.collapsed]="headerCollapsed()"
+  [matTooltip]="headerCollapsed() ? 'Show header' : 'Hide header'"
+  [attr.aria-label]="headerCollapsed() ? 'Show header' : 'Hide header'"
+  [attr.aria-expanded]="!headerCollapsed()"
+  (click)="toggleHeader()"
+>
+  <mat-icon>{{ headerCollapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</mat-icon>
+</button>
+<main [class.fills-screen]="fillsScreen()"><router-outlet /></main>
+@if (showFooter()) {
+  <footer class="shell-footer no-print">
+    <span class="footer-brand"><mat-icon>menu_book</mat-icon> eLogbook</span>
+    <span class="footer-note">Open-source MVP · your demo data stays in this browser</span>
+    <nav class="footer-links" aria-label="Project links">
+      <a href="https://github.com/Junjiequan/elogbook" target="_blank" rel="noopener">Source</a>
+      <a
+        href="https://github.com/Junjiequan/elogbook/blob/main/LICENSE"
+        target="_blank"
+        rel="noopener"
+        >MIT licence</a
+      >
+    </nav>
+  </footer>
+}

@@ -34,35 +34,8 @@ export interface PromptDialogData {
     MatInput,
     MatLabel,
   ],
-  template: `
-    <h2 mat-dialog-title>{{ data.title }}</h2>
-    <mat-dialog-content>
-      <mat-form-field class="full-width">
-        <mat-label>{{ data.label }}</mat-label>
-        <input
-          matInput
-          #field
-          cdkFocusInitial
-          [value]="data.value ?? ''"
-          (keydown.enter)="dialogRef.close(field.value)"
-        />
-        @if (data.hint) {
-          <mat-hint>{{ data.hint }}</mat-hint>
-        }
-      </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-flat-button [mat-dialog-close]="field.value">
-        {{ data.confirmLabel ?? 'OK' }}
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: `
-    .full-width {
-      width: min(480px, 80vw);
-    }
-  `,
+  templateUrl: './prompt-dialog.html',
+  styleUrl: './prompt-dialog.scss',
 })
 export class PromptDialog {
   protected readonly data = inject<PromptDialogData>(MAT_DIALOG_DATA);

@@ -3,7 +3,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 import type { Logbook } from '../../core/models/logbook.models';
-import { DeleteLogbookDialog, type DeleteLogbookDialogData } from './delete-logbook-dialog';
+import {
+  DeleteLogbookDialog,
+  type DeleteLogbookDialogData,
+} from './delete-logbook-dialog/delete-logbook-dialog';
 import { LogbooksStore } from './logbooks.store';
 
 /** The one way to delete a logbook from the UI: confirm, delete, tell the user. */

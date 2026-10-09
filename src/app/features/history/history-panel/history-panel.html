@@ -1,0 +1,28 @@
+<header>
+  <h2>Version history</h2>
+  <button mat-icon-button (click)="closed.emit()" aria-label="Close version history">
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+<ul>
+  @for (version of versions.value() ?? []; track version.id) {
+    <li>
+      <button
+        type="button"
+        [class.selected]="version.id === selectedId()"
+        (click)="selected.emit(version)"
+      >
+        <span class="when">{{ version.savedAt | date: 'd MMM y, HH:mm' }}</span>
+        <span class="who">{{ version.savedBy.name }} · {{ reasonLabel(version.reason) }}</span>
+      </button>
+    </li>
+  } @empty {
+    <li class="empty">
+      {{
+        versions.isLoading()
+          ? 'Loading…'
+          : 'No saved versions yet. Versions are taken automatically as you write.'
+      }}
+    </li>
+  }
+</ul>

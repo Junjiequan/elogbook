@@ -1,0 +1,30 @@
+<section class="stats" aria-label="Overview">
+  <div class="stat">
+    <span class="icon"><mat-icon>menu_book</mat-icon></span>
+    <span class="text"
+      ><strong>{{ data().total }}</strong
+      ><span>Logbooks</span></span
+    >
+  </div>
+  <div class="stat">
+    <span class="icon"><mat-icon>person</mat-icon></span>
+    <span class="text"
+      ><strong>{{ data().owned }}</strong
+      ><span>Owned by me</span></span
+    >
+  </div>
+  <div class="stat">
+    <span class="icon"><mat-icon>group</mat-icon></span>
+    <span class="text"
+      ><strong>{{ data().shared }}</strong
+      ><span>Shared with me</span></span
+    >
+  </div>
+  <div class="stat">
+    <span class="icon"><mat-icon>update</mat-icon></span>
+    <span class="text"
+      ><strong>{{ data().latest | date: 'd MMM' }}</strong
+      ><span>Last activity</span></span
+    >
+  </div>
+</section>

@@ -4,10 +4,8 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withRouterConfig } from '@angular/router';
-import {
-  ExperimentContext,
-  StaticExperimentContext,
-} from './core/experiment-context/experiment-context';
+import { ProposalRepository } from './core/data-access/proposal.repository';
+import { DemoProposalRepository } from './demo/demo-proposals';
 import { IndexedDbLogbookRepository } from './core/data-access/indexeddb-logbook.repository';
 import { DemoSeeder } from './demo/demo-seeder';
 import { LogbookRepository } from './core/data-access/logbook.repository';
@@ -31,7 +29,7 @@ export const appConfig: ApplicationConfig = {
     { provide: AuthService, useExisting: TestAuthService },
     // Swap these two for HTTP-backed implementations once the NestJS backend exists.
     { provide: LogbookRepository, useClass: IndexedDbLogbookRepository },
-    { provide: ExperimentContext, useClass: StaticExperimentContext },
+    { provide: ProposalRepository, useClass: DemoProposalRepository },
     // Realistic demo logbook for every new user. Remove this line to turn it off.
     DemoSeeder,
   ],

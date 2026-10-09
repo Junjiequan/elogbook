@@ -54,7 +54,7 @@ the permissions.
   Hocuspocus (or NestJS WebSocket) server. The editor is already isolated in `RichTextEditor`, so this changes
   that component and the repository, not the pages.
 - **Real authentication / no-VPN access.** Plan: OIDC against the facility identity provider. See "Test sign-in" below for what exists today and how to replace it.
-- **Real proposal / sample data.** Implement `ExperimentContext` against the proposal system or SciCat.
+- **Real proposal / sample data.** Implement `ProposalRepository` against the proposal system or SciCat.
 - **Instrument scan macros.** Plan: a second structured node (like `sampleInfo`) created from control-software
   events, e.g. a "scan" block with run number and a link to the data.
 - **Image storage.** Images are currently embedded in the entry, at full quality. That makes entries and their saved versions large when there are many big images. Replace `ImageService` with an upload that returns a URL (original files in object storage, shown scaled in the page).
@@ -65,29 +65,36 @@ the permissions.
 ```
 src/app
 ├── core/                     app-wide domain and services, no screens
-│   ├── models/               Logbook, Entry, EntryVersion, User …
+│   ├── models/               Logbook, Entry, EntryVersion, User, Proposal …
 │   ├── auth/                 AuthService (abstract), CurrentUserService, permissions.ts (pure functions)
-│   ├── data-access/          LogbookRepository (abstract) + IndexedDB implementation
-│   ├── experiment-context/   proposal / sample source (abstract + static data)
+│   ├── data-access/          the ports the backend will implement (abstract classes):
+│   │                         LogbookRepository (+ IndexedDB implementation) and
+│   │                         ProposalRepository (proposals / samples; demo data in `demo/`)
 │   └── theme/                light / dark ThemeService
-├── demo/                     generated demo logbooks + seeder (temporary, removable)
+├── demo/                     demo logbooks, seeder and demo proposals / samples (temporary, removable)
 ├── features/
-│   ├── logbooks/             list page, create dialog, LogbooksStore (root)
-│   ├── logbook/              logbook shell (entry list), EntriesStore (page-scoped)
-│   ├── entry/                entry page + EntryAutosave (component-scoped)
-│   ├── editor/               RichTextEditor, toolbar, Tiptap extensions, ImageService
-│   ├── history/              version list
-│   ├── sharing/              share dialog
-│   ├── print/                export page
-│   └── test-auth/            temporary sign-up / sign-in (see below)
-└── shared/                   logbook tags, prompt dialog
+│   ├── logbooks/             logbook-list/, logbook-table/, logbook-stats/, new-logbook-dialog/,
+│   │                         delete-logbook-dialog/ + LogbooksStore (root), delete-logbook service
+│   ├── logbook/              logbook-page/ (entry list), no-entry-selected/ + EntriesStore (page-scoped)
+│   ├── entry/                entry-page/, delete-entry-dialog/ + EntryAutosave (component-scoped)
+│   ├── editor/               rich-text-editor/, editor-toolbar/, insert-sample-dialog/,
+│   │                         Tiptap extensions, ImageService
+│   ├── history/              history-panel/
+│   ├── sharing/              share-dialog/
+│   ├── print/                print-page/
+│   └── test-auth/            login-page/ + temporary sign-up / sign-in (see below)
+└── shared/                   logbook-tags/, prompt-dialog/
 ```
 
 Conventions
 
+- **One folder per component**, holding the same four files: `name.ts`, `name.html`, `name.scss` and
+  `name.spec.ts`. No inline templates or styles. Code that is not a component (stores, services,
+  directives, pure functions) sits next to its feature's component folders with its own `.ts` and
+  `.spec.ts`. The root component `app.*` lives directly in `src/app`.
 - Standalone components, `OnPush`, signals for state, `input()` / `output()`, new control flow, lazy-loaded routes.
 - Route params arrive as component inputs (`withComponentInputBinding`).
-- **Swap points for the backend**: `LogbookRepository`, `ExperimentContext` (both provided in `app.config.ts`),
+- **Swap points for the backend**: `LogbookRepository`, `ProposalRepository` (both in `core/data-access`, provided in `app.config.ts`),
   `ImageService` (in `features/editor`), `CurrentUserService`. Write an `HttpLogbookRepository` and change one provider line.
 - Stores: root-level for data shared across pages (`LogbooksStore`), component-scoped (`providers: [...]`) for
   state that should die with the page (`EntriesStore`, `EntryAutosave`).

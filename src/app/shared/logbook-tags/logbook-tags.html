@@ -1,0 +1,25 @@
+@if (instrument()) {
+  <span class="tag tag--instrument" title="Instrument">
+    <mat-icon>sensors</mat-icon>{{ instrument() }}
+  </span>
+}
+@if (proposalId()) {
+  <span class="tag tag--proposal" [attr.title]="'Proposal ' + proposalId()">
+    <mat-icon>description</mat-icon>{{ proposalId() }}
+  </span>
+}
+@if (demo()) {
+  <span class="tag tag--demo" title="Demo logbook, it cannot be deleted">Demo</span>
+}
+@if (role(); as currentRole) {
+  <span class="tag tag--role" [attr.data-role]="currentRole" title="Your role in this logbook">
+    <mat-icon>{{ roleIcon() }}</mat-icon
+    >{{ currentRole }}
+  </span>
+}
+@if (visibility(); as access) {
+  <span class="tag tag--access" [attr.title]="accessTitle()">
+    <mat-icon>{{ access === 'private' ? 'lock' : 'public' }}</mat-icon>
+    {{ access === 'private' ? 'Private' : 'Facility-wide read' }}
+  </span>
+}

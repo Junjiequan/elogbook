@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>New logbook</h2>
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="content">
+    <mat-form-field>
+      <mat-label>Title</mat-label>
+      <input matInput formControlName="title" cdkFocusInitial required />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="2"></textarea>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Proposal (optional)</mat-label>
+      <mat-select formControlName="proposalId" (selectionChange)="proposalChosen($event.value)">
+        <mat-option [value]="null">None</mat-option>
+        @for (p of proposals.value() ?? []; track p.id) {
+          <mat-option [value]="p.id">{{ p.id }} – {{ p.title }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Instrument (optional)</mat-label>
+      <mat-select formControlName="instrument">
+        <mat-option [value]="null">None</mat-option>
+        @for (name of instruments; track name) {
+          <mat-option [value]="name">{{ name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-flat-button type="submit" [disabled]="form.invalid">Create</button>
+  </mat-dialog-actions>
+</form>

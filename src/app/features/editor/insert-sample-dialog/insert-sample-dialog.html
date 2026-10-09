@@ -1,0 +1,27 @@
+<h2 mat-dialog-title>Insert sample information</h2>
+<mat-dialog-content class="content">
+  <mat-form-field>
+    <mat-label>Proposal</mat-label>
+    <mat-select [value]="proposalId()" (selectionChange)="selectProposal($event.value)">
+      @for (p of proposals.value() ?? []; track p.id) {
+        <mat-option [value]="p.id">{{ p.id }} – {{ p.title }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Sample</mat-label>
+    <mat-select
+      [value]="sampleId()"
+      (selectionChange)="sampleId.set($event.value)"
+      [disabled]="!proposal()"
+    >
+      @for (s of proposal()?.samples ?? []; track s.id) {
+        <mat-option [value]="s.id">{{ s.id }} – {{ s.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button [disabled]="!attrs()" (click)="insert()">Insert</button>
+</mat-dialog-actions>
