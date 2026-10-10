@@ -6,9 +6,9 @@ import { MatIcon } from '@angular/material/icon';
 import type { Logbook, MemberRole } from '../../../core/models/logbook.models';
 import { LogbookTags } from '../../../shared/logbook-tags/logbook-tags';
 import { TablePopover } from '../../../shared/table-popover/table-popover';
-import { Highlight } from '../highlight';
+import { Highlight } from '../../../shared/highlight/highlight';
 import { MemberAvatars } from '../member-avatars/member-avatars';
-import { Truncated } from '../truncated';
+import { Truncated } from '../../../shared/truncated/truncated';
 
 /**
  * One logbook as a card in the list: title and description (cut after 2 and 3 lines, in full in a

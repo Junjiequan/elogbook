@@ -67,7 +67,7 @@ src/
 ├── demo/                     demo logbooks, seeder and demo proposals / samples. Temporary, so it sits
 │                             outside app/. Used by app.config.ts, LogbooksStore (optional seeder) and the
 │                             test sign-in (DEMO_USERS); see "To remove it later" below
-├── theme/                    generated Material colour palettes (used by styles.scss)
+├── theme/                    generated Material colour palettes (used by styles.scss; every colour variable is listed in COLORS.md)
 └── app/
     ├── core/                     app-wide domain and services, no screens
     │   ├── models/               Logbook, Entry, EntryVersion, User, Proposal …
@@ -87,7 +87,7 @@ src/
     │   ├── sharing/              share-dialog/
     │   ├── print/                print-page/
     │   └── test-auth/            login-page/ + temporary sign-up / sign-in (see below)
-    └── shared/                   logbook-tags/, prompt-dialog/, table-popover/ (hover card), user-controls/ (the account icon)
+    └── shared/                   logbook-tags/, prompt-dialog/, table-popover/ (hover card), truncated/ and highlight/ (directives: detect cut-off text, mark search words), user-controls/ (the account icon)
 ```
 
 Conventions
@@ -147,7 +147,7 @@ treat Google sign-in here as a convenience for testing too.
 - **Colours:** a cyan primary (`#0099dc`: tiles, links, selection) with a navy footer (`#003366`);
   forest green, orange, grass green and purple complete the set. They are defined as CSS variables
   (`--ess-*`) in `src/styles.scss`, and the Material palettes in `src/theme/_ess-colors.scss` were generated
-  from them with `ng generate @angular/material:m3-theme`. To re-colour the app, change those values and regenerate the palette.
+  from them with `ng generate @angular/material:m3-theme`. To re-colour the app, change those values and regenerate the palette. **Every colour variable you can use, with its light and dark value, is listed in `src/theme/COLORS.md`.**
 - **Typography:** Titillium Web (open source, bundled with `@fontsource/titillium-web`). Main headlines are
   Light, titles Regular or Semibold, body text Regular.
 - **Shadows:** three soft tokens in `src/styles.scss` (`--app-shadow-sm`, `-md`, `-lg`, plus `-side` for the

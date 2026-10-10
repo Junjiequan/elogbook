@@ -7,10 +7,10 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { CurrentUserService } from '../../../core/auth/current-user.service';
 import { roleOf } from '../../../core/auth/permissions';
 import type { Logbook, MemberRole } from '../../../core/models/logbook.models';
-import { Highlight } from '../highlight';
+import { Highlight } from '../../../shared/highlight/highlight';
 import { MemberAvatars } from '../member-avatars/member-avatars';
 import { TablePopover } from '../../../shared/table-popover/table-popover';
-import { Truncated } from '../truncated';
+import { Truncated } from '../../../shared/truncated/truncated';
 
 /**
  * Compact table of logbooks: every row is one line. A long title or description is cut with an
