@@ -1,9 +1,23 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpException,
+  NotFoundException,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import type { AuthResponseDto } from '../dto/auth-response.dto.js';
 import { authLimit } from '../auth-limit.js';
+import { OAuthCredentialDto } from '../dto/oauth-credential.dto.js';
 import { Public } from '../decorators/public.decorator.js';
+import type { OAuthWidget } from './oauth-settings.js';
 import { COOKIE, COOKIE_SECONDS, OAuthError, OAuthService } from './oauth.service.js';
 
 /** One cookie from the request (no cookie parser needed). */
@@ -25,8 +39,33 @@ export class OAuthController {
   /** Whether OAuth is set up, and its button text. */
   @Public()
   @Get()
-  status(): { enabled: boolean; label: string | null } {
-    return { enabled: this.oauth.label !== null, label: this.oauth.label };
+  status(): { enabled: boolean; label: string | null; widget: OAuthWidget | null } {
+    return {
+      enabled: this.oauth.label !== null,
+      label: this.oauth.label,
+      widget: this.oauth.widget,
+    };
+  }
+
+  /** Signs in with the ID token from the provider's own button; answers like `POST /auth/login`. */
+  @Public()
+  @Throttle(authLimit)
+  @HttpCode(200)
+  @Post('credential')
+  async credential(@Body() dto: OAuthCredentialDto): Promise<AuthResponseDto> {
+    if (this.oauth.label === null) {
+      throw new NotFoundException();
+    }
+    try {
+      return await this.oauth.signInWithCredential(dto.credential);
+    } catch (error) {
+      if (error instanceof OAuthError) {
+        // The web app turns `message` into words.
+        const status = error.code === 'failed' ? 401 : error.code === 'unavailable' ? 503 : 403;
+        throw new HttpException({ statusCode: status, message: error.code }, status);
+      }
+      throw error;
+    }
   }
 
   /** Redirects the browser to the provider. */

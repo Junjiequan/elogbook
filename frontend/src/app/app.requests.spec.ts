@@ -7,6 +7,7 @@ import {
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  Router,
   TitleStrategy,
   provideRouter,
   withComponentInputBinding,
@@ -100,17 +101,21 @@ describe('what the app asks the API when pages are switched', () => {
   /** Lets timers and promises run, and the app's effects (zoneless: nothing runs them unprompted in a test). */
   const tick = async () => {
     await new Promise<void>((done) => setTimeout(done, 25));
-    TestBed.tick();
+    for (let i = 0; i < 4; i++) {
+      TestBed.tick(); // an effect can set off the next one
+      await Promise.resolve();
+    }
   };
 
   /** Answers every request the app makes until it has gone quiet, and returns them in the order they came. */
   async function settle(): Promise<string[]> {
     const seen: string[] = [];
     let quiet = 0;
-    while (quiet < 3) {
+    while (quiet < 4) {
       await tick();
       const pending: TestRequest[] = http.match(() => true);
-      quiet = pending.length === 0 ? quiet + 1 : 0;
+      const idle = pending.length === 0 && !TestBed.inject(Router).currentNavigation();
+      quiet = idle ? quiet + 1 : 0;
       for (const request of pending) {
         const path = request.request.urlWithParams.replace(API, '');
         seen.push(`${request.request.method} ${path}`);

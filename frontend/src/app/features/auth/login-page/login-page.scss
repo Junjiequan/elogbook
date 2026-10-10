@@ -90,6 +90,13 @@
   padding-top: 16px;
 }
 
+.widget {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  margin-bottom: 4px;
+}
+
 .oauth {
   width: 100%;
   margin-bottom: 4px;

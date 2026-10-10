@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { TEST_USERS } from '../../../testing/test-users';
 import type { User } from '../../../core/models/logbook.models';
 import { ApiAuthService, AuthError } from '../../../core/auth/api-auth.service';
+import { OAuthWidgets, type OAuthProvider } from '../../../core/auth/oauth-widgets';
 import { Redirector } from '../../../core/auth/redirector';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { LoginPage } from './login-page';
@@ -15,34 +16,44 @@ describe('LoginPage', () => {
     user: ReturnType<typeof signal<User | null>>;
     signIn: Mock;
     signUp: Mock;
-    oauthLabel: Mock;
+    oauthProvider: Mock;
     oauthLoginUrl: Mock;
+    signInWithCredential: Mock;
   };
   let navigate: Mock;
   let redirect: Mock;
+  let renderWidget: Mock;
   const el = () => fixture.nativeElement as HTMLElement;
 
   const create = async (
     inputs: {
       returnUrl?: string;
       oauthError?: string;
-      oauthLabel?: string | null;
+      oauth?: OAuthProvider | null;
+      widgetFails?: boolean;
     } = {},
   ) => {
     auth = {
       user: signal<User | null>(null),
       signIn: vi.fn().mockName('signIn').mockResolvedValue(undefined),
       signUp: vi.fn().mockName('signUp').mockResolvedValue(undefined),
-      oauthLabel: vi
+      oauthProvider: vi
         .fn()
-        .mockName('oauthLabel')
-        .mockResolvedValue(inputs.oauthLabel ?? null),
+        .mockName('oauthProvider')
+        .mockResolvedValue(inputs.oauth ?? null),
+      signInWithCredential: vi.fn().mockName('signInWithCredential').mockResolvedValue(undefined),
       oauthLoginUrl: vi
         .fn()
         .mockName('oauthLoginUrl')
         .mockImplementation((returnUrl?: string) => `/api/v1/auth/oauth/login?r=${returnUrl}`),
     };
     redirect = vi.fn().mockName('redirect');
+    renderWidget = vi
+      .fn()
+      .mockName('render')
+      .mockImplementation(() =>
+        inputs.widgetFails ? Promise.reject(new Error('script blocked')) : Promise.resolve(),
+      );
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -50,6 +61,7 @@ describe('LoginPage', () => {
         provideFakeAuth(),
         { provide: ApiAuthService, useValue: auth },
         { provide: Redirector, useValue: { to: redirect } },
+        { provide: OAuthWidgets, useValue: { render: renderWidget } },
       ],
     });
     navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
@@ -166,35 +178,82 @@ describe('LoginPage', () => {
   });
 
   describe('signing in through the identity provider (OAuth)', () => {
-    const oauthButton = () => el().querySelector<HTMLButtonElement>('button.oauth');
+    const redirectButton = () => el().querySelector<HTMLButtonElement>('button.oauth');
+    const widgetHost = () => el().querySelector<HTMLElement>('.widget');
+    const google: OAuthProvider = {
+      label: 'Google',
+      widget: { kind: 'google', clientId: 'client-1.apps.googleusercontent.com' },
+    };
+    const ping: OAuthProvider = { label: 'Ping', widget: null };
 
     it('offers nothing when the API has no OAuth set up', async () => {
-      await create({ oauthLabel: null });
+      await create({ oauth: null });
 
-      expect(oauthButton()).toBeNull();
+      expect(redirectButton()).toBeNull();
+      expect(widgetHost()).toBeNull();
       expect(submit()).not.toBeNull(); // the password form is still there
     });
 
-    it('offers a button named after the provider, next to the password form', async () => {
-      await create({ oauthLabel: 'Google' });
+    it("draws the provider's own component when it has one, next to the password form", async () => {
+      await create({ oauth: google });
 
-      expect(oauthButton()!.textContent).toContain('Continue with Google');
+      expect(widgetHost()).not.toBeNull();
+      expect(renderWidget).toHaveBeenCalledTimes(1);
+      expect(renderWidget).toHaveBeenCalledWith(google.widget, widgetHost(), expect.any(Function));
+      expect(redirectButton()).toBeNull(); // not a copy of it
       expect(submit()).not.toBeNull();
     });
 
-    it('leaves for the provider, remembering where the visitor was heading', async () => {
-      await create({ oauthLabel: 'Google', returnUrl: '/logbooks/abc' });
+    it("signs in with what the provider's component hands over", async () => {
+      await create({ oauth: google });
+      const onCredential = renderWidget.mock.calls[0][2] as (credential: string) => void;
 
-      oauthButton()!.click();
+      onCredential('the-id-token');
+      await settle();
+
+      expect(auth.signInWithCredential).toHaveBeenCalledWith('the-id-token');
+    });
+
+    it('says why when the API refuses what the component handed over', async () => {
+      await create({ oauth: google });
+      auth.signInWithCredential.mockRejectedValue(
+        new AuthError('Accounts with this email address are not allowed to sign in here.'),
+      );
+
+      (renderWidget.mock.calls[0][2] as (credential: string) => void)('token');
+      await settle();
+
+      expect(el().querySelector('[role="alert"]')!.textContent).toContain('not allowed');
+    });
+
+    it('uses the redirect button when the provider has no component of its own', async () => {
+      await create({ oauth: ping });
+
+      expect(renderWidget).not.toHaveBeenCalled();
+      expect(widgetHost()).toBeNull();
+      expect(redirectButton()!.textContent).toContain('Continue with Ping');
+    });
+
+    it('falls back to the redirect button when the component cannot be drawn', async () => {
+      await create({ oauth: google, widgetFails: true });
+      await settle();
+
+      expect(redirectButton()!.textContent).toContain('Continue with Google');
+    });
+
+    it('leaves for the provider, remembering where the visitor was heading', async () => {
+      await create({ oauth: ping, returnUrl: '/logbooks/abc' });
+
+      redirectButton()!.click();
 
       expect(auth.oauthLoginUrl).toHaveBeenCalledWith('/logbooks/abc');
       expect(redirect).toHaveBeenCalledWith('/api/v1/auth/oauth/login?r=/logbooks/abc');
     });
 
     it('does not pass on a return address that leads away from the app', async () => {
-      await create({ oauthLabel: 'Google', returnUrl: '//evil.example' });
+      await create({ oauth: ping, returnUrl: '//evil.example' });
 
-      oauthButton()!.click();
+      redirectButton()!.click();
 
       expect(auth.oauthLoginUrl).toHaveBeenCalledWith('/logbooks');
     });
@@ -210,7 +269,7 @@ describe('LoginPage', () => {
       ['failed', 'did not work'],
       ['something-new', 'did not work'],
     ])('says why it did not work: %s', async (code, words) => {
-      await create({ oauthLabel: 'Google', oauthError: code });
+      await create({ oauth: ping, oauthError: code });
       await settle();
 
       expect(el().querySelector('[role="alert"]')!.textContent).toContain(words);

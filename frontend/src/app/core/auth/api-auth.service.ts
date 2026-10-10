@@ -4,6 +4,8 @@ import { firstValueFrom } from 'rxjs';
 import { AppConfig } from '../api/app-config';
 import type { User } from '../models/logbook.models';
 import { AuthService } from './auth.service';
+import { OAUTH_MESSAGES } from './oauth-messages';
+import type { OAuthProvider } from './oauth-widgets';
 
 const SESSION_KEY = 'elogbook.session';
 
@@ -27,6 +29,10 @@ export class AuthError extends Error {}
 
 const messageFor = (error: unknown): string => {
   if (error instanceof HttpErrorResponse) {
+    const code = (error.error as { message?: unknown } | null)?.message;
+    if (typeof code === 'string' && code in OAUTH_MESSAGES) {
+      return OAUTH_MESSAGES[code];
+    }
     switch (error.status) {
       case 0:
         return 'Cannot reach the server. Try again in a moment.';
@@ -64,18 +70,25 @@ export class ApiAuthService extends AuthService {
     await this.start('/auth/login', { email, password });
   }
 
-  /** Button text, or `null` when OAuth is off. */
-  async oauthLabel(): Promise<string | null> {
+  /** The identity provider the API offers, or `null` when OAuth is off. */
+  async oauthProvider(): Promise<OAuthProvider | null> {
     try {
       const status = await firstValueFrom(
-        this.http.get<{ enabled: boolean; label: string | null }>(
+        this.http.get<{ enabled: boolean; label: string | null; widget: OAuthProvider['widget'] }>(
           `${this.config.apiUrl}/auth/oauth`,
         ),
       );
-      return status.enabled ? status.label : null;
+      return status.enabled && status.label
+        ? { label: status.label, widget: status.widget ?? null }
+        : null;
     } catch {
       return null; // an API that cannot be reached shows the password form alone
     }
+  }
+
+  /** Signs in with the ID token a provider's own button returned. */
+  async signInWithCredential(credential: string): Promise<void> {
+    await this.start('/auth/oauth/credential', { credential });
   }
 
   /** Address that starts the provider sign-in. */

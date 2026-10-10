@@ -90,8 +90,18 @@ People are recognised by `iss` + `sub`, never by email alone, because an email c
 The provider must say `email_verified: true`; anything else is refused. Domains can be limited with
 `OAUTH_ALLOWED_EMAIL_DOMAINS`.
 
+**Each provider's own sign-in component.** The login page draws the provider's own button when it has one, never a
+look-alike. For Google that is Google's button (Google Identity Services): it hands the browser a signed ID token,
+which goes to `POST /auth/oauth/credential`. The API checks the signature against the provider's published keys, the
+issuer, the audience (your client id) and the expiry, then applies the same rules as the redirect flow (verified email,
+allowed domains, `iss` + `sub` identity). A provider without a component of its own (Ping signs people in on its hosted
+login page) gets a "Continue with …" button that uses the redirect flow above, as does Google if its script cannot
+load. A new provider's component is one more case in `frontend/src/app/core/auth/oauth-widgets.ts` and `widgetFor` in
+`oauth-settings.ts`.
+
 For development with Google: create an OAuth client (Web application) in the Google Cloud console, add
-`http://localhost:4300/api/v1/auth/oauth/callback` as an authorised redirect URI, put the five values in `backend/.env`,
+`http://localhost:4300/api/v1/auth/oauth/callback` as an authorised redirect URI and `http://localhost:4300` as an
+authorised JavaScript origin (Google's button needs it), put the five values in `backend/.env`,
 and `npm start`. Turn `AUTH_ALLOW_REGISTRATION` off when everyone should come through the provider; otherwise somebody can register an address that is not theirs, with a password only they know, before its owner first signs in with OAuth.
 `test/oauth.e2e-spec.ts` runs the whole flow against a small fake provider that really checks the secret, PKCE and codes.
 

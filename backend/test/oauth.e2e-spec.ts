@@ -91,7 +91,7 @@ describe('OAuth sign-in', () => {
 
     it('says it is available, and what the button is called', async () => {
       const res = await publicApi(app).get('/auth/oauth').expect(200);
-      expect(res.body).toEqual({ enabled: true, label: 'Test IdP' });
+      expect(res.body).toEqual({ enabled: true, label: 'Test IdP', widget: null });
     });
 
     it('sends the browser to the provider with state, nonce and a PKCE challenge', async () => {
@@ -369,6 +369,98 @@ describe('OAuth sign-in', () => {
     });
   });
 
+  describe("the provider's own button (an ID token sent to the API)", () => {
+    const send = (credential: unknown) =>
+      request(app.getHttpServer()).post(`${API}/auth/oauth/credential`).send({ credential });
+
+    beforeEach(() => start());
+
+    it('signs the person in like a password does, with the same kind of answer', async () => {
+      const res = await send(await idp.issueCredential(googleish('Anna@Example.org'))).expect(200);
+
+      expect(res.body).toEqual({
+        access_token: expect.any(String),
+        expires_in: 8 * 3600,
+        user: { id: expect.any(String), name: 'Anna Lindqvist', email: 'anna@example.org' },
+        isAdmin: false,
+      });
+      await request(app.getHttpServer())
+        .get(`${API}/auth/whoami`)
+        .set('Authorization', `Bearer ${res.body.access_token}`)
+        .expect(200);
+    });
+
+    it('is the same account and identity as signing in by redirect', async () => {
+      const viaButton = await send(await idp.issueCredential(googleish('anna@example.org'))).expect(
+        200,
+      );
+      const viaRedirect = await signInWith(googleish('anna@example.org'));
+
+      const who = await request(app.getHttpServer())
+        .get(`${API}/auth/whoami`)
+        .set('Authorization', `Bearer ${tokenOf(viaRedirect.location)}`)
+        .expect(200);
+      expect(who.body.user.id).toBe(viaButton.body.user.id);
+      expect(await identities().count()).toBe(1);
+      expect(await users().count()).toBe(1);
+    });
+
+    it.each([
+      ['a token signed with a key the provider never published', { forged: true }],
+      ['a token meant for another app', { audience: 'someone-elses-client' }],
+      ['a token from another issuer', { issuer: 'https://evil.example' }],
+      ['an expired token', { expiresIn: -60 }],
+    ])('refuses %s', async (_name, options) => {
+      const res = await send(
+        await idp.issueCredential(googleish('anna@example.org'), options),
+      ).expect(401);
+
+      expect(res.body.message).toBe('failed');
+      expect(await users().count()).toBe(0);
+    });
+
+    it.each(['', 'not-a-jwt', 'a.b.c'])('refuses %j', async (credential) => {
+      await send(credential).expect(401);
+      expect(await users().count()).toBe(0);
+    });
+
+    it('refuses a missing or oversized credential, and extra fields', async () => {
+      await request(app.getHttpServer()).post(`${API}/auth/oauth/credential`).send({}).expect(400);
+      await send('x'.repeat(9000)).expect(400);
+      await request(app.getHttpServer())
+        .post(`${API}/auth/oauth/credential`)
+        .send({ credential: 'x', admin: true })
+        .expect(400);
+    });
+
+    it('applies the same rules as the redirect: a verified email, and one person per account', async () => {
+      const unverified = await send(
+        await idp.issueCredential(googleish('a@example.org', { email_verified: false })),
+      ).expect(403);
+      expect(unverified.body.message).toBe('unverified');
+
+      await send(await idp.issueCredential(googleish('b@example.org', { sub: 'first' }))).expect(
+        200,
+      );
+      const other = await send(
+        await idp.issueCredential(googleish('b@example.org', { sub: 'second' })),
+      ).expect(403);
+      expect(other.body.message).toBe('conflict');
+    });
+
+    it('draws no component of its own for a provider that has none', async () => {
+      expect((await publicApi(app).get('/auth/oauth').expect(200)).body.widget).toBeNull();
+    });
+  });
+
+  it('does not take credentials when OAuth is not set up', async () => {
+    app = await createTestApp();
+    await request(app.getHttpServer())
+      .post(`${API}/auth/oauth/credential`)
+      .send({ credential: 'x.y.z' })
+      .expect(404);
+  });
+
   it('only lets the listed email domains in', async () => {
     await start({ OAUTH_ALLOWED_EMAIL_DOMAINS: 'ess.eu' });
 
@@ -419,6 +511,7 @@ describe('OAuth sign-in', () => {
       expect((await publicApi(app).get('/auth/oauth').expect(200)).body).toEqual({
         enabled: false,
         label: null,
+        widget: null,
       });
       await publicApi(app).get('/auth/oauth/login').expect(404);
       await publicApi(app).get('/auth/oauth/callback').expect(404);

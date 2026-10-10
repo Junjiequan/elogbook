@@ -21,6 +21,18 @@ export interface OAuthSettings {
   createAccounts: boolean;
 }
 
+/** A provider's own sign-in component that the web app can draw. Only Google has one so far. */
+export interface OAuthWidget {
+  kind: 'google';
+  clientId: string;
+}
+
+export function widgetFor(settings: OAuthSettings | null): OAuthWidget | null {
+  return settings && new URL(settings.issuer).hostname === 'accounts.google.com'
+    ? { kind: 'google', clientId: settings.clientId }
+    : null;
+}
+
 export const PLACEHOLDER = /^CHANGE-ME/i;
 
 const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])$/;

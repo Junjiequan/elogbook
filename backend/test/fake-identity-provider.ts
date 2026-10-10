@@ -40,6 +40,25 @@ export class FakeIdentityProvider {
   }
 
   /**
+   * An ID token as the provider's own button hands it to the browser. `forged` signs it with a key the provider
+   * never published; `audience`, `issuer` and `expiresIn` (seconds from now) can be bent to test the checks.
+   */
+  async issueCredential(
+    claims: Record<string, unknown>,
+    options: { forged?: boolean; audience?: string; issuer?: string; expiresIn?: number } = {},
+  ): Promise<string> {
+    const key = options.forged ? (await generateKeyPair('RS256')).privateKey : this.key;
+    const now = Math.floor(Date.now() / 1000);
+    return new SignJWT({ ...claims })
+      .setProtectedHeader({ alg: 'RS256', kid: 'test-key' })
+      .setIssuer(options.issuer ?? this.issuer)
+      .setAudience(options.audience ?? CLIENT_ID)
+      .setIssuedAt(now)
+      .setExpirationTime(now + (options.expiresIn ?? 300))
+      .sign(key);
+  }
+
+  /**
    * What the browser does at the provider: the person signs in and agrees. Returns the query string the
    * provider sends the browser back with (`code` and `state`) for the redirect address in `authorizeUrl`.
    */

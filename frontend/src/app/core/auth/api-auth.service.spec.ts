@@ -104,20 +104,59 @@ describe('ApiAuthService', () => {
   });
 
   describe('signing in through the identity provider (OAuth)', () => {
-    it('knows the button label when the API offers it, and nothing otherwise', async () => {
+    it('knows the provider when the API offers one, and nothing otherwise', async () => {
       const auth = create();
+      const widget = { kind: 'google', clientId: 'c.apps.googleusercontent.com' };
 
-      const on = auth.oauthLabel();
-      http.expectOne('/api/v1/auth/oauth').flush({ enabled: true, label: 'Google' });
-      expect(await on).toBe('Google');
+      const withWidget = auth.oauthProvider();
+      http.expectOne('/api/v1/auth/oauth').flush({ enabled: true, label: 'Google', widget });
+      expect(await withWidget).toEqual({ label: 'Google', widget });
 
-      const off = auth.oauthLabel();
-      http.expectOne('/api/v1/auth/oauth').flush({ enabled: false, label: null });
+      const without = auth.oauthProvider();
+      http.expectOne('/api/v1/auth/oauth').flush({ enabled: true, label: 'Ping', widget: null });
+      expect(await without).toEqual({ label: 'Ping', widget: null });
+
+      const off = auth.oauthProvider();
+      http.expectOne('/api/v1/auth/oauth').flush({ enabled: false, label: null, widget: null });
       expect(await off).toBeNull();
 
-      const unreachable = auth.oauthLabel();
+      const unreachable = auth.oauthProvider();
       http.expectOne('/api/v1/auth/oauth').flush({}, { status: 0, statusText: '' });
       expect(await unreachable).toBeNull();
+    });
+
+    it("signs in with the ID token from the provider's own component", async () => {
+      const auth = create();
+
+      const done = auth.signInWithCredential('the-id-token');
+      const request = http.expectOne('/api/v1/auth/oauth/credential');
+      expect(request.request.body).toEqual({ credential: 'the-id-token' });
+      request.flush(reply());
+      await done;
+
+      expect(auth.user()).toEqual(anna);
+      expect(auth.token()).toBe('token-1');
+    });
+
+    it.each([
+      [401, 'failed', 'did not work'],
+      [403, 'not_allowed', 'not allowed'],
+      [403, 'unverified', 'not verified'],
+      [403, 'conflict', 'different account'],
+      [403, 'no_account', 'no account'],
+      [503, 'unavailable', 'cannot be reached'],
+    ])('explains a refused ID token: %i %s', async (status, code, words) => {
+      const auth = create();
+
+      const done = auth.signInWithCredential('token');
+      http
+        .expectOne('/api/v1/auth/oauth/credential')
+        .flush({ statusCode: status, message: code }, { status, statusText: 'x' });
+
+      const error = await done.catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(AuthError);
+      expect((error as AuthError).message).toContain(words);
+      expect(auth.user()).toBeNull();
     });
 
     it('builds the address that starts the sign-in, with where to return to', () => {

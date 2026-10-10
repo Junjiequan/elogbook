@@ -1,5 +1,5 @@
 import type { AppConfig } from '../../config/configuration.js';
-import { parseOAuthSettings } from './oauth-settings.js';
+import { parseOAuthSettings, widgetFor } from './oauth-settings.js';
 
 const google = (over: Partial<AppConfig['oauth']> = {}): AppConfig['oauth'] => ({
   enabled: true,
@@ -14,6 +14,22 @@ const google = (over: Partial<AppConfig['oauth']> = {}): AppConfig['oauth'] => (
   allowedEmailDomains: [],
   createAccounts: true,
   ...over,
+});
+
+describe('widgetFor', () => {
+  it("is Google's own button, with the client id, for Google", () => {
+    expect(widgetFor(parseOAuthSettings(google()))).toEqual({
+      kind: 'google',
+      clientId: '123.apps.googleusercontent.com',
+    });
+  });
+
+  it('is nothing for a provider without a component of its own, or when off', () => {
+    expect(
+      widgetFor(parseOAuthSettings(google({ issuer: 'https://login.pingone.eu/abc' }))),
+    ).toBeNull();
+    expect(widgetFor(null)).toBeNull();
+  });
 });
 
 describe('parseOAuthSettings', () => {

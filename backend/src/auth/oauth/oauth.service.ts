@@ -2,12 +2,19 @@ import { createHmac } from 'node:crypto';
 import { Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import * as client from 'openid-client';
 import type { AppConfig } from '../../config/configuration.js';
+import type { User } from '../../users/entities/user.entity.js';
 import { IdentityConflictError, UsersService } from '../../users/users.service.js';
 import { AuthService } from '../auth.service.js';
 import type { AuthResponseDto } from '../dto/auth-response.dto.js';
-import { parseOAuthSettings, type OAuthSettings } from './oauth-settings.js';
+import {
+  parseOAuthSettings,
+  widgetFor,
+  type OAuthSettings,
+  type OAuthWidget,
+} from './oauth-settings.js';
 
 /** Why a sign-in failed. */
 export type OAuthFailure =
@@ -24,6 +31,14 @@ export class OAuthError extends Error {
   constructor(readonly code: OAuthFailure) {
     super(code);
   }
+}
+
+/** The claims of an ID token that matter here. */
+interface Claims {
+  sub?: string;
+  email?: unknown;
+  email_verified?: unknown;
+  name?: unknown;
 }
 
 /** Kept in a short-lived cookie between login and callback. */
@@ -44,6 +59,7 @@ export class OAuthService implements OnApplicationBootstrap {
   private readonly logger = new Logger(OAuthService.name);
   private settings: OAuthSettings | null = null;
   private discovery: Promise<client.Configuration> | null = null;
+  private keys: ReturnType<typeof createRemoteJWKSet> | null = null;
 
   constructor(
     private readonly config: ConfigService<AppConfig, true>,
@@ -101,7 +117,7 @@ export class OAuthService implements OnApplicationBootstrap {
     }
     const pending = this.readCookie(cookie);
 
-    let claims: client.IDToken | undefined;
+    let claims: Claims | undefined;
     try {
       const configuration = await this.configuration(settings);
       const callback = new URL(settings.redirectUri);
@@ -118,6 +134,35 @@ export class OAuthService implements OnApplicationBootstrap {
       throw new OAuthError('failed');
     }
 
+    const user = await this.userFor(claims, settings);
+    return {
+      session: await this.auth.login(user),
+      returnUrl: pending.returnUrl,
+      frontendUrl: settings.frontendUrl,
+    };
+  }
+
+  /** Signs in with an ID token the browser got from the provider's own widget (Google's button). */
+  async signInWithCredential(credential: string): Promise<AuthResponseDto> {
+    const settings = this.required();
+    const metadata = (await this.configuration(settings)).serverMetadata();
+    let claims: Claims;
+    try {
+      this.keys ??= createRemoteJWKSet(new URL(metadata.jwks_uri!));
+      // Google writes its issuer both with and without the scheme.
+      const issuers = [metadata.issuer, metadata.issuer.replace(/^https:\/\//, '')];
+      claims = (
+        await jwtVerify(credential, this.keys, { issuer: issuers, audience: settings.clientId })
+      ).payload;
+    } catch (error) {
+      this.logger.warn(`ID token from ${settings.label} refused: ${(error as Error).message}`);
+      throw new OAuthError('failed');
+    }
+    return this.auth.login(await this.userFor(claims, settings));
+  }
+
+  /** The checks every sign-in passes, and the person's account. */
+  private async userFor(claims: Claims | undefined, settings: OAuthSettings): Promise<User> {
     const email = typeof claims?.email === 'string' ? claims.email.trim().toLowerCase() : '';
     if (!email || !claims?.sub) {
       throw new OAuthError('failed');
@@ -130,12 +175,11 @@ export class OAuthService implements OnApplicationBootstrap {
     if (settings.allowedEmailDomains.length > 0 && !settings.allowedEmailDomains.includes(domain)) {
       throw new OAuthError('not_allowed');
     }
-
     let user;
     try {
       user = await this.users.signInWithIdentity(
         {
-          issuer: claims.iss ?? settings.issuer,
+          issuer: settings.issuer,
           subject: claims.sub,
           email,
           name: typeof claims.name === 'string' ? claims.name : '',
@@ -151,11 +195,12 @@ export class OAuthService implements OnApplicationBootstrap {
     if (!user) {
       throw new OAuthError('no_account');
     }
-    return {
-      session: await this.auth.login(user),
-      returnUrl: pending.returnUrl,
-      frontendUrl: settings.frontendUrl,
-    };
+    return user;
+  }
+
+  /** What the web app needs to draw the provider's own sign-in component; `null` when it has none. */
+  get widget(): OAuthWidget | null {
+    return widgetFor(this.settings);
   }
 
   /** For redirecting failures. */
