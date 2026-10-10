@@ -1,0 +1,65 @@
+import {
+  Check,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  type Relation,
+} from 'typeorm';
+import { User } from '../../users/entities/user.entity.js';
+import { LogbookMember } from './logbook-member.entity.js';
+
+/** `private`: only listed members. `facility-read`: any signed-in user may read. */
+export type Visibility = 'private' | 'facility-read';
+export const VISIBILITIES: readonly Visibility[] = ['private', 'facility-read'];
+
+@Entity('logbooks')
+@Check('CHK_logbooks_visibility', "visibility IN ('private', 'facility-read')")
+export class Logbook {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'text' })
+  title: string;
+
+  @Column({ type: 'text', default: '' })
+  description: string;
+
+  @Column({ type: 'text', nullable: true })
+  instrument: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  proposalId: string | null;
+
+  @Column({ type: 'text', default: 'private' })
+  visibility: Visibility;
+
+  @OneToMany(() => LogbookMember, (member) => member.logbook)
+  members: Relation<LogbookMember[]>;
+
+  /**
+   * Set on the sample logbooks made by `POST /demo`: the person they were made for. Only `DELETE /demo`
+   * removes them by this, so real logbooks can never be caught by it.
+   */
+  @Index()
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: true })
+  demoUser: Relation<User> | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  demoUserId: string | null;
+
+  /** A sample logbook is personal: the facility-wide rule does not apply to it. */
+  get demo(): boolean {
+    return !!this.demoUserId;
+  }
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
+}

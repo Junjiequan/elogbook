@@ -24,16 +24,44 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm run test:ci
+      # Unit tests of both apps (the frontend in headless Chrome); no database needed.
+      - run: npm test
       - name: Build for GitHub Pages
         run: npm run build:pages
       - uses: actions/upload-pages-artifact@v5
         if: github.ref == 'refs/heads/main'
         with:
-          path: dist/elogbook/browser
+          path: frontend/dist/elogbook/browser
+
+  # The API's end-to-end tests: the real app against a real PostgreSQL.
+  backend-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: elogbook
+          POSTGRES_PASSWORD: elogbook
+          POSTGRES_DB: elogbook_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U elogbook -d elogbook_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:e2e
 
   deploy:
     if: github.ref == 'refs/heads/main'
+    # Only the frontend is published here, so a failing API database test must not hold back the site.
     needs: verify
     runs-on: ubuntu-latest
     permissions:

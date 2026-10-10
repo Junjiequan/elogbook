@@ -1,0 +1,77 @@
+{
+  "name": "elogbook-frontend",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "build:pages": "ng build --base-href /elogbook/ && node -e \"require('fs').copyFileSync('dist/elogbook/browser/index.html','dist/elogbook/browser/404.html')\"",
+    "lint": "ng lint",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessCI",
+    "format:check": "prettier --check \"src/**/*.{ts,html,scss}\""
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/cdk": "^22.2.2",
+    "@angular/common": "^22.2.2",
+    "@angular/compiler": "^22.2.2",
+    "@angular/core": "^22.2.2",
+    "@angular/forms": "^22.2.2",
+    "@angular/material": "^22.2.2",
+    "@angular/platform-browser": "^22.2.2",
+    "@angular/router": "^22.2.2",
+    "@elogbook/permissions": "*",
+    "@fontsource/titillium-web": "^5.3.0",
+    "@tiptap/core": "^3.31.4",
+    "@tiptap/extension-highlight": "^3.31.4",
+    "@tiptap/extension-image": "^3.31.4",
+    "@tiptap/extension-list": "^3.31.4",
+    "@tiptap/extension-placeholder": "^3.31.4",
+    "@tiptap/extension-table": "^3.31.4",
+    "@tiptap/extension-text-align": "^3.31.4",
+    "@tiptap/extension-text-style": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
+    "idb": "^8.0.4",
+    "material-icons": "^1.13.14",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.2",
+    "@angular/cli": "^22.2.2",
+    "@angular/compiler-cli": "^22.2.2",
+    "@eslint/js": "^10.0.1",
+    "@types/jasmine": "^7.0.0",
+    "angular-eslint": "^22.5.0",
+    "eslint": "^10.12.0",
+    "istanbul-lib-instrument": "^6.0.3",
+    "jasmine-core": "^7.0.2",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "^2.3.0",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  }
+}
