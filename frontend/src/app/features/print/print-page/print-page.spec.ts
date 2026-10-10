@@ -2,9 +2,8 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
-import { ProposalRepository } from '../../../core/data-access/proposal.repository';
 import type { Entry, Logbook } from '../../../core/models/logbook.models';
-import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
+import { provideTestProposals } from '../../../testing/test-proposals';
 import { TEST_USERS } from '../../../testing/test-users';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { PrintPage } from './print-page';
@@ -22,7 +21,6 @@ const logbook: Logbook = {
   members: [{ user: anna, role: 'owner' }],
   owner: TEST_USERS[0],
   ...OWNER_ACCESS,
-  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 };
@@ -68,7 +66,7 @@ describe('PrintPage', () => {
         provideRouter([]),
         { provide: LogbookRepository, useValue: repo },
         { provide: LogbooksStore, useValue: { logbooks: signal(logbooks) } },
-        { provide: ProposalRepository, useClass: DemoProposalRepository },
+        provideTestProposals(),
       ],
     });
     fixture = TestBed.createComponent(PrintPage);

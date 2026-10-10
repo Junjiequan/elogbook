@@ -1,4 +1,4 @@
-import { toUserDto } from '../auth/auth.service.js';
+import { toUserDto } from '../users/user-dto.js';
 import type { UserDto } from '../auth/interfaces/jwt-user.interface.js';
 import type { EntryVersion, VersionReason } from './entities/entry-version.entity.js';
 import type { Entry, EntryContent } from './entities/entry.entity.js';

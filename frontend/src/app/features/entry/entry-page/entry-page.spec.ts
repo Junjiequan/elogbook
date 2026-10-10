@@ -9,9 +9,8 @@ import {
   LogbookRepository,
   PinLimitReachedError,
 } from '../../../core/data-access/logbook.repository';
-import { ProposalRepository } from '../../../core/data-access/proposal.repository';
 import type { Entry, Logbook, MemberRole } from '../../../core/models/logbook.models';
-import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
+import { provideTestProposals } from '../../../testing/test-proposals';
 import { TEST_USERS } from '../../../testing/test-users';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { EntriesStore } from '../../logbook/entries.store';
@@ -49,7 +48,6 @@ const logbook = (role: MemberRole): Logbook => ({
   ],
   owner: TEST_USERS[0],
   ...OWNER_ACCESS,
-  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
@@ -128,7 +126,7 @@ describe('EntryPage', () => {
         provideRouter([]),
         provideFakeAuth(as),
         { provide: LogbookRepository, useValue: repo },
-        { provide: ProposalRepository, useClass: DemoProposalRepository },
+        provideTestProposals(),
         {
           provide: LogbooksStore,
           useValue: { logbooks: signal([{ ...logbook(role), ...accessFor(logbook(role), as) }]) },
@@ -152,6 +150,15 @@ describe('EntryPage', () => {
     await create();
 
     expect(autosave.open).toHaveBeenCalledWith('e1');
+  });
+
+  it('puts the entry and its logbook in the tab title, and follows edits to the title', async () => {
+    await create();
+    expect(document.title).toBe('Day 1 · Beamtime 1 · eLogbook');
+
+    autosave.entry.update((e) => e && { ...e, title: '' });
+    await settle();
+    expect(document.title).toBe('Untitled entry · Beamtime 1 · eLogbook');
   });
 
   it('shows a spinner while the entry loads, and says so when it cannot be found', async () => {

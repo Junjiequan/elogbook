@@ -2,7 +2,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
-import type { Entry, Logbook } from '../../core/models/logbook.models';
+import type { Logbook } from '../../core/models/logbook.models';
 import { LogbooksStore, type LoadStatus } from '../logbooks/logbooks.store';
 import { entryTitle, exportTitle, logbookTitle } from './logbook-titles';
 
@@ -12,14 +12,12 @@ describe('page titles of a logbook', () => {
   const setup = (
     options: {
       status?: LoadStatus;
-      entry?: Partial<Entry> | undefined;
     } = {},
   ) => {
     const status = signal<LoadStatus>(options.status ?? 'ready');
     const repo = {
       getEntry: vi.fn().mockName('LogbookRepository.getEntry'),
     };
-    repo.getEntry.mockResolvedValue(options.entry as Entry | undefined);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -27,7 +25,7 @@ describe('page titles of a logbook', () => {
         { provide: LogbooksStore, useValue: { status, logbooks: signal([book]) } },
       ],
     });
-    return { status };
+    return { status, repo };
   };
 
   const resolve = (fn: typeof logbookTitle, params: Record<string, string>) =>
@@ -63,19 +61,13 @@ describe('page titles of a logbook', () => {
     expect(await resolve(exportTitle, { logbookId: 'nope' })).toBe('Export logbook');
   });
 
-  it('names an entry after itself and its logbook', async () => {
-    setup({ entry: { title: 'Day 1' } });
+  it('names an entry page after its logbook until the entry itself has loaded', async () => {
+    const { repo } = setup();
 
     expect(await resolve(entryTitle, { logbookId: 'l1', entryId: 'e1' })).toBe(
-      'Day 1 · LoKI beamtime',
+      'Entry · LoKI beamtime',
     );
-  });
-
-  it('calls an untitled entry "Untitled entry"', async () => {
-    setup({ entry: { title: '' } });
-
-    expect(await resolve(entryTitle, { logbookId: 'l1', entryId: 'e1' })).toBe(
-      'Untitled entry · LoKI beamtime',
-    );
+    expect(await resolve(entryTitle, { logbookId: 'nope', entryId: 'e1' })).toBe('Entry');
+    expect(repo.getEntry).not.toHaveBeenCalled(); // the entry page loads it; asking twice doubled the request
   });
 });

@@ -13,7 +13,6 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
-    "seed": "node dist/database/seed.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "oxlint --type-aware src/ test/",
@@ -21,7 +20,9 @@
     "test:watch": "vitest",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:ci": "vitest run",
-    "env:init": "node scripts/init-env.mjs"
+    "env:init": "node scripts/init-env.mjs",
+    "dummy:seed": "npm run seed -w @elogbook/demo",
+    "dummy:remove": "npm run remove -w @elogbook/demo"
   },
   "dependencies": {
     "@casl/ability": "^7.0.1",
@@ -38,6 +39,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "helmet": "^8.3.0",
+    "openid-client": "^6.8.8",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -56,6 +58,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.15.0",
     "@types/supertest": "^7.0.0",
+    "jose": "^6.2.12",
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.9.9",

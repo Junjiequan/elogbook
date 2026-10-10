@@ -21,6 +21,7 @@ import {
   REMOTE_COLLEAGUE,
   TEAM,
 } from './demo-people.js';
+import { FACILITY_SPECS } from './demo-facility.js';
 import { MORE_SPECS } from './demo-more.js';
 import type { LogbookSpec } from './demo-spec.js';
 
@@ -478,4 +479,4 @@ function toBundle(spec: LogbookSpec, user: User, now: Date): LogbookBundle {
 }
 
 export const createExtraDemoLogbooks = (user: User, now = new Date()): LogbookBundle[] =>
-  [...SPECS, ...MORE_SPECS].map((spec) => toBundle(spec, user, now));
+  [...SPECS, ...MORE_SPECS, ...FACILITY_SPECS].map((spec) => toBundle(spec, user, now));

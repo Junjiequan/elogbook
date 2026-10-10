@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { TEST_USERS } from '../../../testing/test-users';
 import type { User } from '../../../core/models/logbook.models';
 import { ApiAuthService, AuthError } from '../../../core/auth/api-auth.service';
+import { Redirector } from '../../../core/auth/redirector';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { LoginPage } from './login-page';
 
@@ -14,26 +15,41 @@ describe('LoginPage', () => {
     user: ReturnType<typeof signal<User | null>>;
     signIn: Mock;
     signUp: Mock;
+    oauthLabel: Mock;
+    oauthLoginUrl: Mock;
   };
   let navigate: Mock;
+  let redirect: Mock;
   const el = () => fixture.nativeElement as HTMLElement;
 
   const create = async (
     inputs: {
       returnUrl?: string;
+      oauthError?: string;
+      oauthLabel?: string | null;
     } = {},
   ) => {
     auth = {
       user: signal<User | null>(null),
       signIn: vi.fn().mockName('signIn').mockResolvedValue(undefined),
       signUp: vi.fn().mockName('signUp').mockResolvedValue(undefined),
+      oauthLabel: vi
+        .fn()
+        .mockName('oauthLabel')
+        .mockResolvedValue(inputs.oauthLabel ?? null),
+      oauthLoginUrl: vi
+        .fn()
+        .mockName('oauthLoginUrl')
+        .mockImplementation((returnUrl?: string) => `/api/v1/auth/oauth/login?r=${returnUrl}`),
     };
+    redirect = vi.fn().mockName('redirect');
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideFakeAuth(),
         { provide: ApiAuthService, useValue: auth },
+        { provide: Redirector, useValue: { to: redirect } },
       ],
     });
     navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
@@ -41,8 +57,12 @@ describe('LoginPage', () => {
     if (inputs.returnUrl !== undefined) {
       fixture.componentRef.setInput('returnUrl', inputs.returnUrl);
     }
+    if (inputs.oauthError !== undefined) {
+      fixture.componentRef.setInput('oauthError', inputs.oauthError);
+    }
     fixture.detectChanges();
     await fixture.whenStable();
+    await settle(); // the provider's name arrives after the page is first drawn
   };
 
   const settle = async () => {
@@ -145,10 +165,56 @@ describe('LoginPage', () => {
     expect(el().querySelector('[role="alert"]')!.textContent).toContain('already exists');
   });
 
-  it('no longer offers test accounts, a Google button or a "test only" notice', async () => {
-    await create();
+  describe('signing in through the identity provider (OAuth)', () => {
+    const oauthButton = () => el().querySelector<HTMLButtonElement>('button.oauth');
 
-    expect(el().querySelector('.demo, .google, .notice')).toBeNull();
+    it('offers nothing when the API has no OAuth set up', async () => {
+      await create({ oauthLabel: null });
+
+      expect(oauthButton()).toBeNull();
+      expect(submit()).not.toBeNull(); // the password form is still there
+    });
+
+    it('offers a button named after the provider, next to the password form', async () => {
+      await create({ oauthLabel: 'Google' });
+
+      expect(oauthButton()!.textContent).toContain('Continue with Google');
+      expect(submit()).not.toBeNull();
+    });
+
+    it('leaves for the provider, remembering where the visitor was heading', async () => {
+      await create({ oauthLabel: 'Google', returnUrl: '/logbooks/abc' });
+
+      oauthButton()!.click();
+
+      expect(auth.oauthLoginUrl).toHaveBeenCalledWith('/logbooks/abc');
+      expect(redirect).toHaveBeenCalledWith('/api/v1/auth/oauth/login?r=/logbooks/abc');
+    });
+
+    it('does not pass on a return address that leads away from the app', async () => {
+      await create({ oauthLabel: 'Google', returnUrl: '//evil.example' });
+
+      oauthButton()!.click();
+
+      expect(auth.oauthLoginUrl).toHaveBeenCalledWith('/logbooks');
+    });
+
+    it.each([
+      ['denied', 'cancelled'],
+      ['expired', 'took too long'],
+      ['unverified', 'not verified'],
+      ['conflict', 'different account'],
+      ['not_allowed', 'not allowed'],
+      ['no_account', 'no account'],
+      ['unavailable', 'cannot be reached'],
+      ['failed', 'did not work'],
+      ['something-new', 'did not work'],
+    ])('says why it did not work: %s', async (code, words) => {
+      await create({ oauthLabel: 'Google', oauthError: code });
+      await settle();
+
+      expect(el().querySelector('[role="alert"]')!.textContent).toContain(words);
+    });
   });
 
   describe('after signing in', () => {

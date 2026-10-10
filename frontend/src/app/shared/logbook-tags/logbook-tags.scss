@@ -33,13 +33,6 @@
   color: var(--mat-sys-tertiary);
 }
 
-// Orange text is too light on a pale tint, so it is darkened (lightened in dark mode) via the text colour.
-.tag--demo {
-  padding-left: 9px;
-  background: color-mix(in srgb, var(--ess-orange) 18%, transparent);
-  color: color-mix(in srgb, var(--ess-orange) 55%, var(--mat-sys-on-surface));
-}
-
 .tag--access {
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--mat-sys-outline-variant);

@@ -2,3 +2,5 @@
 **/dist
 **/.env
 .git
+backend/config/*.json
+!backend/config/*.example.json

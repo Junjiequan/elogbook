@@ -8,7 +8,7 @@ import { OWNER_ACCESS } from '../../../testing/logbook-fixtures';
 
 const [anna] = TEST_USERS;
 
-const logbook = (members: { user: User; role: MemberRole }[], demo = false): Logbook => ({
+const logbook = (members: { user: User; role: MemberRole }[]): Logbook => ({
   id: 'l1',
   title: 'My logbook',
   description: '',
@@ -16,7 +16,6 @@ const logbook = (members: { user: User; role: MemberRole }[], demo = false): Log
   proposalId: null,
   visibility: 'private',
   members,
-  demo,
   owner: TEST_USERS[0],
   ...OWNER_ACCESS,
   createdAt: '2026-10-01T10:00:00Z',
@@ -68,12 +67,5 @@ describe('DeleteEntryDialog', () => {
     expect(create(logbook([{ user: anna, role: 'owner' }]), '').textContent).toContain(
       'Untitled entry',
     );
-  });
-
-  it('explains that demo content cannot be deleted, with no Yes button', () => {
-    const el = create(logbook([{ user: anna, role: 'owner' }], true));
-
-    expect(el.textContent).toContain('cannot be deleted');
-    expect(labels(el)).toEqual(['OK']);
   });
 });

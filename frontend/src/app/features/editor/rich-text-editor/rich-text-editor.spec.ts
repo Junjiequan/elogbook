@@ -1,8 +1,7 @@
 import { Component, signal, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { JSONContent } from '@tiptap/core';
-import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
+import { provideTestProposals } from '../../../testing/test-proposals';
 import { RichTextEditor } from './rich-text-editor';
 
 const doc = (text: string): JSONContent => ({
@@ -34,10 +33,7 @@ describe('RichTextEditor', () => {
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
-      providers: [
-        provideZonelessChangeDetection(),
-        { provide: ProposalRepository, useClass: DemoProposalRepository },
-      ],
+      providers: [provideZonelessChangeDetection(), provideTestProposals()],
     });
     fixture = TestBed.createComponent(Host);
     host = fixture.componentInstance;

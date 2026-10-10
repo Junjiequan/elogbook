@@ -39,12 +39,6 @@ describe('permissions', () => {
       expect(person('stranger').can('configure', subject)).toBe(false);
       expect(person('editor').can('write', subject)).toBe(true);
     });
-
-    it('does not apply to a demo logbook, which is personal', () => {
-      const demo = logbookSubject(logbook({ visibility: 'facility-read', demo: true }));
-      expect(person('stranger').can('read', demo)).toBe(false);
-      expect(person('viewer').can('read', demo)).toBe(true);
-    });
   });
 
   describe('administrators', () => {
@@ -100,7 +94,6 @@ describe('permissions', () => {
       expect(roleOf(logbook(), 'editor')).toBe('editor');
       expect(roleOf(logbook(), 'stranger')).toBeNull();
       expect(roleOf(logbook({ visibility: 'facility-read' }), 'stranger')).toBe('viewer');
-      expect(roleOf(logbook({ visibility: 'facility-read', demo: true }), 'stranger')).toBeNull();
     });
   });
 });

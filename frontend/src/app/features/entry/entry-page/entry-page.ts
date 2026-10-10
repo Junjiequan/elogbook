@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -20,6 +21,7 @@ import {
   LogbookRepository,
   PinLimitReachedError,
 } from '../../../core/data-access/logbook.repository';
+import { tabTitle } from '../../../core/titles/app-title-strategy';
 import { MAX_PINNED_ENTRIES } from '../../../core/models/logbook.models';
 import type { EntryVersion } from '../../../core/models/logbook.models';
 import { firstValueFrom } from 'rxjs';
@@ -79,6 +81,7 @@ export class EntryPage {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly tab = inject(Title);
   private readonly entries = inject(EntriesStore);
   private readonly repository = inject(LogbookRepository);
 
@@ -102,6 +105,15 @@ export class EntryPage {
   protected readonly statusIcon = computed(() => STATUS_ICON[this.autosave.status()]);
 
   constructor() {
+    // "<entry> · <logbook> · eLogbook", following the title as it is edited.
+    effect(() => {
+      const entry = this.autosave.entry();
+      const logbook = this.logbooks.logbooks().find((l) => l.id === this.logbookId());
+      if (entry) {
+        const page = entry.title || 'Untitled entry';
+        this.tab.setTitle(tabTitle(logbook ? `${page} · ${logbook.title}` : page));
+      }
+    });
     effect(() => {
       const id = this.entryId();
       untracked(() => {

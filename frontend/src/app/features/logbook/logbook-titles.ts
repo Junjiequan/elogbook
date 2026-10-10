@@ -2,7 +2,6 @@ import { inject, Injector } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import type { ResolveFn } from '@angular/router';
 import { catchError, filter, firstValueFrom, of, timeout } from 'rxjs';
-import { LogbookRepository } from '../../core/data-access/logbook.repository';
 import { LogbooksStore } from '../logbooks/logbooks.store';
 
 /** How long a page title may hold up navigation while the logbooks are still loading. */
@@ -42,15 +41,12 @@ export const exportTitle: ResolveFn<string> = async (route) => {
   return name ? `Export · ${name}` : 'Export logbook';
 };
 
-/** Tab title of an entry: "<entry> · <logbook>". */
+/** Tab title of an entry until it has loaded; the entry page then sets "<entry> · <logbook>" itself. */
 export const entryTitle: ResolveFn<string> = async (route) => {
-  const store = inject(LogbooksStore);
-  const injector = inject(Injector);
-  const repository = inject(LogbookRepository);
-  const [entry, name] = await Promise.all([
-    repository.getEntry(route.params['entryId']).catch(() => undefined),
-    logbookName(store, injector, route.params['logbookId']),
-  ]);
-  const title = entry ? entry.title || 'Untitled entry' : 'Entry';
-  return name ? `${title} · ${name}` : title;
+  const name = await logbookName(
+    inject(LogbooksStore),
+    inject(Injector),
+    route.params['logbookId'],
+  );
+  return name ? `Entry · ${name}` : 'Entry';
 };

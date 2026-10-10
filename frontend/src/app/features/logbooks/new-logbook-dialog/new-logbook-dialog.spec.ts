@@ -7,8 +7,7 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
-import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
+import { provideTestProposals } from '../../../testing/test-proposals';
 import { NewLogbookDialog } from './new-logbook-dialog';
 
 describe('NewLogbookDialog', () => {
@@ -24,7 +23,7 @@ describe('NewLogbookDialog', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: MatDialogRef, useValue: ref },
-        { provide: ProposalRepository, useClass: DemoProposalRepository },
+        provideTestProposals(),
       ],
     });
     fixture = TestBed.createComponent(NewLogbookDialog);

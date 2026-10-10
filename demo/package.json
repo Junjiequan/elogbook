@@ -1,0 +1,33 @@
+{
+  "name": "@elogbook/demo",
+  "version": "0.0.1",
+  "description": "Development and demo tool, outside both apps: fills the database with dummy logbooks.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "seed": "npm run build && node --env-file-if-exists=../backend/.env dist/cli.js seed",
+    "remove": "npm run build && node --env-file-if-exists=../backend/.env dist/cli.js remove",
+    "test": "vitest run",
+    "test:ci": "vitest run",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "lint": "oxlint --type-aware src/ test/",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "oxlint": "^1.58.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "prettier": "^3.9.9",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.11"
+  }
+}

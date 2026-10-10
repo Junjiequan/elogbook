@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 # The lockfile covers every workspace, so npm needs each package.json, even if it installs only one.
 COPY frontend/package.json frontend/
+COPY demo/package.json demo/
 RUN npm ci --workspace backend --include-workspace-root=false --ignore-scripts
 COPY backend/tsconfig.json backend/tsconfig.build.json backend/nest-cli.json backend/
 COPY backend/src backend/src
@@ -17,6 +18,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/
 COPY frontend/package.json frontend/
+COPY demo/package.json demo/
 RUN npm ci --workspace backend --include-workspace-root=false --omit=dev --ignore-scripts
 
 FROM node:24-alpine

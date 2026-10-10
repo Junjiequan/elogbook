@@ -9,6 +9,13 @@
       <p class="error" role="alert">{{ message }}</p>
     }
 
+    @if (oauthLabel(); as label) {
+      <button mat-stroked-button type="button" class="oauth" (click)="signInWithProvider()">
+        Continue with {{ label }}
+      </button>
+      <p class="or" aria-hidden="true"><span>or use your email</span></p>
+    }
+
     <mat-button-toggle-group
       class="mode"
       aria-label="Sign in or sign up"

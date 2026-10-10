@@ -1,3 +1,7 @@
+import { join } from 'node:path';
+
+const configDir = process.env.CONFIG_DIR || 'config';
+
 const list = (value: string | undefined): string[] =>
   (value ?? '')
     .split(',')
@@ -32,9 +36,33 @@ export const configuration = () => ({
     allowRegistration: flag(process.env.AUTH_ALLOW_REGISTRATION, true),
     adminEmails: list(process.env.ADMIN_EMAILS).map((email) => email.toLowerCase()),
   },
-  demo: {
-    // POST /demo makes sample logbooks for the signed-in person, DELETE /demo removes them again.
-    enabled: flag(process.env.DEMO_ENABLED, process.env.NODE_ENV !== 'production'),
+  // The folder for JSON files that describe a deployment (accounts today, more over time). The real files
+  // are git-ignored; `*.example.json` next to them are the starting points.
+  configDir,
+  proposals: {
+    // The proposals the app offers (see config/proposals.example.json). A missing default file means none.
+    file: process.env.PROPOSALS_FILE || join(configDir, 'proposals.json'),
+    explicit: !!process.env.PROPOSALS_FILE,
+  },
+  // On when OAUTH_ISSUER is set.
+  oauth: {
+    enabled: flag(process.env.OAUTH_ENABLED, true),
+    label: process.env.OAUTH_LABEL,
+    issuer: process.env.OAUTH_ISSUER,
+    clientId: process.env.OAUTH_CLIENT_ID,
+    clientSecret: process.env.OAUTH_CLIENT_SECRET,
+    clientAuthentication: process.env.OAUTH_CLIENT_AUTHENTICATION,
+    redirectUri: process.env.OAUTH_REDIRECT_URI,
+    frontendUrl: process.env.OAUTH_FRONTEND_URL,
+    scopes: list(process.env.OAUTH_SCOPES?.replace(/\s+/g, ',')),
+    allowedEmailDomains: list(process.env.OAUTH_ALLOWED_EMAIL_DOMAINS),
+    createAccounts: flag(process.env.OAUTH_CREATE_ACCOUNTS, true),
+  },
+  localAccounts: {
+    // Accounts (with roles such as admin) made when the API starts. A missing default file is fine;
+    // a file that was asked for by name and is missing is an error.
+    file: process.env.LOCAL_ACCOUNTS_FILE || join(configDir, 'local-accounts.json'),
+    explicit: !!process.env.LOCAL_ACCOUNTS_FILE,
   },
   rateLimit: {
     default: Number(process.env.RATE_LIMIT ?? 120),

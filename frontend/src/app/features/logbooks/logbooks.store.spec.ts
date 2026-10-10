@@ -19,7 +19,6 @@ const logbook = (id: string, owner = anna): Logbook => ({
   members: [{ user: owner, role: 'owner' }],
   owner: owner,
   ...OWNER_ACCESS,
-  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
@@ -37,11 +36,7 @@ describe('LogbooksStore.delete', () => {
       deleteLogbook: vi.fn().mockName('LogbookRepository.deleteLogbook'),
     };
     repo.listLogbooks.mockResolvedValue(
-      [
-        logbook('mine', anna),
-        logbook('theirs', jon),
-        { ...logbook('sample', anna), demo: true },
-      ].map((book) => seenBy(book, user, admin)),
+      [logbook('mine', anna), logbook('theirs', jon)].map((book) => seenBy(book, user, admin)),
     );
     repo.deleteLogbook.mockResolvedValue(undefined);
     TestBed.configureTestingModule({
@@ -69,7 +64,7 @@ describe('LogbooksStore.delete', () => {
     expect(repo.deleteLogbook).toHaveBeenCalledTimes(1);
 
     expect(repo.deleteLogbook).toHaveBeenCalledWith('mine');
-    expect(store.logbooks().map((l) => l.id)).toEqual(['theirs', 'sample']);
+    expect(store.logbooks().map((l) => l.id)).toEqual(['theirs']);
   });
 
   it('refuses to delete a logbook owned by someone else', async () => {
@@ -78,15 +73,7 @@ describe('LogbooksStore.delete', () => {
 
     await expect(store.delete('theirs')).rejects.toThrow();
     expect(repo.deleteLogbook).not.toHaveBeenCalled();
-    expect(store.logbooks().length).toBe(3);
-  });
-
-  it('never deletes a sample logbook, not even for an administrator', async () => {
-    const { repo, store } = setup(anna, true);
-    await loaded(store);
-
-    await expect(store.delete('sample')).rejects.toThrowError(/Sample logbooks cannot be deleted/);
-    expect(repo.deleteLogbook).not.toHaveBeenCalled();
+    expect(store.logbooks().length).toBe(2);
   });
 
   it('lets an administrator delete someone else’s logbook that they can open', async () => {

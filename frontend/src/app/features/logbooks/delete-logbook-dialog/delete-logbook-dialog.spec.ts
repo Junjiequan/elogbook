@@ -19,7 +19,6 @@ const logbook = (id: string, owner = anna): Logbook => ({
   members: [{ user: owner, role: 'owner' }],
   owner: owner,
   ...OWNER_ACCESS,
-  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
@@ -61,12 +60,5 @@ describe('DeleteLogbookDialog', () => {
 
     const content = el.querySelector('mat-dialog-content')!;
     expect(getComputedStyle(content).overflowY).toBe('visible');
-  });
-
-  it('explains that a demo logbook cannot be deleted, with no Yes button', async () => {
-    const el = await create({ ...logbook('sample'), demo: true });
-
-    expect(el.textContent).toContain('cannot be deleted');
-    expect(labels(el)).toEqual(['OK']);
   });
 });

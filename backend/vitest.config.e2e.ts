@@ -13,13 +13,19 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       DATABASE_URL:
-        process.env.TEST_DATABASE_URL ?? 'postgres://elogbook:elogbook@localhost:5433/elogbook_test',
+        process.env.TEST_DATABASE_URL ??
+        'postgres://elogbook:elogbook@localhost:5433/elogbook_test',
       DATABASE_MIGRATE: 'true',
       JWT_SECRET: 'e2e-only-secret-that-is-at-least-32-characters-long',
       ADMIN_EMAILS: 'admin@example.org',
       RATE_LIMIT: '100000',
       AUTH_RATE_LIMIT: '100000',
       SWAGGER_ENABLED: 'false',
+      // The tests must not depend on a developer's own backend/.env or config/ folder.
+      CONFIG_DIR: './test/no-config',
+      // empty = off; the OAuth specs set their own
+      OAUTH_ISSUER: '',
+      OAUTH_ENABLED: 'true',
     },
   },
 });

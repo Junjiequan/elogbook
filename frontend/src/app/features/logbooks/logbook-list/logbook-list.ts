@@ -37,7 +37,6 @@ import { UserControls } from '../../../shared/user-controls/user-controls';
 import { LogbookCard } from '../logbook-card/logbook-card';
 import { NoResults } from '../no-results/no-results';
 import { PinnedEntries } from '../pinned-entries/pinned-entries';
-import { SampleLogbooksButton } from '../sample-logbooks/sample-logbooks';
 import { LogbookPager } from '../logbook-pager/logbook-pager';
 import { LogbookTable } from '../logbook-table/logbook-table';
 import { NewLogbookDialog } from '../new-logbook-dialog/new-logbook-dialog';
@@ -94,7 +93,6 @@ function scrollParent(element: HTMLElement): HTMLElement | null {
     NgTemplateOutlet,
     NoResults,
     PinnedEntries,
-    SampleLogbooksButton,
     UserControls,
   ],
   templateUrl: './logbook-list.html',

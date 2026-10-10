@@ -20,9 +20,9 @@ x-node: &node
     - backend_node_modules:/app/backend/node_modules
     - frontend_node_modules:/app/frontend/node_modules
     - frontend_angular_cache:/app/frontend/.angular
-  environment: &watch
-    # File events do not always cross from the host into a container, so the watchers poll instead.
-    CHOKIDAR_USEPOLLING: 'true'
+  environment:
+    &watch # File events do not always cross from the host into a container, so the watchers poll instead.
+    CHOKIDAR_USEPOLLING: "true"
     TSC_WATCHFILE: PriorityPollingInterval
     TSC_WATCHDIRECTORY: FixedPollingInterval
 
@@ -35,12 +35,12 @@ services:
       POSTGRES_PASSWORD: elogbook
       POSTGRES_DB: elogbook
     ports:
-      - '127.0.0.1:5433:5432'
+      - "127.0.0.1:5433:5432"
     volumes:
       - elogbook-db:/var/lib/postgresql/data
       - ./backend/docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U elogbook -d elogbook']
+      test: ["CMD-SHELL", "pg_isready -U elogbook -d elogbook"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -48,7 +48,7 @@ services:
   # Installs the dependencies into the volumes, then exits. The others wait for it.
   deps:
     <<: *node
-    restart: 'no'
+    restart: "no"
     command:
       - sh
       - -c
@@ -68,6 +68,9 @@ services:
   backend:
     <<: *node
     command: npm run start:dev -w backend
+    env_file:
+      - path: backend/.env
+        required: false
     depends_on:
       db:
         condition: service_healthy
@@ -75,15 +78,14 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *watch
-      PORT: '3000'
+      PORT: "3000"
       DATABASE_URL: postgres://elogbook:elogbook@db:5432/elogbook
       # Development only. Anything else needs its own secret (openssl rand -base64 48).
       JWT_SECRET: development-only-secret-change-me-0123456789
       CORS_ORIGINS: http://localhost:4300,http://127.0.0.1:4300
       ADMIN_EMAILS: anna.lindqvist@example.org
-      DEMO_ENABLED: 'true'
     ports:
-      - '127.0.0.1:3000:3000'
+      - "127.0.0.1:3000:3000"
     healthcheck:
       test:
         - CMD
@@ -106,7 +108,7 @@ services:
       # The dev server forwards /api to the API, so the browser only ever talks to one address.
       API_PROXY_TARGET: http://backend:3000
     ports:
-      - '127.0.0.1:4300:4300'
+      - "127.0.0.1:4300:4300"
 
 volumes:
   elogbook-db:

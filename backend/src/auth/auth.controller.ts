@@ -3,20 +3,17 @@ import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import type { User } from '../users/entities/user.entity.js';
-import { AuthService, toUserDto } from './auth.service.js';
+import { toUserDto } from '../users/user-dto.js';
+import { AuthService } from './auth.service.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import { Public } from './decorators/public.decorator.js';
 import { AuthResponseDto } from './dto/auth-response.dto.js';
 import { CredentialsDto } from './dto/credentials.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LocalAuthGuard } from './guards/local-auth.guard.js';
+import { authLimit } from './auth-limit.js';
 import { Role } from './role.enum.js';
 import type { JwtUser, UserDto } from './interfaces/jwt-user.interface.js';
-
-// Sign-in and sign-up are the routes worth guessing at, so they get a much lower limit than the rest.
-const authLimit = {
-  default: { limit: () => Number(process.env.AUTH_RATE_LIMIT ?? 10), ttl: 60_000 },
-};
 
 @ApiTags('auth')
 @ApiBearerAuth()
@@ -30,7 +27,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiBody({ type: CredentialsDto })
   @Post('login')
-  login(@Req() request: Request & { user: User }): AuthResponseDto {
+  login(@Req() request: Request & { user: User }): Promise<AuthResponseDto> {
     return this.authService.login(request.user);
   }
 

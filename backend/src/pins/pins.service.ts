@@ -2,16 +2,14 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { entrySubject } from '../casl/ability.js';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { toUserDto } from '../auth/auth.service.js';
+import { toUserDto } from '../users/user-dto.js';
+import { MAX_PINNED_ENTRIES } from './pins.constants.js';
 import type { JwtUser, UserDto } from '../auth/interfaces/jwt-user.interface.js';
 import { Entry } from '../entries/entities/entry.entity.js';
 import { EntriesService } from '../entries/entries.service.js';
 import { CaslAbilityFactory } from '../casl/casl-ability.factory.js';
 import { User } from '../users/entities/user.entity.js';
 import { PinnedEntry } from './entities/pinned-entry.entity.js';
-
-/** How many entries one person can pin. A short list stays useful; a long one is just another list. */
-export const MAX_PINNED_ENTRIES = 4;
 
 /** An entry the person pinned, with where it lives: what the list page's "Pinned" panel shows. */
 export interface PinnedEntryDto {

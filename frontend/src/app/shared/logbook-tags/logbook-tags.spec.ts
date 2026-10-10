@@ -8,7 +8,6 @@ describe('LogbookTags', () => {
     instrument?: string | null;
     proposalId?: string | null;
     role?: MemberRole | null;
-    demo?: boolean;
     visibility?: Visibility | null;
   }) => {
     TestBed.resetTestingModule(); // each call renders a fresh component
@@ -34,10 +33,12 @@ describe('LogbookTags', () => {
     expect(tags(render({ role: 'viewer' }))).toEqual(['visibilityviewer']);
   });
 
-  it('can also show "Demo" and who can read the logbook, for the list', () => {
-    expect(
-      tags(render({ instrument: 'LoKI', demo: true, role: 'owner', visibility: 'private' })),
-    ).toEqual(['sensorsLoKI', 'Demo', 'workspace_premiumowner', 'lock Private']);
+  it('can also show who can read the logbook, for the list', () => {
+    expect(tags(render({ instrument: 'LoKI', role: 'owner', visibility: 'private' }))).toEqual([
+      'sensorsLoKI',
+      'workspace_premiumowner',
+      'lock Private',
+    ]);
 
     expect(tags(render({ visibility: 'facility-read' }))).toEqual(['public Facility-wide read']);
   });

@@ -39,8 +39,10 @@ const EDITOR_MARKS = new Set([
 describe('the demo content', () => {
   const bundles = createDemoLogbooks(user, now);
 
-  it('is a set of logbooks, each with entries', () => {
-    expect(bundles.length).toBeGreaterThanOrEqual(10);
+  it('is enough logbooks to need paging, each with entries', () => {
+    // Not an exact number: how many there are is for the content to decide, and tests that depend on it break
+    // whenever someone adds one. (The API tests compare with what this set contains.)
+    expect(bundles.length).toBeGreaterThanOrEqual(20);
     for (const { logbook, entries } of bundles) {
       expect(logbook.demo, logbook.title).toBe(true);
       expect(entries.length, logbook.title).toBeGreaterThan(0);
@@ -70,12 +72,6 @@ describe('the demo content', () => {
         logbook.title,
       ).toBe(true);
     }
-  });
-
-  it('never shares a sample logbook with the real demo accounts', () => {
-    const demoAccounts = ['anna.lindqvist', 'jon.carter', 'mei.tanaka'];
-    const emails = bundles.flatMap((b) => b.logbook.members.map((m) => m.user.email));
-    expect(emails.filter((e) => demoAccounts.some((a) => e.startsWith(a)))).toEqual([]);
   });
 
   it('is never dated in the future, and entries are not older than their logbook', () => {

@@ -26,8 +26,6 @@ export interface Logbook {
   /** The person responsible for the logbook; also in `members`, with the `owner` role. */
   owner: User;
   members: LogbookMember[];
-  /** Sample content made with "Add sample logbooks"; shown with a "Demo" label. */
-  demo: boolean;
   /**
    * What the signed-in person may do with this logbook. The server works it out and sends it, so the
    * screens never apply permission rules themselves (the server enforces them anyway).

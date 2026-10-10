@@ -16,7 +16,7 @@ export class DeleteLogbook {
   private readonly store = inject(LogbooksStore);
   private readonly snackBar = inject(MatSnackBar);
 
-  /** Resolves `true` when the logbook was deleted. Demo logbooks only get an explanation. */
+  /** Resolves `true` when the logbook was deleted. */
   async confirmAndDelete(logbook: Logbook): Promise<boolean> {
     const confirmed = await firstValueFrom(
       this.dialog

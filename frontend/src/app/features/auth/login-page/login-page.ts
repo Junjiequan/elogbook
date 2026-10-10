@@ -7,7 +7,19 @@ import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/for
 import { MatInput } from '@angular/material/input';
 
 import { ApiAuthService, AuthError } from '../../../core/auth/api-auth.service';
+import { Redirector } from '../../../core/auth/redirector';
 import { UserControls } from '../../../shared/user-controls/user-controls';
+
+/** Messages for the `oauthError` codes. */
+const OAUTH_MESSAGES: Record<string, string> = {
+  denied: 'Sign-in was cancelled.',
+  expired: 'That sign-in took too long. Try again.',
+  unverified: 'Your email address is not verified with the provider, so it cannot be used here.',
+  conflict: 'This email address is already linked to a different account at the provider.',
+  not_allowed: 'Accounts with this email address are not allowed to sign in here.',
+  no_account: 'There is no account for this email address yet. Ask for access first.',
+  unavailable: 'The sign-in service cannot be reached right now. Try again in a moment.',
+};
 
 @Component({
   selector: 'app-login-page',
@@ -30,13 +42,18 @@ import { UserControls } from '../../../shared/user-controls/user-controls';
 export class LoginPage {
   /** Where to go after signing in (from the `returnUrl` query parameter). */
   readonly returnUrl = input<string>();
+  /** Why OAuth sign-in failed (`oauthError` query parameter). */
+  readonly oauthError = input<string>();
 
   private readonly auth = inject(ApiAuthService);
   private readonly router = inject(Router);
+  private readonly redirector = inject(Redirector);
   private readonly fb = inject(FormBuilder).nonNullable;
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
   protected readonly mode = signal<'signin' | 'signup'>('signin');
+  /** Button text; `null` when off. */
+  protected readonly oauthLabel = signal<string | null>(null);
 
   protected readonly signInForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -50,6 +67,14 @@ export class LoginPage {
   });
 
   constructor() {
+    void this.auth.oauthLabel().then((label) => this.oauthLabel.set(label));
+    // Show why OAuth failed.
+    effect(() => {
+      const code = this.oauthError();
+      if (code) {
+        this.error.set(OAUTH_MESSAGES[code] ?? 'Signing in did not work. Try again.');
+      }
+    });
     // Signed in (just now, or already) → continue to where the visitor was heading.
     effect(() => {
       if (this.auth.user()) {
@@ -61,6 +86,10 @@ export class LoginPage {
   protected setMode(mode: 'signin' | 'signup'): void {
     this.mode.set(mode);
     this.error.set(null);
+  }
+
+  protected signInWithProvider(): void {
+    this.redirector.to(this.auth.oauthLoginUrl(this.safeReturnUrl()));
   }
 
   protected signIn(): Promise<void> {

@@ -6,8 +6,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSelectHarness } from '@angular/material/select/testing';
-import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
+import { provideTestProposals } from '../../../testing/test-proposals';
 import { InsertSampleDialog } from './insert-sample-dialog';
 
 describe('InsertSampleDialog', () => {
@@ -23,7 +22,7 @@ describe('InsertSampleDialog', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: MatDialogRef, useValue: ref },
-        { provide: ProposalRepository, useClass: DemoProposalRepository },
+        provideTestProposals(),
       ],
     });
     fixture = TestBed.createComponent(InsertSampleDialog);

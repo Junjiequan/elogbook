@@ -55,15 +55,12 @@ export class LogbooksStore {
 
   /**
    * Permanently deletes a logbook the server says the current user may delete (an owner, or an
-   * administrator). Sample logbooks are protected: they go all at once with "Remove sample logbooks".
+   * administrator).
    */
   async delete(id: string): Promise<void> {
     const logbook = this._logbooks().find((l) => l.id === id);
     if (!logbook?.canDelete) {
       throw new Error('You are not allowed to delete this logbook.');
-    }
-    if (logbook.demo) {
-      throw new Error('Sample logbooks cannot be deleted one by one.');
     }
     await this.repository.deleteLogbook(id);
     this._logbooks.update((all) => all.filter((l) => l.id !== id));

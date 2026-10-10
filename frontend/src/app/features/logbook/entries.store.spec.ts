@@ -14,7 +14,6 @@ const logbook = (
     user: User;
     role: MemberRole;
   }[],
-  demo = false,
 ): Logbook => ({
   id: 'l1',
   title: 'My logbook',
@@ -23,7 +22,6 @@ const logbook = (
   proposalId: null,
   visibility: 'private',
   members,
-  demo,
   owner: TEST_USERS[0],
   ...OWNER_ACCESS,
   createdAt: '2026-10-01T10:00:00Z',
@@ -104,16 +102,6 @@ describe('EntriesStore.delete', () => {
     expect(repo.deleteEntry).toHaveBeenCalledTimes(1);
 
     expect(repo.deleteEntry).toHaveBeenCalledWith('a');
-  });
-
-  it('never deletes entries of a sample logbook, even for an administrator', async () => {
-    const { repo, store } = setup(anna, true);
-    await store.load('l1');
-
-    await expect(
-      store.delete(entry('a'), as({ ...owned, demo: true }, anna, true)),
-    ).rejects.toThrowError(/sample/i);
-    expect(repo.deleteEntry).not.toHaveBeenCalled();
   });
 
   it('refuses an entry that belongs to a different logbook', async () => {

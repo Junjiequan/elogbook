@@ -16,7 +16,6 @@ export interface DeleteLogbookDialogData {
 
 /**
  * Asks "are you sure?" before a logbook is deleted; closes with `true` only on "Yes".
- * Demo logbooks cannot be deleted, so for those it just explains why.
  */
 @Component({
   selector: 'app-delete-logbook-dialog',

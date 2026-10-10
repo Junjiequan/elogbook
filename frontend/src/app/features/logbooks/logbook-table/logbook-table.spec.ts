@@ -22,7 +22,6 @@ const logbook = (id: string, extra: Partial<Logbook> = {}): Logbook => ({
   members: [{ user: anna, role: 'owner' }],
   owner: TEST_USERS[0],
   ...OWNER_ACCESS,
-  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
   ...extra,
@@ -72,12 +71,11 @@ describe('LogbookTable', () => {
     expect(updated.startsWith('2026-10-01')).toBe(true);
   });
 
-  it('shows the current user’s role and marks demo logbooks', async () => {
+  it('shows the current user’s role', async () => {
     await create([
       logbook('a'),
       sharedWithMe(
         logbook('b', {
-          demo: true,
           members: [
             { user: jon, role: 'owner' },
             { user: anna, role: 'viewer' },
@@ -88,8 +86,6 @@ describe('LogbookTable', () => {
 
     expect(el().querySelectorAll('.role')[0].textContent?.trim()).toBe('owner');
     expect(el().querySelectorAll('.role')[1].textContent?.trim()).toBe('viewer');
-    expect(rows()[1].querySelector('.badge')?.textContent).toContain('Demo');
-    expect(rows()[0].querySelector('.badge')).toBeNull();
   });
 
   it('shows what a role allows when the role is hovered or focused', async () => {

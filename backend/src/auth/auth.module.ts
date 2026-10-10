@@ -6,6 +6,8 @@ import type { AppConfig } from '../config/configuration.js';
 import { UsersModule } from '../users/users.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { OAuthController } from './oauth/oauth.controller.js';
+import { OAuthService } from './oauth/oauth.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { LocalStrategy } from './strategies/local.strategy.js';
 
@@ -20,8 +22,8 @@ import { LocalStrategy } from './strategies/local.strategy.js';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  controllers: [AuthController, OAuthController],
+  providers: [AuthService, OAuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -1,11 +1,15 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { UserIdentity } from './entities/user-identity.entity.js';
 import { User } from './entities/user.entity.js';
 
 export const normaliseEmail = (email: string): string => email.trim().toLowerCase();
 
 const UNIQUE_VIOLATION = '23505';
+
+/** The account is already linked to a different person at this provider. */
+export class IdentityConflictError extends Error {}
 
 @Injectable()
 export class UsersService {
@@ -59,23 +63,99 @@ export class UsersService {
   }
 
   /**
+   * The account for a person a provider has vouched for. They are known by the provider's stable id, not their
+   * email: a returning person is found by it, a first-time one is matched to an existing or invited account by
+   * email (and linked), or gets a new account when `create` is set. `null`: no account and none to be made.
+   * Throws `IdentityConflictError` if that account is already linked to somebody else at the same provider.
+   */
+  async signInWithIdentity(
+    identity: { issuer: string; subject: string; email: string; name: string },
+    create: boolean,
+  ): Promise<User | null> {
+    const attempt = () =>
+      this.users.manager.transaction(async (manager) => {
+        const linked = await manager.findOneBy(UserIdentity, {
+          issuer: identity.issuer,
+          subject: identity.subject,
+        });
+        if (linked) {
+          return manager.findOneByOrFail(User, { id: linked.userId });
+        }
+        const key = normaliseEmail(identity.email);
+        const existing = await manager
+          .createQueryBuilder(User, 'user')
+          .setLock('pessimistic_write')
+          .where('user.email = :email', { email: key })
+          .getOne();
+        if (!existing && !create) {
+          return null;
+        }
+        if (
+          existing &&
+          (await manager.existsBy(UserIdentity, { userId: existing.id, issuer: identity.issuer }))
+        ) {
+          throw new IdentityConflictError();
+        }
+        const user =
+          existing ?? manager.create(User, { email: key, roles: [], passwordHash: null });
+        if (!existing || existing.invited) {
+          user.name = identity.name.trim() || key.split('@')[0];
+          user.invited = false;
+        }
+        const saved = await manager.save(user);
+        await manager.insert(UserIdentity, {
+          issuer: identity.issuer,
+          subject: identity.subject,
+          userId: saved.id,
+        });
+        return saved;
+      });
+    try {
+      return await attempt();
+    } catch (error) {
+      if (error instanceof QueryFailedError && error.driverError?.code === UNIQUE_VIOLATION) {
+        return attempt(); // two first sign-ins at once
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Makes an account exist exactly as given (the local accounts file): created if new, otherwise brought in
+   * line, including an account that was only invited or that someone registered first.
+   */
+  async applyAccount(account: {
+    email: string;
+    name: string;
+    roles: string[];
+    passwordHash: string;
+  }): Promise<'created' | 'updated' | 'unchanged'> {
+    const existing = await this.findForLogin(account.email);
+    if (!existing) {
+      await this.users.save(
+        this.users.create({ ...account, email: normaliseEmail(account.email), invited: false }),
+      );
+      return 'created';
+    }
+    const same =
+      existing.name === account.name &&
+      existing.passwordHash === account.passwordHash &&
+      !existing.invited &&
+      [...existing.roles].sort().join() === [...account.roles].sort().join();
+    if (same) {
+      return 'unchanged';
+    }
+    Object.assign(existing, { ...account, email: existing.email, invited: false });
+    await this.users.save(existing);
+    return 'updated';
+  }
+
+  /**
    * The accounts for these emails, creating an invited one (no password yet) for anybody new: sharing
    * a logbook with a colleague must work before they have signed in for the first time.
    */
   async ensureByEmails(emails: string[], manager: EntityManager): Promise<Map<string, User>> {
-    return this.ensurePeople(
-      emails.map((email) => ({ email })),
-      manager,
-    );
-  }
-
-  /** The same, for people whose name is known (the colleagues in the sample logbooks). */
-  async ensurePeople(
-    people: { email: string; name?: string }[],
-    manager: EntityManager,
-  ): Promise<Map<string, User>> {
-    const named = new Map(people.map((p) => [normaliseEmail(p.email), p.name]));
-    const keys = [...named.keys()];
+    const keys = [...new Set(emails.map(normaliseEmail))];
     await manager
       .createQueryBuilder()
       .insert()
@@ -83,7 +163,7 @@ export class UsersService {
       .values(
         keys.map((email) => ({
           email,
-          name: named.get(email) ?? email.split('@')[0],
+          name: email.split('@')[0],
           invited: true,
           roles: [],
         })),

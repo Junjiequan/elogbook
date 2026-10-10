@@ -11,7 +11,7 @@ This is a monorepo: two apps, each with its own `package.json`, tied together by
 | Folder                          | What it is                                                                                                                                                                      |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`frontend/`](frontend)         | The Angular app. It talks to the API for everything (sign-in, logbooks, entries, pins); nothing is stored in the browser except the session token and your appearance settings. |
-| [`backend/`](backend/README.md) | The NestJS REST API on PostgreSQL: sign-in (JWT), logbooks, members, entries, version history, pins, sample content. It decides who may do what and tells the app.              |
+| [`backend/`](backend/README.md) | The NestJS REST API on PostgreSQL: sign-in (JWT), logbooks, members, entries, version history, pins. It decides who may do what and tells the app.                              |
 
 ```bash
 nvm use                  # Node 24 (see .nvmrc); needs Node ^22.22.3 or ^24.15
@@ -31,17 +31,16 @@ npm run build:pages      # the frontend as GitHub Pages builds it
 npm test -w frontend     # (or any script of one app: -w frontend / -w backend) Vitest in Chrome, in watch mode
 ```
 
-Try it with **sample logbooks**: the **Add sample logbooks** button (next to "All logbooks") creates a set of
-realistic logbooks for you: one detailed three-day LoKI SANS beamtime (run tables, sample blocks, checklists, a
-shear-cell schematic, a detector image, an I(Q) plot, fit results, a leak incident, handover notes and a version
-history) plus a dozen smaller ones with different roles (owner / editor / viewer) and access levels, so the list,
-search and table view have something to show. **Remove sample logbooks** deletes exactly those again, and nothing
-else. They are personal (nobody else sees yours) and the figures and numbers are illustrative, not real
-measurements. The content lives in `backend/src/demo/`; the API can switch the feature off (`DEMO_ENABLED=false`).
+For local development and demos there is a separate tool, the `demo/` folder, outside both apps. Run
+`npm run dummy:seed` and everyone who can sign in gets 30 realistic logbooks (a detailed three-day LoKI SANS beamtime and
+29 smaller ones, with entries, version history, pins and fictional colleagues in different roles); `npm run dummy:remove`
+removes exactly those again. Nothing runs it automatically; `dummy:seed` makes anything only when `ENABLE_DEMO=true` is set
+(in `backend/.env` or the environment). Unset or any other value: nothing is made. See `demo/README.md`.
 
-Create an account on the sign-in page, or, with the API's seed command (`npm run seed -w backend`), sign in with
-one of the demo accounts (password `demo1234`): Anna Lindqvist, Jon Carter or Mei Tanaka. Share a logbook with
-another account's email address to try the permissions.
+`npm run setup:backend` also creates `backend/config/local-accounts.json` with three **administrator accounts** (random
+passwords, written in that git-ignored file); the API makes them when it starts. See `backend/README.md`.
+
+Create an account on the sign-in page. Share a logbook with another account's email address to try the permissions.
 
 ## What the MVP covers
 
@@ -83,8 +82,6 @@ shown in the logbook's `owner` field; they are always also a member with the own
   read it, as a viewer, without being listed. Nobody gains more than that by it.
 - **Administrators** (the emails in the API's `ADMIN_EMAILS`) get no extra access to read or edit. They may delete a
   logbook or entry that they can already open.
-- **Sample logbooks** follow the same roles, are personal to the person who added them, and are removed all at once
-  with "Remove sample logbooks".
 - The rules are written once, in `backend/src/casl/ability.ts`, and enforced by the API on every request. The app only
   shows or hides buttons using what the API tells it (`myRole`, `canWrite`, `canConfigure`, `canDelete`).
 
@@ -93,7 +90,7 @@ shown in the logbook's `owner` field; they are always also a member with the own
 - **Live collaboration / "see updates at home".** Plan: Yjs with the Tiptap collaboration extension and a
   Hocuspocus (or NestJS WebSocket) server. The editor is already isolated in `RichTextEditor`, so this changes
   that component and the repository, not the pages.
-- **Facility sign-in / no-VPN access.** Plan: OIDC against the facility identity provider, as another Passport strategy in the API (see `backend/README.md`). Today people sign in with an email and password the API stores (scrypt-hashed).
+- **Facility sign-in / no-VPN access.** People sign in with an email and password the API stores (scrypt-hashed), or through an OAuth (OpenID Connect) identity provider: Google now, Ping or another later by changing `OAUTH_*` settings (see `backend/README.md`).
 - **Real proposal / sample data.** Implement `ProposalRepository` against the proposal system or SciCat.
 - **Instrument scan macros.** Plan: a second structured node (like `sampleInfo`) created from control-software
   events, e.g. a "scan" block with run number and a link to the data.
@@ -109,6 +106,7 @@ elogbook/
 ├── docker-compose.yaml the whole development stack: frontend, backend, PostgreSQL
 ├── frontend/           Angular app: its own package.json, angular.json, tsconfig*, eslint, vitest
 ├── backend/            NestJS API: its own package.json, tsconfig*, Dockerfile (production image)
+├── demo/               development tool, outside both apps: dummy logbooks (own package.json)
 └── .github/workflows/  CI: lint, unit tests, API e2e tests, GitHub Pages deploy of frontend/
 ```
 
@@ -133,8 +131,8 @@ npm run down         # stop everything (the database keeps its data in a Docker 
 - Dependencies are installed for Linux into Docker volumes; your own `node_modules` are not used inside the containers
   (and need not exist). The first start takes a minute or two for that.
 - File watching uses polling, because file events do not reliably cross from macOS or Windows into a container.
-- The API gets its settings from the compose file (a development-only `JWT_SECRET`), not from `backend/.env`.
-- Demo accounts: `docker compose exec backend npm run seed -w backend`. Logs: `docker compose logs -f backend`.
+- The API reads `backend/.env` too (for example the `OAUTH_*` settings), but the compose file wins for the database address, `JWT_SECRET` (development only), ports and CORS. Restart the API after changing `.env`: `docker compose up -d backend`.
+- Dummy logbooks: `npm run dummy:seed` (needs `ENABLE_DEMO=true`) from your machine. Logs: `docker compose logs -f backend`.
 - Run either this or `npm start`, not both: they use the same ports.
 
 ## Architecture (frontend)
@@ -148,7 +146,7 @@ frontend/src/
     │   ├── api/                  AppConfig (where the API is: config.json)
     │   ├── auth/                 AuthService (abstract), ApiAuthService (sign-in against the API), HTTP interceptor, route guard, CurrentUserService
     │   ├── data-access/          the ports (abstract classes): LogbookRepository (implemented by HttpLogbookRepository, which calls the API)
-    │   │                         and ProposalRepository (proposals / samples; fixed demo data until a proposal system is connected)
+    │   │                         and ProposalRepository (proposals / samples, served by the API from `backend/config/proposals.json`)
     │   └── theme/                light / dark ThemeService
     ├── features/
     │   ├── logbooks/             logbook-list/, logbook-card/, logbook-table/, member-avatars/, pinned-entries/, no-results/, logbook-filters.ts, new-logbook-dialog/,
@@ -183,7 +181,8 @@ Conventions
 
 ## Sign-in and the API
 
-People sign in with an email and password (`POST /auth/login`, or sign up with `/auth/register`). The API answers with a
+People sign in with an email and password (`POST /auth/login`, or sign up with `/auth/register`), or with "Continue with
+Google" when the API has OAuth configured (`OAUTH_*`, see `backend/README.md`). The API answers with a
 token that the app keeps in the browser's local storage until it expires, sends with every request (`authInterceptor`),
 and drops when the API stops accepting it, which sends you back to the sign-in page and then to where you were. Sign-up
 can be switched off (`AUTH_ALLOW_REGISTRATION=false`). Administrators are the emails in the API's `ADMIN_EMAILS`.

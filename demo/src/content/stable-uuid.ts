@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-/** The same text always gives the same UUID, so making the sample logbooks twice cannot duplicate them. */
+/** The same text always gives the same UUID, so making the dummy logbooks twice cannot duplicate them. */
 export function stableUuid(key: string): string {
   const bytes = createHash('sha1').update(`elogbook-demo:${key}`).digest().subarray(0, 16);
   bytes[6] = (bytes[6] & 0x0f) | 0x50; // version 5

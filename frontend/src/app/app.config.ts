@@ -18,7 +18,7 @@ import { ApiAuthService } from './core/auth/api-auth.service';
 import { AuthService } from './core/auth/auth.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { DATE_TIME_FORMAT } from './core/date-format';
-import { DemoProposalRepository } from './core/data-access/demo-proposal.repository';
+import { HttpProposalRepository } from './core/data-access/http-proposal.repository';
 import { HttpLogbookRepository } from './core/data-access/http-logbook.repository';
 import { LogbookRepository } from './core/data-access/logbook.repository';
 import { ProposalRepository } from './core/data-access/proposal.repository';
@@ -43,7 +43,6 @@ export const appConfig: ApplicationConfig = {
     { provide: DATE_PIPE_DEFAULT_OPTIONS, useValue: { dateFormat: DATE_TIME_FORMAT } },
     { provide: AuthService, useExisting: ApiAuthService },
     { provide: LogbookRepository, useClass: HttpLogbookRepository },
-    // The proposal system has no API yet: fixed proposals and samples.
-    { provide: ProposalRepository, useClass: DemoProposalRepository },
+    { provide: ProposalRepository, useClass: HttpProposalRepository },
   ],
 };

@@ -38,7 +38,12 @@ libpeerconnection.log
 testem.log
 typings
 __screenshots__/
+.vitest-attachments/
 
 # System files
 .DS_Store
 Thumbs.db
+
+# Real configuration files of a deployment (accounts with passwords, ...); the *.example.json files stay
+backend/config/*.json
+!backend/config/*.example.json

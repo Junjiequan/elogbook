@@ -30,6 +30,4 @@ export interface MemberLike {
 export interface LogbookLike {
   visibility: Visibility;
   members: readonly MemberLike[];
-  /** Sample content generated for a new user: personal, so the facility-wide rule does not apply. */
-  demo?: boolean;
 }

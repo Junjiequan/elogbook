@@ -8,9 +8,6 @@
     <mat-icon>description</mat-icon>{{ proposalId() }}
   </span>
 }
-@if (demo()) {
-  <span class="tag tag--demo" title="Demo logbook, it cannot be deleted">Demo</span>
-}
 @if (role(); as currentRole) {
   <app-table-popover
     [heading]="'Your role: ' + currentRole"

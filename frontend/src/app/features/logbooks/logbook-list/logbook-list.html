@@ -15,10 +15,7 @@
 
   <app-pinned-entries class="pinned" />
 
-  <div class="section-head">
-    <h2 class="section-title">All logbooks</h2>
-    <app-sample-logbooks />
-  </div>
+  <h2 class="section-title">All logbooks</h2>
 
   <!-- One row of controls, kept in view while scrolling a long list. -->
   <!-- Sits just above the bar: once it has scrolled out of sight, the bar is stuck to the top. -->
@@ -178,9 +175,7 @@
     }
     @default {
       @if (store.logbooks().length === 0) {
-        <p class="message">
-          No logbooks yet. Create one to get started, or add sample logbooks to look around.
-        </p>
+        <p class="message">No logbooks yet. Create one to get started.</p>
       } @else if (visible().length === 0) {
         <app-no-results [filters]="activeFilters()" (cleared)="clearFilters()" />
       } @else if (shownView() === 'cards') {

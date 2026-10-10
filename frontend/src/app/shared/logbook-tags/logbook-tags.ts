@@ -12,7 +12,7 @@ const ROLE_ICONS: Record<MemberRole, string> = {
 
 /**
  * The small coloured tags describing a logbook: instrument, proposal and the user's role, and on the
- * list also "Demo" and who can read it. Instrument uses ESS Cyan, proposal ESS Forest, demo ESS Orange;
+ * list also who can read it. Instrument uses ESS Cyan, proposal ESS Forest;
  * the role is navy (owner), navy tint (editor) or grey. Hovering or focusing the role tag shows what that
  * role can and cannot do.
  */
@@ -27,7 +27,6 @@ export class LogbookTags {
   readonly instrument = input<string | null>(null);
   readonly proposalId = input<string | null>(null);
   readonly role = input<MemberRole | null>(null);
-  readonly demo = input(false);
   readonly visibility = input<Visibility | null>(null);
 
   protected readonly accessTitle = computed(() =>

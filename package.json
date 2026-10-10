@@ -6,7 +6,8 @@
   "license": "MIT",
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "demo"
   ],
   "scripts": {
     "start": "concurrently -n frontend,backend -c cyan,green \"npm:start:frontend\" \"npm:start:backend\"",
@@ -15,13 +16,15 @@
     "up": "docker compose up --build",
     "down": "docker compose down",
     "setup:backend": "npm run db:up && npm run env:init -w backend",
+    "dummy:seed": "npm run seed -w @elogbook/demo",
+    "dummy:remove": "npm run remove -w @elogbook/demo",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose stop db",
     "build": "npm run build --workspaces --if-present",
     "build:pages": "npm run build:pages -w frontend",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test:ci --workspaces --if-present",
-    "test:e2e": "npm run test:e2e -w backend",
+    "test:e2e": "npm run test:e2e -w backend && npm run test:e2e -w @elogbook/demo",
     "format:check": "npm run format:check --workspaces --if-present"
   },
   "devDependencies": {

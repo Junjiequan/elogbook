@@ -16,7 +16,6 @@ export interface DeleteEntryDialogData {
 
 /**
  * Asks "are you sure?" before an entry is deleted; closes with `true` only on "Yes".
- * Entries of a demo logbook cannot be deleted, so for those it just explains why.
  */
 @Component({
   selector: 'app-delete-entry-dialog',

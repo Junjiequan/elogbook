@@ -30,6 +30,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   /** One lookup per request: a deleted person, or a changed role, takes effect at once. */
   async validate(payload: JwtPayload): Promise<JwtUser> {
+    if (!payload.sub) {
+      throw new UnauthorizedException(); // findOneBy({ id: undefined }) matches anybody
+    }
     const user = await this.users.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException();

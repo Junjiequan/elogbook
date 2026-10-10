@@ -3,18 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { AppConfig } from '../config/configuration.js';
 import type { User } from '../users/entities/user.entity.js';
+import { toUserDto } from '../users/user-dto.js';
 import { UsersService } from '../users/users.service.js';
 import type { AuthResponseDto } from './dto/auth-response.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
-import type { UserDto } from './interfaces/jwt-user.interface.js';
 import { Role } from './role.enum.js';
 import { hashPassword, verifyPassword } from './utils/password.js';
-
-export const toUserDto = (user: Pick<User, 'id' | 'name' | 'email'>): UserDto => ({
-  id: user.id,
-  name: user.name,
-  email: user.email,
-});
 
 @Injectable()
 export class AuthService {
@@ -43,7 +37,7 @@ export class AuthService {
     return this.login(user);
   }
 
-  login(user: User): AuthResponseDto {
+  async login(user: User): Promise<AuthResponseDto> {
     const expiresIn = this.config.get('jwt.expiresIn', { infer: true });
     return {
       access_token: this.jwt.sign({ sub: user.id }, { expiresIn }),

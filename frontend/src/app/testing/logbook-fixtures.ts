@@ -15,12 +15,12 @@ export const OWNER_ACCESS: Access = {
  * owners manage and delete; editors write; viewers read. (Administrators may delete what they can open.)
  */
 export function accessFor(
-  logbook: { visibility: Visibility; members: LogbookMember[]; demo?: boolean },
+  logbook: { visibility: Visibility; members: LogbookMember[] },
   user: User,
   isAdmin = false,
 ): Access {
   const own = logbook.members.find((m) => m.user.id === user.id)?.role ?? null;
-  const open = logbook.visibility === 'facility-read' && !logbook.demo;
+  const open = logbook.visibility === 'facility-read';
   const myRole = own ?? (open ? 'viewer' : null);
   return {
     myRole,

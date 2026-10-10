@@ -1,5 +1,5 @@
 import { type AppAbility, logbookSubject, roleOf } from '../casl/ability.js';
-import { toUserDto } from '../auth/auth.service.js';
+import { toUserDto } from '../users/user-dto.js';
 import type { UserDto } from '../auth/interfaces/jwt-user.interface.js';
 import type { LogbookMember, MemberRole } from './entities/logbook-member.entity.js';
 import type { Logbook, Visibility } from './entities/logbook.entity.js';
@@ -15,8 +15,6 @@ export interface LogbookDto {
   /** The person responsible for the logbook (also a member, with the `owner` role). */
   owner: UserDto;
   members: { user: UserDto; role: MemberRole }[];
-  /** A sample logbook made by `POST /demo`. */
-  demo: boolean;
   /** What the person asking may do, so a screen never has to work it out: the server decides. */
   myRole: MemberRole | null;
   canWrite: boolean;
@@ -46,7 +44,6 @@ export const toLogbookDto = (
   members: [...logbook.members]
     .sort(byRoleThenName)
     .map((member) => ({ user: toUserDto(member.user), role: member.role })),
-  demo: logbook.demo,
   myRole: roleOf(logbook, userId),
   canWrite: ability.can('write', logbookSubject(logbook)),
   canConfigure: ability.can('configure', logbookSubject(logbook)),

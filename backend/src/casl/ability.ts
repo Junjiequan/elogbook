@@ -11,7 +11,6 @@ import type { AbilityUser, Action, LogbookLike, MemberRole } from './types.js';
 /** The logbook as the rules see it: members always carry `userId`. */
 interface LogbookShape {
   visibility: LogbookLike['visibility'];
-  demo?: boolean;
   members: { userId: string; role: MemberRole }[];
 }
 
@@ -31,7 +30,6 @@ const memberId = (member: LogbookLike['members'][number]): string =>
 
 const toShape = (logbook: LogbookLike): LogbookShape => ({
   visibility: logbook.visibility,
-  demo: logbook.demo,
   members: logbook.members.map((member) => ({ userId: memberId(member), role: member.role })),
 });
 
@@ -69,10 +67,8 @@ export function defineAbilityFor(user: AbilityUser): AppAbility {
         $elemMatch: roles ? { userId: user.id, role: { $in: roles } } : { userId: user.id },
       },
     });
-    // The facility-wide rule does not apply to demo logbooks: they are personal copies.
     const facility: MongoQuery = {
       [`${prefix}visibility`]: 'facility-read',
-      [`${prefix}demo`]: { $ne: true },
     };
 
     can('read', name, member());

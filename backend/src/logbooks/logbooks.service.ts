@@ -33,7 +33,7 @@ export class LogbooksService {
 
   /**
    * Every logbook the person can open, most recently updated first. The `WHERE` is the `read` rule of
-   * `@elogbook/permissions` written as SQL (member, or open to the facility and not a demo logbook); the
+   * `@elogbook/permissions` written as SQL (a member, or open to the facility); the
    * e2e spec "agrees with the permission rules" fails if the two ever drift apart.
    */
   async list(user: JwtUser): Promise<LogbookDto[]> {
@@ -44,7 +44,7 @@ export class LogbooksService {
       .leftJoinAndSelect('logbook.members', 'member')
       .leftJoinAndSelect('member.user', 'memberUser')
       .where(
-        `(logbook.visibility = 'facility-read' AND logbook.demo_user_id IS NULL) OR EXISTS (
+        `logbook.visibility = 'facility-read' OR EXISTS (
            SELECT 1 FROM logbook_members mine
            WHERE mine.logbook_id = logbook.id AND mine.user_id = :userId)`,
         { userId: user.id },

@@ -32,14 +32,11 @@ export class EntriesStore {
 
   /**
    * Permanently deletes an entry. Allowed when the server says the person may delete in this logbook
-   * (its owner, or an administrator), and never in a sample logbook (whose content is protected).
+   * (its owner, or an administrator).
    */
   async delete(entry: Entry, logbook: Logbook): Promise<void> {
     if (entry.logbookId !== logbook.id || !logbook.canDelete) {
       throw new Error('You are not allowed to delete this entry.');
-    }
-    if (logbook.demo) {
-      throw new Error('Entries of a sample logbook cannot be deleted.');
     }
     await this.repository.deleteEntry(entry.id);
     this._entries.update((all) => all.filter((e) => e.id !== entry.id));

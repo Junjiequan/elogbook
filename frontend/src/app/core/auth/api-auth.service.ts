@@ -46,7 +46,7 @@ const messageFor = (error: unknown): string => {
 };
 
 /**
- * Who is signed in, against the eLogbook API (`POST /auth/login` and `/auth/register`).
+ * Who is signed in, against the eLogbook API (password, or OAuth via `/auth/callback`).
  * The token is kept in this browser's local storage until it expires, so a reload keeps you signed in.
  */
 @Injectable({ providedIn: 'root' })
@@ -62,6 +62,45 @@ export class ApiAuthService extends AuthService {
 
   async signIn(email: string, password: string): Promise<void> {
     await this.start('/auth/login', { email, password });
+  }
+
+  /** Button text, or `null` when OAuth is off. */
+  async oauthLabel(): Promise<string | null> {
+    try {
+      const status = await firstValueFrom(
+        this.http.get<{ enabled: boolean; label: string | null }>(
+          `${this.config.apiUrl}/auth/oauth`,
+        ),
+      );
+      return status.enabled ? status.label : null;
+    } catch {
+      return null; // an API that cannot be reached shows the password form alone
+    }
+  }
+
+  /** Address that starts the provider sign-in. */
+  oauthLoginUrl(returnUrl?: string): string {
+    const query = returnUrl ? `?${new URLSearchParams({ returnUrl })}` : '';
+    return `${this.config.apiUrl}/auth/oauth/login${query}`;
+  }
+
+  /** Signs in with a token from the provider flow. */
+  async completeOAuth(token: string, expiresInSeconds: number): Promise<void> {
+    try {
+      const who = await firstValueFrom(
+        this.http.get<{ user: User; isAdmin: boolean }>(`${this.config.apiUrl}/auth/whoami`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
+      this.store({
+        token,
+        expiresAt: Date.now() + expiresInSeconds * 1000,
+        user: who.user,
+        isAdmin: who.isAdmin,
+      });
+    } catch (error) {
+      throw new AuthError(messageFor(error));
+    }
   }
 
   async signUp(name: string, email: string, password: string): Promise<void> {
@@ -83,17 +122,20 @@ export class ApiAuthService extends AuthService {
       const response = await firstValueFrom(
         this.http.post<AuthResponse>(`${this.config.apiUrl}${path}`, body),
       );
-      const session: Session = {
+      this.store({
         token: response.access_token,
         expiresAt: Date.now() + response.expires_in * 1000,
         user: response.user,
         isAdmin: response.isAdmin,
-      };
-      this.write(session);
-      this.session.set(session);
+      });
     } catch (error) {
       throw new AuthError(messageFor(error));
     }
+  }
+
+  private store(session: Session): void {
+    this.write(session);
+    this.session.set(session);
   }
 
   private readSession(): Session | null {

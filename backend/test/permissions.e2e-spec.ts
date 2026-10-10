@@ -40,16 +40,7 @@ describe('the API agrees with the permission rules', () => {
     await owner.patch(`/logbooks/${sharedOpen}`, { visibility: 'facility-read' }).expect(200);
     const adminViewer = await owner.createLogbook('Admin is a viewer');
     await owner.share(adminViewer, [{ person: people.admin, role: 'viewer' }]);
-    // Sample logbooks are personal, even when one of them is open to the facility.
-    await owner.post('/demo').expect(200);
-    const demo = (await owner.get('/logbooks').expect(200)).body.filter((l: any) => l.demo);
-    const ownedDemo = demo.find((l: any) => l.myRole === 'owner');
-    await owner.patch(`/logbooks/${ownedDemo.id}`, { visibility: 'facility-read' }).expect(200);
-    const demoIds: string[] = [
-      ownedDemo,
-      ...demo.filter((l: any) => l !== ownedDemo).slice(0, 2),
-    ].map((l: any) => l.id);
-    logbookIds = [privateBook, open, sharedOpen, adminViewer, ...demoIds];
+    logbookIds = [privateBook, open, sharedOpen, adminViewer];
   });
   afterAll(() => app.close());
 

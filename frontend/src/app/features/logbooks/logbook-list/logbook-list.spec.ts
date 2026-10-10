@@ -37,7 +37,6 @@ const logbook = (
   members: [{ user: TEST_USERS[0], role: 'owner' }],
   owner: TEST_USERS[0],
   ...OWNER_ACCESS,
-  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });

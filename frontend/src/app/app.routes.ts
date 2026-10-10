@@ -10,6 +10,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login-page/login-page').then((m) => m.LoginPage),
   },
   {
+    path: 'auth/callback',
+    title: 'Signing in',
+    loadComponent: () =>
+      import('./features/auth/oauth-callback/oauth-callback').then((m) => m.OAuthCallback),
+  },
+  {
     path: '',
     canActivateChild: [authGuard],
     children: [
