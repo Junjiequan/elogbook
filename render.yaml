@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: elogbook-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TRUST_PROXY
+        value: "1"
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: AUTH_ALLOW_REGISTRATION
+        value: "true"
+      - key: OAUTH_ISSUER
+        value: https://accounts.google.com
+      - key: OAUTH_LABEL
+        value: Google
+      - key: OAUTH_CLIENT_ID
+        sync: false
+      - key: OAUTH_CLIENT_SECRET
+        sync: false
+      - key: OAUTH_REDIRECT_URI
+        sync: false
+      - key: OAUTH_FRONTEND_URL
+        sync: false
+  - type: web
+    name: elogbook
+    runtime: static
+    buildCommand: npm ci && npm run build:static -w frontend
+    staticPublishPath: ./frontend/dist/elogbook/browser
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: API_URL
+        sync: false

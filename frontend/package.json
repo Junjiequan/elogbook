@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "build:pages": "ng build --base-href /elogbook/ && node -e \"require('fs').copyFileSync('dist/elogbook/browser/index.html','dist/elogbook/browser/404.html')\"",
+    "build:static": "ng build && node scripts/write-config.mjs",
     "lint": "ng lint",
     "test:ci": "ng test --watch=false",
     "format:check": "prettier --check \"src/**/*.{ts,html,scss}\""
