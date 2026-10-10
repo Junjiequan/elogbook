@@ -19,8 +19,6 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatTooltip } from '@angular/material/tooltip';
 import { filter, map } from 'rxjs';
-import { CurrentUserService } from '../../../core/auth/current-user.service';
-import { canDelete, canManage, canWrite, roleOf } from '../../../core/auth/permissions';
 import { ShareDialog, type ShareDialogData } from '../../sharing/share-dialog/share-dialog';
 import { DeleteLogbook } from '../../logbooks/delete-logbook.service';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
@@ -56,7 +54,6 @@ export class LogbookPage {
 
   protected readonly logbooks = inject(LogbooksStore);
   protected readonly entries = inject(EntriesStore);
-  private readonly currentUser = inject(CurrentUserService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly deleter = inject(DeleteLogbook);
@@ -64,19 +61,10 @@ export class LogbookPage {
   protected readonly logbook = computed(() =>
     this.logbooks.logbooks().find((l) => l.id === this.logbookId()),
   );
-  protected readonly role = computed(() => {
-    const logbook = this.logbook();
-    return logbook ? roleOf(logbook, this.currentUser.user()) : null;
-  });
-  protected readonly mayWrite = computed(() => {
-    const logbook = this.logbook();
-    return !!logbook && canWrite(logbook, this.currentUser.user());
-  });
-
-  protected readonly mayDelete = computed(() => {
-    const logbook = this.logbook();
-    return !!logbook && canDelete(logbook, this.currentUser.user(), this.currentUser.isAdmin());
-  });
+  // What the person may do comes from the server with the logbook; nothing is worked out here.
+  protected readonly role = computed(() => this.logbook()?.myRole ?? null);
+  protected readonly mayWrite = computed(() => !!this.logbook()?.canWrite);
+  protected readonly mayDelete = computed(() => !!this.logbook()?.canDelete);
 
   protected readonly filter = signal('');
   protected readonly visibleEntries = computed(() => {
@@ -172,7 +160,7 @@ export class LogbookPage {
     const logbook = this.logbook();
     if (logbook) {
       this.dialog.open<ShareDialog, ShareDialogData>(ShareDialog, {
-        data: { logbook, canManage: canManage(logbook, this.currentUser.user()) },
+        data: { logbook, canManage: logbook.canConfigure },
       });
     }
   }

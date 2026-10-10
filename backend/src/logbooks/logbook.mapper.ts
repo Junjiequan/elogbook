@@ -1,4 +1,4 @@
-import { type AppAbility, logbookSubject, roleOf } from '@elogbook/permissions';
+import { type AppAbility, logbookSubject, roleOf } from '../casl/ability.js';
 import { toUserDto } from '../auth/auth.service.js';
 import type { UserDto } from '../auth/interfaces/jwt-user.interface.js';
 import type { LogbookMember, MemberRole } from './entities/logbook-member.entity.js';
@@ -12,6 +12,8 @@ export interface LogbookDto {
   instrument: string | null;
   proposalId: string | null;
   visibility: Visibility;
+  /** The person responsible for the logbook (also a member, with the `owner` role). */
+  owner: UserDto;
   members: { user: UserDto; role: MemberRole }[];
   /** A sample logbook made by `POST /demo`. */
   demo: boolean;
@@ -40,6 +42,7 @@ export const toLogbookDto = (
   instrument: logbook.instrument,
   proposalId: logbook.proposalId,
   visibility: logbook.visibility,
+  owner: toUserDto(logbook.owner),
   members: [...logbook.members]
     .sort(byRoleThenName)
     .map((member) => ({ user: toUserDto(member.user), role: member.role })),

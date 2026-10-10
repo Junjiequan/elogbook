@@ -50,4 +50,41 @@ describe('LogbookTags', () => {
       'edit',
     );
   });
+
+  describe('the role tag', () => {
+    const card = () => document.querySelector<HTMLElement>('.cdk-overlay-container .card');
+    const roleTag = (el: HTMLElement) => el.querySelector<HTMLElement>('.tag--role')!;
+    const openFor = async (el: HTMLElement) => {
+      roleTag(el)
+        .closest('.anchor')!
+        .dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    };
+
+    it('can be reached with the keyboard, and says what it is for', () => {
+      const tag = roleTag(render({ role: 'viewer' }));
+
+      expect(tag.getAttribute('tabindex')).toBe('0');
+      expect(tag.getAttribute('aria-label')).toContain('Your role: viewer');
+    });
+
+    it('opens a card that says what a viewer can and cannot do', async () => {
+      await openFor(render({ role: 'viewer' }));
+
+      expect(card()!.getAttribute('aria-label')).toBe('Your role: viewer');
+      expect(card()!.textContent).toContain('Open the logbook and read its entries');
+      expect(card()!.textContent).toContain('Add or edit entries');
+    });
+
+    it('says an owner is not limited', async () => {
+      await openFor(render({ role: 'owner' }));
+
+      expect(card()!.textContent).toContain('Delete entries and the logbook');
+      expect(card()!.textContent).toContain('Nothing is off limits here.');
+    });
+
+    it('has no card when there is no role', () => {
+      expect(render({ role: null }).querySelector('app-table-popover')).toBeNull();
+    });
+  });
 });

@@ -20,7 +20,15 @@ describe('sample information block', () => {
     editor
       .getJSON()
       .content!.filter((n) => n.type !== 'paragraph' || n.content?.length)
-      .map((n) => (n.type === 'paragraph' ? (n.content![0] as { text?: string }).text : n.type));
+      .map((n) =>
+        n.type === 'paragraph'
+          ? (
+              n.content![0] as {
+                text?: string;
+              }
+            ).text
+          : n.type,
+      );
   const positionOfSample = () => {
     let found = -1;
     editor.state.doc.forEach((node, offset) => node.type.name === 'sampleInfo' && (found = offset));
@@ -41,24 +49,24 @@ describe('sample information block', () => {
   afterEach(() => editor.destroy());
 
   it('moves up and down one step at a time', () => {
-    expect(moveBlock(editor, positionOfSample(), -1)).toBeTrue();
+    expect(moveBlock(editor, positionOfSample(), -1)).toBe(true);
     expect(order()).toEqual(['sampleInfo', 'first', 'last']);
 
-    expect(moveBlock(editor, positionOfSample(), 1)).toBeTrue();
+    expect(moveBlock(editor, positionOfSample(), 1)).toBe(true);
     expect(order()).toEqual(['first', 'sampleInfo', 'last']);
 
-    expect(moveBlock(editor, positionOfSample(), 1)).toBeTrue();
+    expect(moveBlock(editor, positionOfSample(), 1)).toBe(true);
     expect(order()).toEqual(['first', 'last', 'sampleInfo']);
   });
 
   it('does nothing at the top or the bottom', () => {
     moveBlock(editor, positionOfSample(), -1);
-    expect(moveBlock(editor, positionOfSample(), -1)).toBeFalse();
+    expect(moveBlock(editor, positionOfSample(), -1)).toBe(false);
     expect(order()).toEqual(['sampleInfo', 'first', 'last']);
 
     moveBlock(editor, positionOfSample(), 1);
     moveBlock(editor, positionOfSample(), 1);
-    expect(moveBlock(editor, positionOfSample(), 1)).toBeFalse();
+    expect(moveBlock(editor, positionOfSample(), 1)).toBe(false);
     expect(order()).toEqual(['first', 'last', 'sampleInfo']);
   });
 

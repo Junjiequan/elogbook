@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+<mat-dialog-content class="content">
+  <p>{{ data.message }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <!-- "No" has initial focus so a stray Enter keypress cannot confirm anything. -->
+  <button mat-button mat-dialog-close cdkFocusInitial>No</button>
+  <button mat-flat-button [class.danger]="data.danger" [mat-dialog-close]="true">
+    {{ data.confirmLabel ?? 'Yes' }}
+  </button>
+</mat-dialog-actions>

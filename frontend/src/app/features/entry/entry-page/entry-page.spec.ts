@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
@@ -10,15 +11,16 @@ import {
 } from '../../../core/data-access/logbook.repository';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
 import type { Entry, Logbook, MemberRole } from '../../../core/models/logbook.models';
-import { DemoProposalRepository } from '../../../../demo/demo-proposals';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
+import { TEST_USERS } from '../../../testing/test-users';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { EntriesStore } from '../../logbook/entries.store';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { EntryAutosave, type SaveStatus } from '../entry-autosave';
 import { EntryPage } from './entry-page';
+import { OWNER_ACCESS, accessFor } from '../../../testing/logbook-fixtures';
 
-const [anna, jon] = DEMO_USERS;
+const [anna, jon] = TEST_USERS;
 
 const entry: Entry = {
   id: 'e1',
@@ -45,6 +47,9 @@ const logbook = (role: MemberRole): Logbook => ({
     { user: anna, role: 'owner' },
     { user: jon, role },
   ],
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
@@ -55,15 +60,19 @@ describe('EntryPage', () => {
     entry: ReturnType<typeof signal<Entry | undefined>>;
     status: ReturnType<typeof signal<SaveStatus>>;
     loadFailed: ReturnType<typeof signal<boolean>>;
-    open: jasmine.Spy;
-    edit: jasmine.Spy;
-    saveVersion: jasmine.Spy;
-    discard: jasmine.Spy;
+    open: Mock;
+    edit: Mock;
+    saveVersion: Mock;
+    discard: Mock;
   };
-  let entries: { delete: jasmine.Spy };
-  let dialog: { open: jasmine.Spy };
-  let navigate: jasmine.Spy;
-  let pins: jasmine.SpyObj<LogbookRepository>;
+  let entries: {
+    delete: Mock;
+  };
+  let dialog: {
+    open: Mock;
+  };
+  let navigate: Mock;
+  let pins: Record<'listVersions' | 'isEntryPinned' | 'setEntryPinned', Mock>;
   const el = () => fixture.nativeElement as HTMLElement;
   const button = (label: string) =>
     el().querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
@@ -76,7 +85,12 @@ describe('EntryPage', () => {
   };
 
   const create = async (
-    options: { as?: typeof anna; role?: MemberRole; loaded?: boolean; pinned?: boolean } = {},
+    options: {
+      as?: typeof anna;
+      role?: MemberRole;
+      loaded?: boolean;
+      pinned?: boolean;
+    } = {},
   ) => {
     const { as = anna, role = 'editor', loaded = true } = options;
     autosave = {
@@ -85,22 +99,27 @@ describe('EntryPage', () => {
       status: signal<SaveStatus>('saved'),
       loadFailed: signal(false),
       savedCount: signal(0),
-      open: jasmine.createSpy('open').and.resolveTo(),
-      edit: jasmine.createSpy('edit'),
-      saveVersion: jasmine.createSpy('saveVersion').and.resolveTo(),
-      discard: jasmine.createSpy('discard').and.resolveTo(),
-      flush: jasmine.createSpy('flush').and.resolveTo(),
+      open: vi.fn().mockName('open').mockResolvedValue(undefined),
+      edit: vi.fn().mockName('edit'),
+      saveVersion: vi.fn().mockName('saveVersion').mockResolvedValue(undefined),
+      discard: vi.fn().mockName('discard').mockResolvedValue(undefined),
+      flush: vi.fn().mockName('flush').mockResolvedValue(undefined),
     };
-    entries = { delete: jasmine.createSpy('delete').and.resolveTo() };
-    dialog = { open: jasmine.createSpy('open').and.returnValue({ afterClosed: () => of(true) }) };
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', [
-      'listVersions',
-      'isEntryPinned',
-      'setEntryPinned',
-    ]);
-    repo.listVersions.and.resolveTo([]);
-    repo.isEntryPinned.and.resolveTo(options.pinned ?? false);
-    repo.setEntryPinned.and.resolveTo();
+    entries = { delete: vi.fn().mockName('delete').mockResolvedValue(undefined) };
+    dialog = {
+      open: vi
+        .fn()
+        .mockName('open')
+        .mockReturnValue({ afterClosed: () => of(true) }),
+    };
+    const repo = {
+      listVersions: vi.fn().mockName('LogbookRepository.listVersions'),
+      isEntryPinned: vi.fn().mockName('LogbookRepository.isEntryPinned'),
+      setEntryPinned: vi.fn().mockName('LogbookRepository.setEntryPinned'),
+    };
+    repo.listVersions.mockResolvedValue([]);
+    repo.isEntryPinned.mockResolvedValue(options.pinned ?? false);
+    repo.setEntryPinned.mockResolvedValue(undefined);
     pins = repo;
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -110,14 +129,17 @@ describe('EntryPage', () => {
         provideFakeAuth(as),
         { provide: LogbookRepository, useValue: repo },
         { provide: ProposalRepository, useClass: DemoProposalRepository },
-        { provide: LogbooksStore, useValue: { logbooks: signal([logbook(role)]) } },
+        {
+          provide: LogbooksStore,
+          useValue: { logbooks: signal([{ ...logbook(role), ...accessFor(logbook(role), as) }]) },
+        },
         { provide: EntriesStore, useValue: entries },
         { provide: MatDialog, useValue: dialog },
       ],
     }).overrideComponent(EntryPage, {
       set: { providers: [{ provide: EntryAutosave, useValue: autosave }] },
     });
-    navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(EntryPage);
     fixture.componentRef.setInput('logbookId', 'l1');
     fixture.componentRef.setInput('entryId', 'e1');
@@ -146,7 +168,7 @@ describe('EntryPage', () => {
 
     it('shows the title and the content, and an editable title', () => {
       expect(title().value).toBe('Day 1');
-      expect(title().readOnly).toBeFalse();
+      expect(title().readOnly).toBe(false);
       expect(el().querySelector('.rt-content')!.textContent).toContain('hello');
     });
 
@@ -205,7 +227,9 @@ describe('EntryPage', () => {
       button('Pin entry')!.click();
       await settle();
 
-      expect(pins.setEntryPinned).toHaveBeenCalledOnceWith(jon, 'e1', true);
+      expect(pins.setEntryPinned).toHaveBeenCalledTimes(1);
+
+      expect(pins.setEntryPinned).toHaveBeenCalledWith('e1', true);
       expect(button('Unpin entry')!.getAttribute('aria-pressed')).toBe('true');
       expect(button('Unpin entry')!.textContent).toContain('Pinned');
     });
@@ -217,7 +241,9 @@ describe('EntryPage', () => {
       button('Unpin entry')!.click();
       await settle();
 
-      expect(pins.setEntryPinned).toHaveBeenCalledOnceWith(jon, 'e1', false);
+      expect(pins.setEntryPinned).toHaveBeenCalledTimes(1);
+
+      expect(pins.setEntryPinned).toHaveBeenCalledWith('e1', false);
       expect(button('Pin entry')).not.toBeNull();
     });
 
@@ -229,13 +255,15 @@ describe('EntryPage', () => {
 
     it('explains the limit when there are already as many pins as allowed, and does not pin', async () => {
       await create({ as: jon, role: 'editor' });
-      const snack = spyOn(TestBed.inject(MatSnackBar), 'open');
-      pins.setEntryPinned.and.rejectWith(new PinLimitReachedError());
+      const snack = vi
+        .spyOn(TestBed.inject(MatSnackBar), 'open')
+        .mockReturnValue(undefined as never);
+      pins.setEntryPinned.mockRejectedValue(new PinLimitReachedError());
 
       button('Pin entry')!.click();
       await settle();
 
-      expect(snack.calls.mostRecent().args[0]).toBe(
+      expect(vi.mocked(snack).mock.lastCall![0]).toBe(
         'You can pin up to 4 entries. Unpin one first.',
       );
       expect(button('Pin entry')).not.toBeNull();
@@ -243,7 +271,7 @@ describe('EntryPage', () => {
 
     it('undoes itself and says so when the pin could not be saved', async () => {
       await create({ as: jon, role: 'editor' });
-      pins.setEntryPinned.and.rejectWith(new Error('no'));
+      pins.setEntryPinned.mockRejectedValue(new Error('no'));
 
       button('Pin entry')!.click();
       await settle();
@@ -256,7 +284,7 @@ describe('EntryPage', () => {
     beforeEach(async () => create({ as: jon, role: 'viewer' }));
 
     it('is read-only, with no way to save a version', () => {
-      expect(title().readOnly).toBeTrue();
+      expect(title().readOnly).toBe(true);
       expect(el().querySelector('.status')!.textContent).toContain('View only');
       expect(button('Save version')).toBeNull();
       expect(button('Delete entry')).toBeNull();
@@ -276,7 +304,7 @@ describe('EntryPage', () => {
     });
 
     it('does nothing when the confirmation is declined', async () => {
-      dialog.open.and.returnValue({ afterClosed: () => of(false) });
+      dialog.open.mockReturnValue({ afterClosed: () => of(false) });
 
       button('Delete entry')!.click();
       await settle();
@@ -286,7 +314,7 @@ describe('EntryPage', () => {
     });
 
     it('stays on the entry and says so when the deletion fails', async () => {
-      entries.delete.and.rejectWith(new Error('no'));
+      entries.delete.mockRejectedValue(new Error('no'));
 
       button('Delete entry')!.click();
       await settle();

@@ -77,3 +77,30 @@ h3 {
   display: flex;
   flex-direction: column;
 }
+
+// What each role can do, in a few words: the choice in the lists above is otherwise a guess.
+.roles {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container);
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+
+  div {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+  }
+
+  dt {
+    flex: none;
+    width: 64px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
+
+  dd {
+    margin: 0;
+  }
+}

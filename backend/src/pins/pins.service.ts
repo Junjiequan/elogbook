@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { entrySubject } from '@elogbook/permissions';
+import { entrySubject } from '../casl/ability.js';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { toUserDto } from '../auth/auth.service.js';

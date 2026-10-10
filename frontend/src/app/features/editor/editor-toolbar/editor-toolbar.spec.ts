@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Editor } from '@tiptap/core';
@@ -13,8 +14,8 @@ import { EditorToolbar } from './editor-toolbar';
 describe('EditorToolbar', () => {
   let fixture: ComponentFixture<EditorToolbar>;
   let editor: Editor;
-  let dialog: jasmine.SpyObj<MatDialog>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let dialog: Record<'open', Mock>;
+  let snackBar: Record<'open', Mock>;
   const el = () => fixture.nativeElement as HTMLElement;
   const button = (label: string) =>
     el().querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
@@ -26,8 +27,12 @@ describe('EditorToolbar', () => {
   };
 
   beforeEach(async () => {
-    dialog = jasmine.createSpyObj('MatDialog', ['open']);
-    snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+    dialog = {
+      open: vi.fn().mockName('MatDialog.open'),
+    };
+    snackBar = {
+      open: vi.fn().mockName('MatSnackBar.open'),
+    };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -54,7 +59,7 @@ describe('EditorToolbar', () => {
   it('is a labelled toolbar with the formatting buttons', () => {
     expect(el().querySelector('[role="toolbar"]')!.getAttribute('aria-label')).toBe('Formatting');
     for (const label of ['Bold', 'Italic', 'Undo', 'Insert table', 'Link', 'Insert image']) {
-      expect(button(label)).withContext(label).not.toBeNull();
+      expect(button(label), label).not.toBeNull();
     }
   });
 
@@ -65,17 +70,17 @@ describe('EditorToolbar', () => {
     button('Bold').click();
     await settle();
 
-    expect(editor.isActive('bold')).toBeTrue();
+    expect(editor.isActive('bold')).toBe(true);
     expect(button('Bold').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('disables Undo until there is something to undo', async () => {
-    expect(button('Undo').disabled).toBeTrue();
+    expect(button('Undo').disabled).toBe(true);
 
     editor.commands.insertContent('more');
     await settle();
 
-    expect(button('Undo').disabled).toBeFalse();
+    expect(button('Undo').disabled).toBe(false);
   });
 
   it('names the current block style', async () => {
@@ -93,12 +98,12 @@ describe('EditorToolbar', () => {
     button('Insert table').click();
     await settle();
 
-    expect(editor.isActive('table')).toBeTrue();
+    expect(editor.isActive('table')).toBe(true);
     expect(button('Add row below')).not.toBeNull();
   });
 
   it('turns the selected text into a link with the address that was typed', async () => {
-    dialog.open.and.returnValue({ afterClosed: () => of('https://example.org') } as never);
+    dialog.open.mockReturnValue({ afterClosed: () => of('https://example.org') } as never);
     editor.commands.selectAll();
 
     button('Link').click();
@@ -108,7 +113,7 @@ describe('EditorToolbar', () => {
   });
 
   it('leaves the text alone when the link dialog is cancelled', async () => {
-    dialog.open.and.returnValue({ afterClosed: () => of(undefined) } as never);
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) } as never);
     editor.commands.selectAll();
 
     button('Link').click();
@@ -132,7 +137,7 @@ describe('EditorToolbar', () => {
       sampleName: 'SDS 5 wt%',
       formula: null,
     };
-    dialog.open.and.returnValue({ afterClosed: () => of(attrs) } as never);
+    dialog.open.mockReturnValue({ afterClosed: () => of(attrs) } as never);
 
     button('Insert sample information').click();
     await settle();
@@ -165,7 +170,7 @@ describe('EditorToolbar', () => {
       );
 
       expect(editor.getHTML()).not.toContain('<img');
-      expect(snackBar.open.calls.mostRecent().args[0]).toContain('at most 20 MB');
+      expect(vi.mocked(snackBar.open).mock.lastCall![0]).toContain('at most 20 MB');
     });
 
     it('has a separate camera button for tablets and phones', () => {

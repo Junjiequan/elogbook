@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { HarnessLoader } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { provideZonelessChangeDetection } from '@angular/core';
@@ -7,16 +8,18 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../../demo/demo-proposals';
+import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
 import { NewLogbookDialog } from './new-logbook-dialog';
 
 describe('NewLogbookDialog', () => {
   let fixture: ComponentFixture<NewLogbookDialog>;
   let loader: HarnessLoader;
-  let ref: jasmine.SpyObj<MatDialogRef<NewLogbookDialog>>;
+  let ref: Record<'close', Mock>;
 
   beforeEach(async () => {
-    ref = jasmine.createSpyObj('MatDialogRef', ['close']);
+    ref = {
+      close: vi.fn().mockName('MatDialogRef.close'),
+    };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -33,10 +36,10 @@ describe('NewLogbookDialog', () => {
   const createButton = () => loader.getHarness(MatButtonHarness.with({ text: 'Create' }));
 
   it('cannot create a logbook without a title', async () => {
-    expect(await (await createButton()).isDisabled()).toBeTrue();
+    expect(await (await createButton()).isDisabled()).toBe(true);
 
     await (await loader.getHarness(MatInputHarness)).setValue('   ');
-    expect(await (await createButton()).isDisabled()).toBeTrue();
+    expect(await (await createButton()).isDisabled()).toBe(true);
   });
 
   it('creates a logbook with the trimmed title and description', async () => {
@@ -46,7 +49,9 @@ describe('NewLogbookDialog', () => {
 
     await (await createButton()).click();
 
-    expect(ref.close).toHaveBeenCalledOnceWith({
+    expect(ref.close).toHaveBeenCalledTimes(1);
+
+    expect(ref.close).toHaveBeenCalledWith({
       title: 'Beamtime 1',
       description: 'notes',
       proposalId: null,

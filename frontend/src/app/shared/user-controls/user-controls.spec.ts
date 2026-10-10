@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeService } from '../../core/theme/theme.service';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { TEST_USERS } from '../../testing/test-users';
 import { provideFakeAuth } from '../../testing/fake-auth';
 import { UserControls } from './user-controls';
 
@@ -18,13 +18,17 @@ describe('UserControls', () => {
     await fixture.whenStable();
   };
 
-  const create = async (options: { admin?: boolean } = {}) => {
+  const create = async (
+    options: {
+      admin?: boolean;
+    } = {},
+  ) => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        provideFakeAuth(DEMO_USERS[0], { admin: options.admin }),
+        provideFakeAuth(TEST_USERS[0], { admin: options.admin }),
       ],
     });
     fixture = TestBed.createComponent(UserControls);
@@ -60,8 +64,8 @@ describe('UserControls', () => {
     trigger().click();
     await settle();
 
-    expect(panel()!.querySelector('h3')!.textContent).toBe(DEMO_USERS[0].name);
-    expect(panel()!.textContent).toContain(DEMO_USERS[0].email);
+    expect(panel()!.querySelector('h3')!.textContent).toBe(TEST_USERS[0].name);
+    expect(panel()!.textContent).toContain(TEST_USERS[0].email);
     expect(panel()!.textContent).toContain('Administrator');
     const modes = Array.from(panel()!.querySelectorAll('.mode')).map((b) => b.textContent?.trim());
     expect(modes).toEqual(['light_mode Light', 'dark_mode Dark']);
@@ -87,8 +91,8 @@ describe('UserControls', () => {
 
   it('signs out and goes to the login page', async () => {
     await create();
-    const signOut = spyOn(TestBed.inject(AuthService), 'signOut');
-    const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    const signOut = vi.spyOn(TestBed.inject(AuthService), 'signOut').mockReturnValue(undefined);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     trigger().click();
     await settle();
 
@@ -104,7 +108,7 @@ describe('UserControls', () => {
     trigger().click();
     await settle(50);
 
-    expect(panel()!.contains(document.activeElement)).toBeTrue();
+    expect(panel()!.contains(document.activeElement)).toBe(true);
 
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await settle();

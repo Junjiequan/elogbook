@@ -16,13 +16,22 @@
         @if (mayWrite()) {
           <span
             class="status"
-            [class.error]="autosave.status() === 'error'"
+            [class.error]="autosave.status() === 'error' || autosave.status() === 'conflict'"
             role="status"
             aria-live="polite"
           >
             <mat-icon>{{ statusIcon() }}</mat-icon>
             <span class="status-text">{{ statusText() }}</span>
           </span>
+          @if (autosave.status() === 'conflict') {
+            <button
+              mat-button
+              (click)="autosave.reload()"
+              matTooltip="Discard your unsaved edits and show the latest version"
+            >
+              Reload
+            </button>
+          }
           <button
             mat-button
             (click)="saveVersion()"

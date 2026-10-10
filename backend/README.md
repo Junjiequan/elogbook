@@ -47,9 +47,10 @@ Passport strategies (`local` and `jwt`), guards, a `Role` enum and decorators.
 - Every other request sends `Authorization: Bearer <token>`. `GET /auth/whoami` says who that is.
 - Every route needs a token unless it is marked `@Public()`. `@Roles(Role.Admin)` restricts a route by role.
 - Logbook permissions (owner / editor / viewer, facility-read, administrators) are defined once, with CASL, in
-  [`packages/permissions`](../packages/permissions/README.md), the same package the Angular app uses. `src/casl/` builds the
-  ability for the signed-in person (SciCat's `CaslAbilityFactory`), and the services ask it on every request: a logbook you
-  cannot open answers 404, one you can read but not change answers 403.
+  `src/casl/ability.ts` (`defineAbilityFor`). `CaslAbilityFactory` builds the ability for the signed-in person (as in
+  SciCat), and the services ask it on every request: a logbook you cannot open answers 404, one you can read but not
+  change answers 403. Every logbook in a response also carries what the person may do with it (`myRole`, `canWrite`,
+  `canConfigure`, `canDelete`), so the Angular app applies no rules of its own.
 
 A facility identity provider (OIDC, LDAP) is added the way SciCat does it: another Passport strategy in
 `auth/strategies/` (`oidc.strategy.ts`) that finds or creates the `users` row and then calls `AuthService.login`.
@@ -72,20 +73,20 @@ Nothing else changes, because the JWT strategy only knows the user's id.
 
 All under `/api/v1`. Interactive docs: `/api/docs` (Swagger).
 
-| Method and path                                                               | Who                                        | What                                                                                                                          |
-| ----------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `GET /health`                                                                 | anyone                                     | 200 while the database answers                                                                                                |
-| `POST /auth/register`, `POST /auth/login`, `GET /auth/whoami`                 | anyone / anyone / signed in                | see above                                                                                                                     |
-| `GET /logbooks`, `POST /logbooks`                                             | signed in                                  | the logbooks you can open (newest first); create one (you become its owner)                                                   |
-| `GET /logbooks/:id`                                                           | reader                                     | one logbook with its members                                                                                                  |
-| `PATCH /logbooks/:id`                                                         | owner                                      | title, description, visibility, and the complete member list (`[{ email, role }]`); someone not signed up yet is invited      |
-| `DELETE /logbooks/:id`                                                        | owner, or an administrator who can open it | removes entries, versions and pins too                                                                                        |
-| `GET /logbooks/:id/entries`, `POST /logbooks/:id/entries`                     | reader / writer                            | list, newest first; create an empty entry                                                                                     |
-| `GET /entries/:id`, `PATCH /entries/:id`, `DELETE /entries/:id`               | reader / writer / owner or admin           | `PATCH` needs `revision`: 409 with `currentRevision` if someone saved since                                                   |
-| `GET /entries/:id/versions`, `POST /entries/:id/versions`                     | reader / writer                            | history; keep a manual version                                                                                                |
-| `POST /entries/:id/versions/:versionId/restore`                               | writer                                     | restores, keeping what it replaces                                                                                            |
-| `GET /demo`, `POST /demo`, `DELETE /demo`                                     | signed in                                  | sample content for trying the app (404 when `DEMO_ENABLED` is off): how many sample logbooks you have; make them; remove them |
-| `GET /pins`, `PUT /pins/:entryId`, `DELETE /pins/:entryId`, `PUT /pins/order` | signed in                                  | your own pins (at most 4, 409 `PIN_LIMIT_REACHED` beyond that) and their order                                                |
+| Method and path                                                               | Who                                        | What                                                                                                                                                                                                           |
+| ----------------------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /health`                                                                 | anyone                                     | 200 while the database answers                                                                                                                                                                                 |
+| `POST /auth/register`, `POST /auth/login`, `GET /auth/whoami`                 | anyone / anyone / signed in                | see above                                                                                                                                                                                                      |
+| `GET /logbooks`, `POST /logbooks`                                             | signed in                                  | the logbooks you can open (newest first); create one (you become its owner)                                                                                                                                    |
+| `GET /logbooks/:id`                                                           | reader                                     | one logbook with its members                                                                                                                                                                                   |
+| `PATCH /logbooks/:id`                                                         | owner                                      | title, description, visibility, and the complete member list (`[{ email, role }]`) (it needs at least one `owner`; to hand the logbook over, make someone else an owner); someone not signed up yet is invited |
+| `DELETE /logbooks/:id`                                                        | owner, or an administrator who can open it | removes entries, versions and pins too                                                                                                                                                                         |
+| `GET /logbooks/:id/entries`, `POST /logbooks/:id/entries`                     | reader / writer                            | list, newest first; create an empty entry                                                                                                                                                                      |
+| `GET /entries/:id`, `PATCH /entries/:id`, `DELETE /entries/:id`               | reader / writer / owner or admin           | `PATCH` needs `revision`: 409 with `currentRevision` if someone saved since                                                                                                                                    |
+| `GET /entries/:id/versions`, `POST /entries/:id/versions`                     | reader / writer                            | history; keep a manual version                                                                                                                                                                                 |
+| `POST /entries/:id/versions/:versionId/restore`                               | writer                                     | restores, keeping what it replaces                                                                                                                                                                             |
+| `GET /demo`, `POST /demo`, `DELETE /demo`                                     | signed in                                  | sample content for trying the app (404 when `DEMO_ENABLED` is off): how many sample logbooks you have; make them; remove them                                                                                  |
+| `GET /pins`, `PUT /pins/:entryId`, `DELETE /pins/:entryId`, `PUT /pins/order` | signed in                                  | your own pins (at most 4, 409 `PIN_LIMIT_REACHED` beyond that) and their order                                                                                                                                 |
 
 Every logbook in a response says what the person asking may do with it (`myRole`, `canWrite`, `canConfigure`, `canDelete`),
 so a screen never works permissions out for itself.
@@ -103,7 +104,7 @@ Automatic versions are taken at most every 5 minutes and only when the entry cha
 
 ## Data model
 
-`users` (email, name, password hash, roles, `invited`) · `logbooks` (`demo_user_id` marks sample logbooks) · `logbook_members` (logbook, user, role) ·
+`users` (email, name, password hash, roles, `invited`) · `logbooks` (`owner_id`: the person responsible, also an `owner` member; `demo_user_id` marks sample logbooks) · `logbook_members` (logbook, user, role) ·
 `entries` (content as `jsonb`, `revision`) · `entry_versions` · `pinned_entries` (user, entry, position).
 Deleting a logbook or entry cascades. `CHECK` constraints keep roles, visibility and version reasons to known values.
 
@@ -125,7 +126,6 @@ The schema e2e spec fails if the entities and the migrations disagree.
 
 ## Not built yet
 
-- The frontend's `HttpLogbookRepository` and an `AuthService` that uses `/auth/login` (the API is ready for both).
 - OIDC / LDAP sign-in, email verification, password reset.
 - Pagination of the entry list, image upload to object storage (entries embed images today, as in the frontend), full-text search.
 - Real-time collaboration.

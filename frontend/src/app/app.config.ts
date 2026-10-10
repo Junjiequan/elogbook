@@ -1,6 +1,9 @@
 import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
+  inject,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
@@ -10,15 +13,16 @@ import {
   withComponentInputBinding,
   withRouterConfig,
 } from '@angular/router';
-import { DATE_TIME_FORMAT } from './core/date-format';
-import { AppTitleStrategy } from './core/titles/app-title-strategy';
-import { ProposalRepository } from './core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../demo/demo-proposals';
-import { IndexedDbLogbookRepository } from './core/data-access/indexeddb-logbook.repository';
-import { DemoSeeder } from '../demo/demo-seeder';
-import { LogbookRepository } from './core/data-access/logbook.repository';
+import { AppConfig } from './core/api/app-config';
+import { ApiAuthService } from './core/auth/api-auth.service';
 import { AuthService } from './core/auth/auth.service';
-import { TestAuthService } from './features/test-auth/test-auth.service';
+import { authInterceptor } from './core/auth/auth.interceptor';
+import { DATE_TIME_FORMAT } from './core/date-format';
+import { DemoProposalRepository } from './core/data-access/demo-proposal.repository';
+import { HttpLogbookRepository } from './core/data-access/http-logbook.repository';
+import { LogbookRepository } from './core/data-access/logbook.repository';
+import { ProposalRepository } from './core/data-access/proposal.repository';
+import { AppTitleStrategy } from './core/titles/app-title-strategy';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -31,17 +35,15 @@ export const appConfig: ApplicationConfig = {
       // Child routes (entries) also receive `logbookId` as an input.
       withRouterConfig({ paramsInheritanceStrategy: 'always' }),
     ),
+    provideHttpClient(withInterceptors([authInterceptor])),
+    // Where the API is comes from config.json, so one build can run against any deployment.
+    provideAppInitializer(() => inject(AppConfig).load()),
     { provide: TitleStrategy, useClass: AppTitleStrategy },
     // Dates read year first, e.g. 2026-10-09 08:46.
     { provide: DATE_PIPE_DEFAULT_OPTIONS, useValue: { dateFormat: DATE_TIME_FORMAT } },
-    // TEST-ONLY sign-in. To remove: delete features/test-auth, drop these two lines and the /login route,
-    // and provide an OIDC-backed AuthService instead.
-    TestAuthService,
-    { provide: AuthService, useExisting: TestAuthService },
-    // Swap these two for HTTP-backed implementations once the NestJS backend exists.
-    { provide: LogbookRepository, useClass: IndexedDbLogbookRepository },
+    { provide: AuthService, useExisting: ApiAuthService },
+    { provide: LogbookRepository, useClass: HttpLogbookRepository },
+    // The proposal system has no API yet: fixed proposals and samples.
     { provide: ProposalRepository, useClass: DemoProposalRepository },
-    // Realistic demo logbook for every new user. Remove this line to turn it off.
-    DemoSeeder,
   ],
 };

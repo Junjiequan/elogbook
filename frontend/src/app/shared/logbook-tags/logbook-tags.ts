@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import type { Visibility, MemberRole } from '../../core/models/logbook.models';
+import { RoleDetails } from '../role-details/role-details';
+import { TablePopover } from '../table-popover/table-popover';
 
 const ROLE_ICONS: Record<MemberRole, string> = {
   owner: 'workspace_premium',
@@ -11,12 +13,13 @@ const ROLE_ICONS: Record<MemberRole, string> = {
 /**
  * The small coloured tags describing a logbook: instrument, proposal and the user's role, and on the
  * list also "Demo" and who can read it. Instrument uses ESS Cyan, proposal ESS Forest, demo ESS Orange;
- * the role is navy (owner), navy tint (editor) or grey.
+ * the role is navy (owner), navy tint (editor) or grey. Hovering or focusing the role tag shows what that
+ * role can and cannot do.
  */
 @Component({
   selector: 'app-logbook-tags',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIcon],
+  imports: [MatIcon, RoleDetails, TablePopover],
   templateUrl: './logbook-tags.html',
   styleUrl: './logbook-tags.scss',
 })

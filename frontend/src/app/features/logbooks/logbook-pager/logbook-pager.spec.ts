@@ -36,10 +36,10 @@ describe('LogbookPager', () => {
 
   it('is a bar of its own, or the footer of a table when flat', async () => {
     await create();
-    expect(el().classList.contains('flat')).toBeFalse();
+    expect(el().classList.contains('flat')).toBe(false);
 
     fixture.componentRef.setInput('flat', true);
     await fixture.whenStable();
-    expect(el().classList.contains('flat')).toBeTrue();
+    expect(el().classList.contains('flat')).toBe(true);
   });
 });

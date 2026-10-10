@@ -19,6 +19,10 @@ export class MemberInputDto {
   @MaxLength(254)
   email: string;
 
+  /**
+   * What the person may do: `owner` everything (settings, members, delete); `editor` add and edit entries
+   * and manage versions; `viewer` read only. See "Roles" in the README.
+   */
   @IsIn(MEMBER_ROLES)
   role: MemberRole;
 }
@@ -40,7 +44,11 @@ export class UpdateLogbookDto {
   @IsIn(VISIBILITIES)
   visibility?: Visibility;
 
-  /** The complete list of members: anyone not in it loses access. At least one owner is required. */
+  /**
+   * The complete list of members: anyone not in it loses access. It needs at least one `owner`. The logbook's
+   * `owner` stays the same while that person is still an owner; to hand the logbook over, make someone else an
+   * owner (and change or remove the previous one): it goes to the first owner listed.
+   */
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(200)

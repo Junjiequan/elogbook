@@ -3,7 +3,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import type { Logbook } from '../../../core/models/logbook.models';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
 import { provideFakeAuth } from '../../../testing/fake-auth';
@@ -20,6 +20,7 @@ import {
 } from './logbook-list';
 import { FILTERS, type LogbookFilter } from '../logbook-filters';
 import { LogbooksStore } from '../logbooks.store';
+import { OWNER_ACCESS, accessFor } from '../../../testing/logbook-fixtures';
 
 const logbook = (
   id: string,
@@ -33,7 +34,10 @@ const logbook = (
   instrument,
   proposalId,
   visibility: 'private',
-  members: [{ user: DEMO_USERS[0], role: 'owner' }],
+  members: [{ user: TEST_USERS[0], role: 'owner' }],
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
@@ -128,8 +132,8 @@ describe('LogbookList', () => {
     for (const card of Array.from(el().querySelectorAll<HTMLElement>('.card'))) {
       const members = card.querySelector('app-member-avatars')!;
       expect(members).not.toBeNull();
-      expect(card.querySelector('app-logbook-tags')!.contains(members)).toBeFalse();
-      expect(card.querySelector('.foot')!.contains(members)).toBeTrue();
+      expect(card.querySelector('app-logbook-tags')!.contains(members)).toBe(false);
+      expect(card.querySelector('.foot')!.contains(members)).toBe(true);
     }
   });
 
@@ -363,7 +367,7 @@ describe('LogbookList pagination', () => {
 });
 
 describe('LogbookList toolbar', () => {
-  const [anna, jon] = DEMO_USERS;
+  const [anna, jon] = TEST_USERS;
   let fixture: ComponentFixture<LogbookList>;
   const el = () => fixture.nativeElement as HTMLElement;
   const titles = () =>
@@ -395,7 +399,12 @@ describe('LogbookList toolbar', () => {
     },
   ];
 
-  const create = async (options: { narrow?: boolean; storedView?: string } = {}) => {
+  const create = async (
+    options: {
+      narrow?: boolean;
+      storedView?: string;
+    } = {},
+  ) => {
     localStorage.removeItem(SORT_STORAGE_KEY);
     localStorage.removeItem(LIST_VIEW_STORAGE_KEY);
     if (options.storedView) {
@@ -414,7 +423,11 @@ describe('LogbookList toolbar', () => {
         { provide: LogbookRepository, useValue: { listPinnedEntries: () => Promise.resolve([]) } },
         {
           provide: LogbooksStore,
-          useValue: { status: signal('ready'), load: () => undefined, logbooks: signal(books) },
+          useValue: {
+            status: signal('ready'),
+            load: () => undefined,
+            logbooks: signal(books.map((book) => ({ ...book, ...accessFor(book, anna) }))),
+          },
         },
       ],
     });
@@ -564,8 +577,11 @@ describe('LogbookList toolbar', () => {
     };
     const shown = () => el().querySelectorAll('.cards > li').length;
 
-    beforeEach(() => jasmine.clock().install());
-    afterEach(() => jasmine.clock().uninstall());
+    // Only timeouts are faked: Angular schedules change detection with an animation frame as well.
+    beforeEach(() =>
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] }),
+    );
+    afterEach(() => vi.useRealTimers());
 
     it('does not search on every key: it waits for a pause', async () => {
       await create();
@@ -573,12 +589,12 @@ describe('LogbookList toolbar', () => {
 
       for (const text of ['a', 'al', 'alp', 'alpha']) {
         keystroke(text);
-        jasmine.clock().tick(SEARCH_DEBOUNCE_MS - 50);
+        vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS - 50);
       }
       await settle();
       expect(shown()).toBe(all);
 
-      jasmine.clock().tick(SEARCH_DEBOUNCE_MS);
+      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
       await settle();
       expect(shown()).toBeLessThan(all);
     });
@@ -666,7 +682,7 @@ describe('LogbookList toolbar', () => {
         for (const b of rects.slice(i + 1)) {
           const overlap =
             a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-          expect(overlap).withContext(`${a.selector} and ${b.selector}`).toBeFalse();
+          expect(overlap, `${a.selector} and ${b.selector}`).toBe(false);
         }
       }
     });
@@ -789,7 +805,7 @@ describe('LogbookList toolbar', () => {
       const event = slash();
 
       expect(document.activeElement).toBe(searchBox());
-      expect(event.defaultPrevented).toBeTrue(); // so the slash is not typed into the box
+      expect(event.defaultPrevented).toBe(true); // so the slash is not typed into the box
       expect(el().querySelector('.slash')).not.toBeNull(); // and the key is shown as a hint
     });
 
@@ -801,7 +817,7 @@ describe('LogbookList toolbar', () => {
 
       const event = slash(other);
 
-      expect(event.defaultPrevented).toBeFalse();
+      expect(event.defaultPrevented).toBe(false);
       expect(document.activeElement).toBe(other);
       other.remove();
     });

@@ -9,10 +9,17 @@ import { entryTitle, exportTitle, logbookTitle } from './logbook-titles';
 const book = { id: 'l1', title: 'LoKI beamtime' } as Logbook;
 
 describe('page titles of a logbook', () => {
-  const setup = (options: { status?: LoadStatus; entry?: Partial<Entry> | undefined } = {}) => {
+  const setup = (
+    options: {
+      status?: LoadStatus;
+      entry?: Partial<Entry> | undefined;
+    } = {},
+  ) => {
     const status = signal<LoadStatus>(options.status ?? 'ready');
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', ['getEntry']);
-    repo.getEntry.and.resolveTo(options.entry as Entry | undefined);
+    const repo = {
+      getEntry: vi.fn().mockName('LogbookRepository.getEntry'),
+    };
+    repo.getEntry.mockResolvedValue(options.entry as Entry | undefined);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),

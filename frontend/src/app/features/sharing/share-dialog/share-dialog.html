@@ -67,6 +67,15 @@
     }
   </ul>
 
+  <dl class="roles" aria-label="What each role can do">
+    @for (role of roles; track role.menuLabel) {
+      <div>
+        <dt>{{ role.menuLabel }}</dt>
+        <dd>{{ role.summary }}</dd>
+      </div>
+    }
+  </dl>
+
   <h3>General access</h3>
   <mat-radio-group
     class="visibility"

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -7,12 +8,12 @@ import { provideRouter } from '@angular/router';
 import { DATE_TIME_FORMAT } from '../../../core/date-format';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
 import { MAX_PINNED_ENTRIES, type PinnedEntry } from '../../../core/models/logbook.models';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { LogbooksStore, type LoadStatus } from '../logbooks.store';
 import { PinnedEntries } from './pinned-entries';
 
-const [anna, jon] = DEMO_USERS;
+const [anna, jon] = TEST_USERS;
 
 const item = (id: string, overrides: Partial<PinnedEntry> = {}): PinnedEntry => ({
   entryId: `e-${id}`,
@@ -28,7 +29,7 @@ const item = (id: string, overrides: Partial<PinnedEntry> = {}): PinnedEntry => 
 
 describe('PinnedEntries', () => {
   let fixture: ComponentFixture<PinnedEntries>;
-  let repo: jasmine.SpyObj<LogbookRepository>;
+  let repo: Record<'listPinnedEntries' | 'setEntryPinned' | 'reorderPinnedEntries', Mock>;
   const el = () => fixture.nativeElement as HTMLElement;
   const tiles = () => Array.from(el().querySelectorAll<HTMLAnchorElement>('a.tile'));
 
@@ -39,14 +40,14 @@ describe('PinnedEntries', () => {
   };
 
   const create = async (pinned: PinnedEntry[], status: LoadStatus = 'ready') => {
-    repo = jasmine.createSpyObj('LogbookRepository', [
-      'listPinnedEntries',
-      'setEntryPinned',
-      'reorderPinnedEntries',
-    ]);
-    repo.listPinnedEntries.and.resolveTo(pinned);
-    repo.setEntryPinned.and.resolveTo();
-    repo.reorderPinnedEntries.and.resolveTo();
+    repo = {
+      listPinnedEntries: vi.fn().mockName('LogbookRepository.listPinnedEntries'),
+      setEntryPinned: vi.fn().mockName('LogbookRepository.setEntryPinned'),
+      reorderPinnedEntries: vi.fn().mockName('LogbookRepository.reorderPinnedEntries'),
+    };
+    repo.listPinnedEntries.mockResolvedValue(pinned);
+    repo.setEntryPinned.mockResolvedValue(undefined);
+    repo.reorderPinnedEntries.mockResolvedValue(undefined);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -136,7 +137,7 @@ describe('PinnedEntries', () => {
   it('asks for this person’s pins', async () => {
     await create([item('1')]);
 
-    expect(repo.listPinnedEntries).toHaveBeenCalledWith(anna);
+    expect(repo.listPinnedEntries).toHaveBeenCalled();
   });
 
   it('calls an untitled entry "Untitled entry"', async () => {
@@ -161,13 +162,15 @@ describe('PinnedEntries', () => {
 
   it('takes a pin off with the cross on its tile, and then shows what is left', async () => {
     await create([item('1'), item('2')]);
-    repo.listPinnedEntries.and.resolveTo([item('2')]);
+    repo.listPinnedEntries.mockResolvedValue([item('2')]);
 
     el().querySelector<HTMLButtonElement>('button[aria-label="Unpin Entry 1"]')!.click();
     await settle();
     await settle();
 
-    expect(repo.setEntryPinned).toHaveBeenCalledOnceWith(anna, 'e-1', false);
+    expect(repo.setEntryPinned).toHaveBeenCalledTimes(1);
+
+    expect(repo.setEntryPinned).toHaveBeenCalledWith('e-1', false);
     expect(tiles().map((t) => t.querySelector('.entry')!.textContent)).toEqual(['Entry 2']);
   });
 
@@ -209,7 +212,7 @@ describe('PinnedEntries', () => {
     it('keeps the placeholders out of what a screen reader reads', async () => {
       await create([item('1')]);
 
-      expect(places().every((p) => p.getAttribute('aria-hidden') === 'true')).toBeTrue();
+      expect(places().every((p) => p.getAttribute('aria-hidden') === 'true')).toBe(true);
     });
   });
 
@@ -232,7 +235,8 @@ describe('PinnedEntries', () => {
       await settle();
 
       expect(order()).toEqual(['Entry 2', 'Entry 3', 'Entry 1']);
-      expect(repo.reorderPinnedEntries).toHaveBeenCalledOnceWith(anna, ['e-2', 'e-3', 'e-1']);
+      expect(repo.reorderPinnedEntries).toHaveBeenCalledTimes(1);
+      expect(repo.reorderPinnedEntries).toHaveBeenCalledWith(['e-2', 'e-3', 'e-1']);
     });
 
     it('moves a tile one place with Alt and an arrow key', async () => {

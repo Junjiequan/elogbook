@@ -1,10 +1,9 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
-import { CurrentUserService } from '../../core/auth/current-user.service';
-import { LogbookRepository } from '../../core/data-access/logbook.repository';
-import type { Entry, EntryChanges, User } from '../../core/models/logbook.models';
+import { EntryConflictError, LogbookRepository } from '../../core/data-access/logbook.repository';
+import type { Entry, EntryChanges } from '../../core/models/logbook.models';
 import { EntriesStore } from '../logbook/entries.store';
 
-export type SaveStatus = 'saved' | 'dirty' | 'saving' | 'error';
+export type SaveStatus = 'saved' | 'dirty' | 'saving' | 'error' | 'conflict';
 
 export const AUTOSAVE_DEBOUNCE_MS = 1000;
 export const AUTOSAVE_RETRY_MS = 5000;
@@ -14,12 +13,13 @@ export const AUTOSAVE_RETRY_MS = 5000;
  *
  * Edits are merged and written after a short pause, saves are serialised, failures are retried,
  * and anything pending is flushed when the entry changes, the page hides, or the page is left.
+ * Each save names the revision it builds on; if someone else saved in between, the status becomes
+ * `conflict` and nothing is overwritten (reload the entry to see their changes).
  * `entry()` mirrors the latest edits, so it is always safe to rebuild the editor from it.
  */
 @Injectable()
 export class EntryAutosave {
   private readonly repository = inject(LogbookRepository);
-  private readonly currentUser = inject(CurrentUserService);
   private readonly entries = inject(EntriesStore);
 
   private readonly _entry = signal<Entry | undefined>(undefined);
@@ -40,8 +40,8 @@ export class EntryAutosave {
   });
 
   private pending: EntryChanges = {};
-  /** Who made the pending edits; captured at edit time so signing out cannot change the author. */
-  private author: User = this.currentUser.user();
+  /** The revision on the server that the edits build on; moves forward with every save. */
+  private revision = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private queue: Promise<void> = Promise.resolve();
   private destroyed = false;
@@ -61,9 +61,20 @@ export class EntryAutosave {
       const entry = await this.repository.getEntry(entryId);
       this._loadFailed.set(!entry);
       this._entry.set(entry);
+      this._generation.update((n) => n + 1); // opening it again rebuilds the editor from what was loaded
+      this.revision = entry?.revision ?? 0;
       this._status.set('saved');
     } catch {
       this._loadFailed.set(true);
+    }
+  }
+
+  /** Throws away unsaved edits and shows the entry as it is on the server now (after a conflict). */
+  async reload(): Promise<void> {
+    const entry = this._entry();
+    if (entry) {
+      await this.discard();
+      await this.open(entry.id);
     }
   }
 
@@ -71,7 +82,6 @@ export class EntryAutosave {
     if (!this._entry()) {
       return;
     }
-    this.author = this.currentUser.user();
     this.pending = { ...this.pending, ...changes };
     this._entry.update((entry) => entry && { ...entry, ...changes });
     this._status.set('dirty');
@@ -86,8 +96,7 @@ export class EntryAutosave {
       const changes = this.pending;
       this.pending = {};
       this._status.set('saving');
-      const author = this.author;
-      this.queue = this.queue.then(() => this.persist(entry.id, changes, author));
+      this.queue = this.queue.then(() => this.persist(entry.id, changes));
     }
     return this.queue;
   }
@@ -104,7 +113,7 @@ export class EntryAutosave {
     const entry = this._entry();
     if (entry) {
       await this.flush();
-      await this.repository.createVersion(entry.id, this.currentUser.user(), 'manual');
+      await this.repository.createVersion(entry.id);
       this._savedCount.update((n) => n + 1);
     }
   }
@@ -115,13 +124,10 @@ export class EntryAutosave {
       return;
     }
     await this.flush();
-    const restored = await this.repository.restoreVersion(
-      entry.id,
-      versionId,
-      this.currentUser.user(),
-    );
+    const restored = await this.repository.restoreVersion(entry.id, versionId);
     this.entries.replace(restored);
     this._entry.set(restored);
+    this.revision = restored.revision;
     this._generation.update((n) => n + 1);
     this._savedCount.update((n) => n + 1);
     this._status.set('saved');
@@ -132,15 +138,21 @@ export class EntryAutosave {
     this.timer = setTimeout(() => void this.flush(), delayMs);
   }
 
-  private async persist(entryId: string, changes: EntryChanges, author: User): Promise<void> {
+  private async persist(entryId: string, changes: EntryChanges): Promise<void> {
     try {
-      const saved = await this.repository.saveEntry(entryId, changes, author);
+      const saved = await this.repository.saveEntry(entryId, changes, this.revision);
+      this.revision = saved.revision;
       this.entries.replace(saved);
       this._savedCount.update((n) => n + 1);
       this._status.set(Object.keys(this.pending).length > 0 ? 'dirty' : 'saved');
-    } catch {
-      // Keep the edits (newer ones win) and try again.
+    } catch (error) {
+      // Keep the edits (newer ones win).
       this.pending = { ...changes, ...this.pending };
+      if (error instanceof EntryConflictError) {
+        // Trying again would only be refused again, and giving up would lose nothing: the edits stay here.
+        this._status.set('conflict');
+        return;
+      }
       this._status.set('error');
       if (!this.destroyed) {
         this.schedule(AUTOSAVE_RETRY_MS);

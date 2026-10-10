@@ -1,4 +1,4 @@
-import { defineAbilityFor, logbookSubject } from '@elogbook/permissions';
+import { defineAbilityFor, logbookSubject } from '../src/casl/ability.js';
 import type { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Logbook } from '../src/logbooks/entities/logbook.entity.js';

@@ -2,7 +2,7 @@ import { Component, signal, provideZonelessChangeDetection } from '@angular/core
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { JSONContent } from '@tiptap/core';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../../demo/demo-proposals';
+import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
 import { RichTextEditor } from './rich-text-editor';
 
 const doc = (text: string): JSONContent => ({

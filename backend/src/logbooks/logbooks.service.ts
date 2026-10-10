@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { type Action, logbookSubject } from '@elogbook/permissions';
+import { type Action, logbookSubject } from '../casl/ability.js';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import type { JwtUser } from '../auth/interfaces/jwt-user.interface.js';
@@ -12,7 +12,7 @@ import { CaslAbilityFactory } from '../casl/casl-ability.factory.js';
 import { UsersService } from '../users/users.service.js';
 import type { CreateLogbookDto } from './dto/create-logbook.dto.js';
 import type { UpdateLogbookDto } from './dto/update-logbook.dto.js';
-import { LogbookMember } from './entities/logbook-member.entity.js';
+import { LogbookMember, type MemberRole } from './entities/logbook-member.entity.js';
 import { Logbook } from './entities/logbook.entity.js';
 import { type LogbookDto, toLogbookDto } from './logbook.mapper.js';
 
@@ -40,6 +40,7 @@ export class LogbooksService {
     const logbooks = await this.dataSource
       .getRepository(Logbook)
       .createQueryBuilder('logbook')
+      .leftJoinAndSelect('logbook.owner', 'owner')
       .leftJoinAndSelect('logbook.members', 'member')
       .leftJoinAndSelect('member.user', 'memberUser')
       .where(
@@ -74,6 +75,7 @@ export class LogbooksService {
           instrument: dto.instrument ?? null,
           proposalId: dto.proposalId ?? null,
           visibility: 'private',
+          ownerId: user.id,
         }),
       );
       await manager.insert(LogbookMember, {
@@ -99,23 +101,33 @@ export class LogbooksService {
       if (dto.title !== undefined) logbook.title = dto.title;
       if (dto.description !== undefined) logbook.description = dto.description;
       if (dto.visibility !== undefined) logbook.visibility = dto.visibility;
-      logbook.updatedAt = new Date();
-      await manager.save(Logbook, logbook);
 
+      let wanted: Map<string, MemberRole> | undefined;
       if (dto.members) {
-        if (!dto.members.some((member) => member.role === 'owner')) {
-          throw new BadRequestException('A logbook needs at least one owner.');
-        }
         const people = await this.users.ensureByEmails(
           dto.members.map((member) => member.email),
           manager,
         );
-        const wanted = new Map(
+        wanted = new Map(
           dto.members.map((member) => [
             people.get(member.email.trim().toLowerCase())!.id,
             member.role,
           ]),
         );
+        // Who owns the logbook follows from the member list: it needs an owner, and while the current
+        // owner is still one they stay "the owner". Otherwise the logbook is handed to the first owner listed.
+        const owners = [...wanted].filter(([, role]) => role === 'owner').map(([userId]) => userId);
+        if (owners.length === 0) {
+          throw new BadRequestException('A logbook needs at least one owner.');
+        }
+        if (!owners.includes(logbook.ownerId)) {
+          logbook.ownerId = owners[0];
+        }
+      }
+      logbook.updatedAt = new Date();
+      await manager.save(Logbook, logbook);
+
+      if (wanted) {
         await manager
           .createQueryBuilder()
           .delete()
@@ -129,13 +141,22 @@ export class LogbooksService {
         );
       }
     });
-    return this.get(user, id);
+    // Answer with the result even if this change took the person's own access away (handing the
+    // logbook over and leaving it): their role is then none, and nothing is allowed.
+    return toLogbookDto((await this.findWithPeople(id))!, this.casl.createForUser(user), user.id);
   }
 
   async remove(user: JwtUser, id: string): Promise<void> {
     await this.requireAccess(user, id, 'delete');
     // Entries, versions and pins go with it (ON DELETE CASCADE).
     await this.dataSource.getRepository(Logbook).delete({ id });
+  }
+
+  private findWithPeople(id: string): Promise<Logbook | null> {
+    return this.dataSource.getRepository(Logbook).findOne({
+      where: { id },
+      relations: { owner: true, members: { user: true } },
+    });
   }
 
   /**
@@ -147,10 +168,7 @@ export class LogbooksService {
     id: string,
     action: Exclude<Action, 'create'>,
   ): Promise<Logbook> {
-    const logbook = await this.dataSource.getRepository(Logbook).findOne({
-      where: { id },
-      relations: { members: { user: true } },
-    });
+    const logbook = await this.findWithPeople(id);
     const ability = this.casl.createForUser(user);
     if (!logbook || !ability.can('read', logbookSubject(logbook))) {
       throw new NotFoundException('Logbook not found.');

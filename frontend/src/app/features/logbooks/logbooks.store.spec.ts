@@ -1,12 +1,13 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { TEST_USERS } from '../../testing/test-users';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
-import type { Logbook } from '../../core/models/logbook.models';
+import type { Logbook, User } from '../../core/models/logbook.models';
 import { provideFakeAuth } from '../../testing/fake-auth';
 import { LogbooksStore } from './logbooks.store';
+import { OWNER_ACCESS, accessFor } from '../../testing/logbook-fixtures';
 
-const [anna, jon] = DEMO_USERS;
+const [anna, jon] = TEST_USERS;
 
 const logbook = (id: string, owner = anna): Logbook => ({
   id,
@@ -16,22 +17,33 @@ const logbook = (id: string, owner = anna): Logbook => ({
   proposalId: null,
   visibility: 'private',
   members: [{ user: owner, role: 'owner' }],
+  owner: owner,
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
 
+/** The logbook as the server would describe it to this person. */
+const seenBy = (book: Logbook, user: User, admin = false): Logbook => ({
+  ...book,
+  ...accessFor(book, user, admin),
+});
+
 describe('LogbooksStore.delete', () => {
   const setup = (user = anna, admin = false) => {
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', [
-      'listLogbooks',
-      'deleteLogbook',
-    ]);
-    repo.listLogbooks.and.resolveTo([
-      logbook('mine', anna),
-      logbook('theirs', jon),
-      { ...logbook('sample', anna), demo: true },
-    ]);
-    repo.deleteLogbook.and.resolveTo();
+    const repo = {
+      listLogbooks: vi.fn().mockName('LogbookRepository.listLogbooks'),
+      deleteLogbook: vi.fn().mockName('LogbookRepository.deleteLogbook'),
+    };
+    repo.listLogbooks.mockResolvedValue(
+      [
+        logbook('mine', anna),
+        logbook('theirs', jon),
+        { ...logbook('sample', anna), demo: true },
+      ].map((book) => seenBy(book, user, admin)),
+    );
+    repo.deleteLogbook.mockResolvedValue(undefined);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -54,7 +66,9 @@ describe('LogbooksStore.delete', () => {
 
     await store.delete('mine');
 
-    expect(repo.deleteLogbook).toHaveBeenCalledOnceWith('mine');
+    expect(repo.deleteLogbook).toHaveBeenCalledTimes(1);
+
+    expect(repo.deleteLogbook).toHaveBeenCalledWith('mine');
     expect(store.logbooks().map((l) => l.id)).toEqual(['theirs', 'sample']);
   });
 
@@ -62,28 +76,30 @@ describe('LogbooksStore.delete', () => {
     const { repo, store } = setup();
     await loaded(store);
 
-    await expectAsync(store.delete('theirs')).toBeRejected();
+    await expect(store.delete('theirs')).rejects.toThrow();
     expect(repo.deleteLogbook).not.toHaveBeenCalled();
     expect(store.logbooks().length).toBe(3);
   });
 
-  it('never deletes a demo logbook, not even for an administrator', async () => {
+  it('never deletes a sample logbook, not even for an administrator', async () => {
     const { repo, store } = setup(anna, true);
     await loaded(store);
 
-    await expectAsync(store.delete('sample')).toBeRejectedWithError(
-      /Demo logbooks cannot be deleted/,
-    );
+    await expect(store.delete('sample')).rejects.toThrowError(/Sample logbooks cannot be deleted/);
     expect(repo.deleteLogbook).not.toHaveBeenCalled();
   });
 
   it('lets an administrator delete someone else’s logbook that they can open', async () => {
     const { repo, store } = setup(anna, true);
-    repo.listLogbooks.and.resolveTo([{ ...logbook('theirs', jon), visibility: 'facility-read' }]);
+    repo.listLogbooks.mockResolvedValue([
+      seenBy({ ...logbook('theirs', jon), visibility: 'facility-read' }, anna, true),
+    ]);
     await loaded(store);
 
     await store.delete('theirs');
 
-    expect(repo.deleteLogbook).toHaveBeenCalledOnceWith('theirs');
+    expect(repo.deleteLogbook).toHaveBeenCalledTimes(1);
+
+    expect(repo.deleteLogbook).toHaveBeenCalledWith('theirs');
   });
 });

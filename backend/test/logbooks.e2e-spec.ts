@@ -35,6 +35,7 @@ describe('logbooks', () => {
       instrument: 'LoKI',
       proposalId: '2026-0412',
       visibility: 'private',
+      owner: anna.user,
       members: [{ user: anna.user, role: 'owner' }],
     });
     expect(res.body.createdAt).toEqual(expect.any(String));
@@ -138,6 +139,117 @@ describe('logbooks', () => {
 
     expect(res.body.members).toEqual([{ user: anna.user, role: 'owner' }]);
     await jon.get(`/logbooks/${id}`).expect(404);
+  });
+
+  describe('the owner', () => {
+    it('is the person who made the logbook, and is also listed as an owner member', async () => {
+      const id = await anna.createLogbook();
+
+      const logbook = (await anna.get(`/logbooks/${id}`).expect(200)).body;
+
+      expect(logbook.owner).toEqual(anna.user);
+      expect(logbook.members).toContainEqual({ user: anna.user, role: 'owner' });
+    });
+
+    it('stays the same while that person is still an owner, even with other owners added', async () => {
+      const id = await anna.createLogbook();
+
+      const res = await anna
+        .patch(`/logbooks/${id}`, {
+          members: [
+            { email: jon.email, role: 'owner' },
+            { email: anna.email, role: 'owner' },
+          ],
+        })
+        .expect(200);
+
+      expect(res.body.owner).toEqual(anna.user);
+    });
+
+    it('is handed over by changing the member list: the new owner is listed, the old one is not', async () => {
+      const id = await anna.createLogbook();
+
+      const res = await anna
+        .patch(`/logbooks/${id}`, {
+          members: [
+            { email: jon.email, role: 'owner' },
+            { email: anna.email, role: 'viewer' },
+          ],
+        })
+        .expect(200);
+
+      expect(res.body.owner).toEqual(jon.user);
+      expect(res.body.members.find((m: any) => m.user.id === anna.user.id).role).toBe('viewer');
+      await anna.patch(`/logbooks/${id}`, { title: 'No longer allowed' }).expect(403);
+      await jon.patch(`/logbooks/${id}`, { title: 'Now managed by Jon' }).expect(200);
+    });
+
+    it('goes to the first owner listed when the current owner is no longer one', async () => {
+      const id = await anna.createLogbook();
+
+      const res = await anna
+        .patch(`/logbooks/${id}`, {
+          members: [
+            { email: mei.email, role: 'owner' },
+            { email: jon.email, role: 'owner' },
+          ],
+        })
+        .expect(200);
+
+      expect(res.body.owner).toEqual(mei.user);
+      // The person who made the change is no longer a member: the answer says so, and allows nothing.
+      expect(res.body).toMatchObject({
+        myRole: null,
+        canWrite: false,
+        canConfigure: false,
+        canDelete: false,
+      });
+      await anna.get(`/logbooks/${id}`).expect(404);
+    });
+
+    it('can be handed to someone who has not signed up yet', async () => {
+      const id = await anna.createLogbook();
+
+      const res = await anna
+        .patch(`/logbooks/${id}`, {
+          members: [
+            { email: 'Newcomer@Example.org', role: 'owner' },
+            { email: anna.email, role: 'editor' },
+          ],
+        })
+        .expect(200);
+
+      expect(res.body.owner.email).toBe('newcomer@example.org');
+      const newcomer = await signUp(app, 'New Comer', 'newcomer@example.org');
+      expect((await newcomer.get(`/logbooks/${id}`).expect(200)).body).toMatchObject({
+        myRole: 'owner',
+        canConfigure: true,
+      });
+    });
+
+    it('cannot be left out: a member list without any owner is refused and nothing changes', async () => {
+      const id = await anna.createLogbook();
+
+      await anna
+        .patch(`/logbooks/${id}`, {
+          members: [
+            { email: anna.email, role: 'editor' },
+            { email: jon.email, role: 'viewer' },
+          ],
+        })
+        .expect(400);
+
+      const logbook = (await anna.get(`/logbooks/${id}`).expect(200)).body;
+      expect(logbook.owner).toEqual(anna.user);
+      expect(logbook.members).toHaveLength(1);
+    });
+
+    it('is not something the request can set directly', async () => {
+      const id = await anna.createLogbook();
+
+      await anna.patch(`/logbooks/${id}`, { ownerEmail: jon.email }).expect(400);
+      await anna.patch(`/logbooks/${id}`, { owner: jon.user }).expect(400);
+    });
   });
 
   it('never leaves a logbook without an owner', async () => {

@@ -54,24 +54,16 @@ services:
       - -c
       - |
         set -e
-        stamp=$$(cat package-lock.json package.json backend/package.json frontend/package.json packages/*/package.json | sha1sum | cut -d' ' -f1)
+        stamp=$$(cat package-lock.json package.json backend/package.json frontend/package.json | sha1sum | cut -d' ' -f1)
         if [ "$$(cat node_modules/.install-stamp 2>/dev/null)" != "$$stamp" ]; then
           echo "Installing dependencies (first run, or a package.json / the lockfile changed)..."
           # `install --no-save`, not `ci`: ci deletes node_modules, which is a volume mount point here.
-          # --no-save keeps the lockfile as it is; the install also builds packages/permissions.
+          # --no-save keeps the lockfile as it is.
           npm install --no-save --no-audit --no-fund
           echo "$$stamp" > node_modules/.install-stamp
         else
           echo "Dependencies are up to date."
         fi
-
-  # Rebuilds @elogbook/permissions when its source changes; both apps import its compiled dist/.
-  permissions:
-    <<: *node
-    command: npm run watch -w @elogbook/permissions
-    depends_on:
-      deps:
-        condition: service_completed_successfully
 
   backend:
     <<: *node
@@ -109,6 +101,10 @@ services:
     depends_on:
       deps:
         condition: service_completed_successfully
+    environment:
+      <<: *watch
+      # The dev server forwards /api to the API, so the browser only ever talks to one address.
+      API_PROXY_TARGET: http://backend:3000
     ports:
       - '127.0.0.1:4300:4300'
 

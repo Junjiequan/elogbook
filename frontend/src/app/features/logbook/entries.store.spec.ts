@@ -1,14 +1,21 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DEMO_USERS } from '../../../demo/demo-users';
+import { TEST_USERS } from '../../testing/test-users';
 import { LogbookRepository } from '../../core/data-access/logbook.repository';
 import type { Entry, Logbook, MemberRole, User } from '../../core/models/logbook.models';
 import { provideFakeAuth } from '../../testing/fake-auth';
 import { EntriesStore } from './entries.store';
+import { OWNER_ACCESS, accessFor } from '../../testing/logbook-fixtures';
 
-const [anna, jon] = DEMO_USERS;
+const [anna, jon] = TEST_USERS;
 
-const logbook = (members: { user: User; role: MemberRole }[], demo = false): Logbook => ({
+const logbook = (
+  members: {
+    user: User;
+    role: MemberRole;
+  }[],
+  demo = false,
+): Logbook => ({
   id: 'l1',
   title: 'My logbook',
   description: '',
@@ -17,6 +24,8 @@ const logbook = (members: { user: User; role: MemberRole }[], demo = false): Log
   visibility: 'private',
   members,
   demo,
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
@@ -34,12 +43,12 @@ const entry = (id: string): Entry => ({
 
 describe('EntriesStore.delete', () => {
   const setup = (user: User, admin = false) => {
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', [
-      'listEntries',
-      'deleteEntry',
-    ]);
-    repo.listEntries.and.resolveTo([entry('a'), entry('b')]);
-    repo.deleteEntry.and.resolveTo();
+    const repo = {
+      listEntries: vi.fn().mockName('LogbookRepository.listEntries'),
+      deleteEntry: vi.fn().mockName('LogbookRepository.deleteEntry'),
+    };
+    repo.listEntries.mockResolvedValue([entry('a'), entry('b')]);
+    repo.deleteEntry.mockResolvedValue(undefined);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -51,6 +60,12 @@ describe('EntriesStore.delete', () => {
     return { repo, store: TestBed.inject(EntriesStore) };
   };
 
+  /** The logbook as the server would describe it to this person. */
+  const as = (book: Logbook, user: User, admin = false): Logbook => ({
+    ...book,
+    ...accessFor(book, user, admin),
+  });
+
   const owned = logbook([
     { user: anna, role: 'owner' },
     { user: jon, role: 'editor' },
@@ -60,9 +75,11 @@ describe('EntriesStore.delete', () => {
     const { repo, store } = setup(anna);
     await store.load('l1');
 
-    await store.delete(entry('a'), owned);
+    await store.delete(entry('a'), as(owned, anna));
 
-    expect(repo.deleteEntry).toHaveBeenCalledOnceWith('a');
+    expect(repo.deleteEntry).toHaveBeenCalledTimes(1);
+
+    expect(repo.deleteEntry).toHaveBeenCalledWith('a');
     expect(store.entries().map((e) => e.id)).toEqual(['b']);
   });
 
@@ -70,7 +87,7 @@ describe('EntriesStore.delete', () => {
     const { repo, store } = setup(jon);
     await store.load('l1');
 
-    await expectAsync(store.delete(entry('a'), owned)).toBeRejected();
+    await expect(store.delete(entry('a'), as(owned, jon))).rejects.toThrow();
     expect(repo.deleteEntry).not.toHaveBeenCalled();
     expect(store.entries().length).toBe(2);
   });
@@ -79,28 +96,32 @@ describe('EntriesStore.delete', () => {
     const { repo, store } = setup(jon, true);
     await store.load('l1');
 
-    await store.delete(entry('a'), {
-      ...logbook([{ user: anna, role: 'owner' }]),
-      visibility: 'facility-read',
-    });
+    await store.delete(
+      entry('a'),
+      as({ ...logbook([{ user: anna, role: 'owner' }]), visibility: 'facility-read' }, jon, true),
+    );
 
-    expect(repo.deleteEntry).toHaveBeenCalledOnceWith('a');
+    expect(repo.deleteEntry).toHaveBeenCalledTimes(1);
+
+    expect(repo.deleteEntry).toHaveBeenCalledWith('a');
   });
 
-  it('never deletes entries of a demo logbook, even for an administrator', async () => {
+  it('never deletes entries of a sample logbook, even for an administrator', async () => {
     const { repo, store } = setup(anna, true);
     await store.load('l1');
 
-    await expectAsync(store.delete(entry('a'), { ...owned, demo: true })).toBeRejectedWithError(
-      /demo/i,
-    );
+    await expect(
+      store.delete(entry('a'), as({ ...owned, demo: true }, anna, true)),
+    ).rejects.toThrowError(/sample/i);
     expect(repo.deleteEntry).not.toHaveBeenCalled();
   });
 
   it('refuses an entry that belongs to a different logbook', async () => {
     const { repo, store } = setup(anna);
 
-    await expectAsync(store.delete({ ...entry('a'), logbookId: 'other' }, owned)).toBeRejected();
+    await expect(
+      store.delete({ ...entry('a'), logbookId: 'other' }, as(owned, anna)),
+    ).rejects.toThrow();
     expect(repo.deleteEntry).not.toHaveBeenCalled();
   });
 });

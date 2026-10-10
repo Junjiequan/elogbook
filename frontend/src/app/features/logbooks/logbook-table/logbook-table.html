@@ -81,9 +81,23 @@
               <app-member-avatars [members]="logbook.members" />
             </td>
             <td>
-              <span class="role" [attr.data-role]="roleLabel(logbook)">{{
-                roleLabel(logbook)
-              }}</span>
+              @if (logbook.myRole; as role) {
+                <app-table-popover
+                  [heading]="'Your role: ' + role"
+                  [pinnable]="false"
+                  [openDelay]="250"
+                  width="300px"
+                >
+                  <span
+                    class="role"
+                    tabindex="0"
+                    [attr.data-role]="role"
+                    [attr.aria-label]="'Your role: ' + role + '. Press to see what it allows.'"
+                    >{{ role }}</span
+                  >
+                  <app-role-details popoverBody [role]="role" />
+                </app-table-popover>
+              }
             </td>
             <td>
               <span class="access">

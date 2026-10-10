@@ -12,10 +12,24 @@
   <span class="tag tag--demo" title="Demo logbook, it cannot be deleted">Demo</span>
 }
 @if (role(); as currentRole) {
-  <span class="tag tag--role" [attr.data-role]="currentRole" title="Your role in this logbook">
-    <mat-icon>{{ roleIcon() }}</mat-icon
-    >{{ currentRole }}
-  </span>
+  <app-table-popover
+    [heading]="'Your role: ' + currentRole"
+    [icon]="roleIcon()"
+    [pinnable]="false"
+    [openDelay]="250"
+    width="300px"
+  >
+    <span
+      class="tag tag--role"
+      tabindex="0"
+      [attr.data-role]="currentRole"
+      [attr.aria-label]="'Your role: ' + currentRole + '. Press to see what it allows.'"
+    >
+      <mat-icon>{{ roleIcon() }}</mat-icon
+      >{{ currentRole }}
+    </span>
+    <app-role-details popoverBody [role]="currentRole" />
+  </app-table-popover>
 }
 @if (visibility(); as access) {
   <span class="tag tag--access" [attr.title]="accessTitle()">

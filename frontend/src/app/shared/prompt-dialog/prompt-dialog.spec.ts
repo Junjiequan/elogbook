@@ -5,7 +5,9 @@ import { PromptDialog, type PromptDialogData } from './prompt-dialog';
 
 describe('PromptDialog', () => {
   const create = (data: PromptDialogData) => {
-    const ref = jasmine.createSpyObj<MatDialogRef<PromptDialog, string>>('MatDialogRef', ['close']);
+    const ref = {
+      close: vi.fn().mockName('MatDialogRef.close'),
+    };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -58,6 +60,8 @@ describe('PromptDialog', () => {
 
     input(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
-    expect(ref.close).toHaveBeenCalledOnceWith('https://example.org');
+    expect(ref.close).toHaveBeenCalledTimes(1);
+
+    expect(ref.close).toHaveBeenCalledWith('https://example.org');
   });
 });

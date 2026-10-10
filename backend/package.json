@@ -24,7 +24,7 @@
     "env:init": "node scripts/init-env.mjs"
   },
   "dependencies": {
-    "@elogbook/permissions": "*",
+    "@casl/ability": "^7.0.1",
     "@nestjs/common": "^12.1.2",
     "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.1.2",

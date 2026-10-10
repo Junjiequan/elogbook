@@ -1,0 +1,21 @@
+<p class="summary">{{ details().summary }}</p>
+
+<ul class="list can" aria-label="Can">
+  @for (item of details().can; track item) {
+    <li>
+      <mat-icon aria-hidden="true">check_circle</mat-icon><span>{{ item }}</span>
+    </li>
+  }
+</ul>
+
+<ul class="list cannot" aria-label="Cannot">
+  @for (item of details().cannot; track item) {
+    <li>
+      <mat-icon aria-hidden="true">cancel</mat-icon><span>{{ item }}</span>
+    </li>
+  } @empty {
+    <li class="none">
+      <mat-icon aria-hidden="true">verified</mat-icon><span>Nothing is off limits here.</span>
+    </li>
+  }
+</ul>

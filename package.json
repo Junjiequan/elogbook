@@ -5,13 +5,10 @@
   "description": "Electronic logbook: Angular frontend and NestJS backend.",
   "license": "MIT",
   "workspaces": [
-    "packages/*",
     "frontend",
     "backend"
   ],
   "scripts": {
-    "prepare": "npm run build -w @elogbook/permissions",
-    "build:packages": "npm run build -w @elogbook/permissions",
     "start": "concurrently -n frontend,backend -c cyan,green \"npm:start:frontend\" \"npm:start:backend\"",
     "start:frontend": "npm run start -w frontend",
     "start:backend": "npm run start:dev -w backend",

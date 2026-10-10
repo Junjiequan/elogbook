@@ -38,10 +38,8 @@ export class PinnedEntries {
   private readonly loaded = resource({
     // Reloads whenever the logbooks do (one was created, shared, deleted).
     params: () =>
-      this.store.status() === 'ready'
-        ? { user: this.currentUser.user(), logbooks: this.store.logbooks() }
-        : undefined,
-    loader: ({ params }) => this.repository.listPinnedEntries(params.user),
+      this.store.status() === 'ready' ? { logbooks: this.store.logbooks() } : undefined,
+    loader: () => this.repository.listPinnedEntries(),
   });
 
   /** What is shown. It follows what was loaded, but can be reordered at once, before that is saved. */
@@ -65,7 +63,7 @@ export class PinnedEntries {
   }
 
   protected async unpin(item: PinnedEntry): Promise<void> {
-    await this.repository.setEntryPinned(this.currentUser.user(), item.entryId, false);
+    await this.repository.setEntryPinned(item.entryId, false);
     this.loaded.reload();
   }
 
@@ -76,9 +74,6 @@ export class PinnedEntries {
     }
     items.splice(to, 0, ...items.splice(from, 1));
     this.items.set(items);
-    void this.repository.reorderPinnedEntries(
-      this.currentUser.user(),
-      items.map((i) => i.entryId),
-    );
+    void this.repository.reorderPinnedEntries(items.map((i) => i.entryId));
   }
 }

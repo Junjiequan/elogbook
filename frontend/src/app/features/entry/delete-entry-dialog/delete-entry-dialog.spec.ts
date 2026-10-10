@@ -1,11 +1,12 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import type { Entry, Logbook, MemberRole, User } from '../../../core/models/logbook.models';
 import { DeleteEntryDialog } from './delete-entry-dialog';
+import { OWNER_ACCESS } from '../../../testing/logbook-fixtures';
 
-const [anna] = DEMO_USERS;
+const [anna] = TEST_USERS;
 
 const logbook = (members: { user: User; role: MemberRole }[], demo = false): Logbook => ({
   id: 'l1',
@@ -16,6 +17,8 @@ const logbook = (members: { user: User; role: MemberRole }[], demo = false): Log
   visibility: 'private',
   members,
   demo,
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });

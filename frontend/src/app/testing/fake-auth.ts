@@ -1,11 +1,11 @@
 import { signal, type Provider } from '@angular/core';
 import { AuthService } from '../core/auth/auth.service';
-import { DEMO_USERS } from '../../demo/demo-users';
+import { TEST_USERS } from './test-users';
 import type { User } from '../core/models/logbook.models';
 
 /** Signs the given user in for a test, without any real authentication. */
 export function provideFakeAuth(
-  user: User = DEMO_USERS[0],
+  user: User = TEST_USERS[0],
   options: { admin?: boolean } = {},
 ): Provider {
   return {
