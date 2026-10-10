@@ -18,7 +18,7 @@ describe('ImageService', () => {
 
     const url = await service.toDocumentUrl(file);
 
-    expect(url.startsWith('data:image/png;base64,')).toBeTrue();
+    expect(url.startsWith('data:image/png;base64,')).toBe(true);
     expect(await readBack(url)).toEqual(bytes);
   });
 
@@ -30,17 +30,20 @@ describe('ImageService', () => {
   });
 
   it('refuses things that are not images', async () => {
-    await expectAsync(
-      service.toDocumentUrl(new File(['x'], 'notes.txt', { type: 'text/plain' })),
-    ).toBeRejectedWithError(ImageRejected, /not an image/);
+    const error = await service
+      .toDocumentUrl(new File(['x'], 'notes.txt', { type: 'text/plain' }))
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ImageRejected);
+    expect((error as Error).message).toMatch(/not an image/);
   });
 
   it('refuses images above the size limit, saying so', async () => {
     const huge = new File([new Uint8Array(MAX_IMAGE_BYTES + 1)], 'huge.png', { type: 'image/png' });
 
-    await expectAsync(service.toDocumentUrl(huge)).toBeRejectedWithError(
-      ImageRejected,
-      /at most 20 MB/,
-    );
+    const error = await service.toDocumentUrl(huge).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ImageRejected);
+    expect((error as Error).message).toMatch(/at most 20 MB/);
   });
 });

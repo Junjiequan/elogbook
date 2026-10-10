@@ -46,6 +46,15 @@ describe('demo content', () => {
     ]);
   });
 
+  it('gives every sample logbook an owner, who is also an owner member', async () => {
+    await anna.post('/demo').expect(200);
+
+    for (const logbook of await listed(anna)) {
+      expect(logbook.owner, logbook.title).toBeTruthy();
+      expect(logbook.members, logbook.title).toContainEqual({ user: logbook.owner, role: 'owner' });
+    }
+  });
+
   it('gives the person the roles and capabilities the content describes', async () => {
     await anna.post('/demo').expect(200);
     const logbooks = await listed(anna);

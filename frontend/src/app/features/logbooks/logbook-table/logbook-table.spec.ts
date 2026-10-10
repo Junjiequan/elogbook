@@ -3,13 +3,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
 import { Router, provideRouter } from '@angular/router';
 import { DATE_TIME_FORMAT } from '../../../core/date-format';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import type { Logbook } from '../../../core/models/logbook.models';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { HOVER_OPEN_DELAY_MS } from '../../../shared/table-popover/table-popover';
 import { LogbookTable } from './logbook-table';
+import { OWNER_ACCESS, accessFor } from '../../../testing/logbook-fixtures';
 
-const [anna, jon, mei] = DEMO_USERS;
+const [anna, jon, mei] = TEST_USERS;
 
 const logbook = (id: string, extra: Partial<Logbook> = {}): Logbook => ({
   id,
@@ -19,10 +20,16 @@ const logbook = (id: string, extra: Partial<Logbook> = {}): Logbook => ({
   proposalId: '2026-0412',
   visibility: 'private',
   members: [{ user: anna, role: 'owner' }],
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
   ...extra,
 });
+
+/** The logbook as the server describes it to Anna, who is signed in. */
+const sharedWithMe = (book: Logbook): Logbook => ({ ...book, ...accessFor(book, anna) });
 
 describe('LogbookTable', () => {
   let fixture: ComponentFixture<LogbookTable>;
@@ -62,25 +69,40 @@ describe('LogbookTable', () => {
 
     const updated = rows()[0].querySelector('td.nowrap')!.textContent!.trim();
     expect(updated).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
-    expect(updated.startsWith('2026-10-01')).toBeTrue();
+    expect(updated.startsWith('2026-10-01')).toBe(true);
   });
 
   it('shows the current user’s role and marks demo logbooks', async () => {
     await create([
       logbook('a'),
-      logbook('b', {
-        demo: true,
-        members: [
-          { user: jon, role: 'owner' },
-          { user: anna, role: 'viewer' },
-        ],
-      }),
+      sharedWithMe(
+        logbook('b', {
+          demo: true,
+          members: [
+            { user: jon, role: 'owner' },
+            { user: anna, role: 'viewer' },
+          ],
+        }),
+      ),
     ]);
 
     expect(el().querySelectorAll('.role')[0].textContent?.trim()).toBe('owner');
     expect(el().querySelectorAll('.role')[1].textContent?.trim()).toBe('viewer');
     expect(rows()[1].querySelector('.badge')?.textContent).toContain('Demo');
     expect(rows()[0].querySelector('.badge')).toBeNull();
+  });
+
+  it('shows what a role allows when the role is hovered or focused', async () => {
+    await create([logbook('a')]);
+
+    const pill = el().querySelector<HTMLElement>('.role')!;
+    expect(pill.getAttribute('tabindex')).toBe('0');
+    pill.closest('.anchor')!.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const card = document.querySelector<HTMLElement>('.cdk-overlay-container .card');
+    expect(card!.getAttribute('aria-label')).toBe('Your role: owner');
+    expect(card!.textContent).toContain('Delete entries and the logbook');
   });
 
   it('opens a logbook only through the icon button in the first column', async () => {
@@ -95,7 +117,7 @@ describe('LogbookTable', () => {
 
   it('does nothing when the row or the title is clicked', async () => {
     await create([logbook('a')]);
-    const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
     rows()[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
     rows()[0]
@@ -138,7 +160,7 @@ describe('LogbookTable', () => {
       style.textContent = '.wide-only { display: table-cell !important; }';
       (fixture.nativeElement as HTMLElement).append(style);
       (fixture.nativeElement as HTMLElement).style.display = 'block';
-      (fixture.nativeElement as HTMLElement).style.width = '700px';
+      (fixture.nativeElement as HTMLElement).style.width = '1000px';
       await new Promise((resolve) => setTimeout(resolve, 60)); // the truncation check runs on resize
       fixture.detectChanges();
       await fixture.whenStable();
@@ -161,7 +183,7 @@ describe('LogbookTable', () => {
       const dots = link.closest('.anchor')!.querySelector('.cut-dots')!;
       expect(dots.textContent).toBe('…');
       expect(getComputedStyle(dots).color).not.toBe(getComputedStyle(link).color);
-      expect(link.hasAttribute('title')).toBeFalse(); // no browser tooltip; the card does it
+      expect(link.hasAttribute('title')).toBe(false); // no browser tooltip; the card does it
 
       await hoverOver('.title-text');
       expect(card()!.textContent).toContain(longTitle.trim());

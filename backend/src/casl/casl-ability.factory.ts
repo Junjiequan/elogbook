@@ -1,4 +1,4 @@
-import { type AppAbility, defineAbilityFor } from '@elogbook/permissions';
+import { type AppAbility, defineAbilityFor } from './ability.js';
 import { Injectable } from '@nestjs/common';
 import type { JwtUser } from '../auth/interfaces/jwt-user.interface.js';
 import { Role } from '../auth/role.enum.js';

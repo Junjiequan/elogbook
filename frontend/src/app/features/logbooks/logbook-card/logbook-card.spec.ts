@@ -2,12 +2,13 @@ import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import { DATE_TIME_FORMAT } from '../../../core/date-format';
 import type { Logbook, MemberRole } from '../../../core/models/logbook.models';
 import { LogbookCard } from './logbook-card';
+import { OWNER_ACCESS } from '../../../testing/logbook-fixtures';
 
-const [anna, jon] = DEMO_USERS;
+const [anna, jon] = TEST_USERS;
 
 const book = (overrides: Partial<Logbook> = {}): Logbook => ({
   id: 'l1',
@@ -20,6 +21,9 @@ const book = (overrides: Partial<Logbook> = {}): Logbook => ({
     { user: anna, role: 'owner' },
     { user: jon, role: 'viewer' },
   ],
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-09T08:46:00',
   ...overrides,

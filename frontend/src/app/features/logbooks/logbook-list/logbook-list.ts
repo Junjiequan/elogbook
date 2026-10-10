@@ -24,8 +24,6 @@ import type { PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { firstValueFrom, map } from 'rxjs';
-import { CurrentUserService } from '../../../core/auth/current-user.service';
-import { roleOf } from '../../../core/auth/permissions';
 import type { Logbook, MemberRole, NewLogbook } from '../../../core/models/logbook.models';
 import {
   DEFAULT_SORT,
@@ -39,6 +37,7 @@ import { UserControls } from '../../../shared/user-controls/user-controls';
 import { LogbookCard } from '../logbook-card/logbook-card';
 import { NoResults } from '../no-results/no-results';
 import { PinnedEntries } from '../pinned-entries/pinned-entries';
+import { SampleLogbooksButton } from '../sample-logbooks/sample-logbooks';
 import { LogbookPager } from '../logbook-pager/logbook-pager';
 import { LogbookTable } from '../logbook-table/logbook-table';
 import { NewLogbookDialog } from '../new-logbook-dialog/new-logbook-dialog';
@@ -95,6 +94,7 @@ function scrollParent(element: HTMLElement): HTMLElement | null {
     NgTemplateOutlet,
     NoResults,
     PinnedEntries,
+    SampleLogbooksButton,
     UserControls,
   ],
   templateUrl: './logbook-list.html',
@@ -103,7 +103,6 @@ function scrollParent(element: HTMLElement): HTMLElement | null {
 })
 export class LogbookList {
   protected readonly store = inject(LogbooksStore);
-  private readonly currentUser = inject(CurrentUserService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
 
@@ -280,7 +279,7 @@ export class LogbookList {
   }
 
   protected roleLabel(logbook: Logbook): MemberRole | '' {
-    return roleOf(logbook, this.currentUser.user()) ?? '';
+    return logbook.myRole ?? '';
   }
 
   /** Typing waits for a pause before searching; one request per word, not per key. */

@@ -26,6 +26,9 @@ jobs:
       - run: npm run lint
       # Unit tests of both apps (the frontend in headless Chrome); no database needed.
       - run: npm test
+        env:
+          # The frontend specs run in the Chrome that is installed on the runner.
+          CHROME_BIN: /usr/bin/google-chrome
       - name: Build for GitHub Pages
         run: npm run build:pages
       - uses: actions/upload-pages-artifact@v5

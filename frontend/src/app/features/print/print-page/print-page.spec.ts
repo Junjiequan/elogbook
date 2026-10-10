@@ -4,12 +4,13 @@ import { provideRouter } from '@angular/router';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
 import type { Entry, Logbook } from '../../../core/models/logbook.models';
-import { DemoProposalRepository } from '../../../../demo/demo-proposals';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
+import { TEST_USERS } from '../../../testing/test-users';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { PrintPage } from './print-page';
+import { OWNER_ACCESS } from '../../../testing/logbook-fixtures';
 
-const [anna] = DEMO_USERS;
+const [anna] = TEST_USERS;
 
 const logbook: Logbook = {
   id: 'l1',
@@ -19,6 +20,9 @@ const logbook: Logbook = {
   proposalId: '2026-0412',
   visibility: 'private',
   members: [{ user: anna, role: 'owner' }],
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 };
@@ -43,9 +47,16 @@ describe('PrintPage', () => {
   const headings = () =>
     Array.from(el().querySelectorAll('.entry h2')).map((h) => h.textContent?.trim());
 
-  const create = async (inputs: { entry?: string } = {}, logbooks: Logbook[] = [logbook]) => {
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', ['listEntries']);
-    repo.listEntries.and.resolveTo([
+  const create = async (
+    inputs: {
+      entry?: string;
+    } = {},
+    logbooks: Logbook[] = [logbook],
+  ) => {
+    const repo = {
+      listEntries: vi.fn().mockName('LogbookRepository.listEntries'),
+    };
+    repo.listEntries.mockResolvedValue([
       entry('b', 'Second day', '2026-10-02T09:00:00Z'),
       entry('a', 'First day', '2026-10-01T09:00:00Z'),
       entry('c', '', '2026-10-03T09:00:00Z'),
@@ -97,7 +108,7 @@ describe('PrintPage', () => {
 
   it('leaves the toolbar out of the printed page and prints on request', async () => {
     await create();
-    const print = spyOn(window, 'print');
+    const print = vi.spyOn(window, 'print').mockReturnValue(undefined);
 
     expect(el().querySelector('.toolbar')!.classList).toContain('no-print');
     el().querySelector<HTMLButtonElement>('.toolbar button')!.click();

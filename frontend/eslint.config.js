@@ -13,6 +13,11 @@ module.exports = tseslint.config(
       ...angular.configs.tsRecommended,
     ],
     processor: angular.processInlineTemplates,
+    languageOptions: {
+      // The tsconfig files are in this folder, wherever ESLint is started from (an editor opens the
+      // repository root, where there is none).
+      parserOptions: { tsconfigRootDir: __dirname },
+    },
     rules: {
       "@angular-eslint/directive-selector": [
         "error",

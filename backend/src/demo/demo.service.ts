@@ -111,6 +111,7 @@ export class DemoService {
       instrument: logbook.instrument,
       proposalId: logbook.proposalId,
       visibility: logbook.visibility,
+      ownerId: idOf((logbook.members.find((m) => m.role === 'owner') ?? { user: me }).user),
       demoUserId: me.id,
       createdAt: new Date(logbook.createdAt),
       updatedAt: new Date(logbook.updatedAt),

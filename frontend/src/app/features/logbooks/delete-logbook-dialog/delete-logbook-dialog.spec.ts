@@ -1,12 +1,13 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
 import type { Logbook } from '../../../core/models/logbook.models';
 import { DeleteLogbookDialog } from './delete-logbook-dialog';
+import { OWNER_ACCESS } from '../../../testing/logbook-fixtures';
 
-const [anna] = DEMO_USERS;
+const [anna] = TEST_USERS;
 
 const logbook = (id: string, owner = anna): Logbook => ({
   id,
@@ -16,14 +17,19 @@ const logbook = (id: string, owner = anna): Logbook => ({
   proposalId: null,
   visibility: 'private',
   members: [{ user: owner, role: 'owner' }],
+  owner: owner,
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 });
 
 describe('DeleteLogbookDialog', () => {
   const create = async (book: Logbook) => {
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', ['listEntries']);
-    repo.listEntries.and.resolveTo([{}, {}, {}] as never);
+    const repo = {
+      listEntries: vi.fn().mockName('LogbookRepository.listEntries'),
+    };
+    repo.listEntries.mockResolvedValue([{}, {}, {}] as never);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),

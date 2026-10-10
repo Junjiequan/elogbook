@@ -1,0 +1,6 @@
+@if (samples.available()) {
+  <button mat-button type="button" class="toggle" [disabled]="samples.busy()" (click)="toggle()">
+    <mat-icon>{{ samples.count() === 0 ? 'add_circle' : 'delete_sweep' }}</mat-icon>
+    {{ samples.count() === 0 ? 'Add sample logbooks' : 'Remove sample logbooks' }}
+  </button>
+}

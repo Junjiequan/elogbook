@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { HarnessLoader } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { provideZonelessChangeDetection } from '@angular/core';
@@ -7,11 +8,12 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { MatRadioGroupHarness } from '@angular/material/radio/testing';
 import type { Logbook } from '../../../core/models/logbook.models';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { ShareDialog } from './share-dialog';
+import { OWNER_ACCESS } from '../../../testing/logbook-fixtures';
 
-const [anna, jon] = DEMO_USERS;
+const [anna, jon] = TEST_USERS;
 
 const logbook: Logbook = {
   id: 'l1',
@@ -24,6 +26,9 @@ const logbook: Logbook = {
     { user: anna, role: 'owner' },
     { user: jon, role: 'viewer' },
   ],
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
 };
@@ -31,16 +36,20 @@ const logbook: Logbook = {
 describe('ShareDialog', () => {
   let fixture: ComponentFixture<ShareDialog>;
   let loader: HarnessLoader;
-  let store: jasmine.SpyObj<LogbooksStore>;
-  let ref: jasmine.SpyObj<MatDialogRef<ShareDialog>>;
+  let store: Record<'updateSettings', Mock>;
+  let ref: Record<'close', Mock>;
   const el = () => fixture.nativeElement as HTMLElement;
   const people = () =>
     Array.from(el().querySelectorAll('.members .name')).map((n) => n.textContent?.trim());
 
   const create = async (canManage: boolean) => {
-    store = jasmine.createSpyObj('LogbooksStore', ['updateSettings']);
-    store.updateSettings.and.resolveTo();
-    ref = jasmine.createSpyObj('MatDialogRef', ['close']);
+    store = {
+      updateSettings: vi.fn().mockName('LogbooksStore.updateSettings'),
+    };
+    store.updateSettings.mockResolvedValue(undefined);
+    ref = {
+      close: vi.fn().mockName('MatDialogRef.close'),
+    };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -57,6 +66,18 @@ describe('ShareDialog', () => {
   };
 
   const button = (text: string) => loader.getHarness(MatButtonHarness.with({ text }));
+
+  it('says in a few words what each role can do', async () => {
+    await create(true);
+
+    const roles = Array.from(el().querySelectorAll('.roles > div')).map((row) => ({
+      role: row.querySelector('dt')!.textContent?.trim(),
+      text: row.querySelector('dd')!.textContent,
+    }));
+    expect(roles.map((r) => r.role)).toEqual(['Owner', 'Can edit', 'Can view']);
+    expect(roles[1].text).toContain('Add and edit entries');
+    expect(roles[2].text).toContain('Cannot change anything');
+  });
 
   it('lists the people with access, and the owner cannot be removed', async () => {
     await create(true);
@@ -76,7 +97,7 @@ describe('ShareDialog', () => {
     expect(await (await loader.getHarness(MatInputHarness)).getValue()).toBe('');
 
     await (await button('Save')).click();
-    const saved = store.updateSettings.calls.mostRecent().args[1];
+    const saved = vi.mocked(store.updateSettings).mock.lastCall![1];
     expect(saved.members!.at(-1)).toEqual({
       user: { id: 'mei.tanaka@example.org', name: 'Mei Tanaka', email: 'mei.tanaka@example.org' },
       role: 'editor',
@@ -88,7 +109,7 @@ describe('ShareDialog', () => {
     const email = await loader.getHarness(MatInputHarness);
 
     await email.setValue('not an address');
-    expect(await (await button('Add')).isDisabled()).toBeTrue();
+    expect(await (await button('Add')).isDisabled()).toBe(true);
 
     await email.setValue(jon.email);
     await (await button('Add')).click();
@@ -107,13 +128,15 @@ describe('ShareDialog', () => {
 
   it('saves only after something has changed, then closes', async () => {
     await create(true);
-    expect(await (await button('Save')).isDisabled()).toBeTrue();
+    expect(await (await button('Save')).isDisabled()).toBe(true);
 
     const access = await loader.getHarness(MatRadioGroupHarness);
     await access.checkRadioButton({ label: /Facility/ });
     await (await button('Save')).click();
 
-    expect(store.updateSettings).toHaveBeenCalledOnceWith('l1', {
+    expect(store.updateSettings).toHaveBeenCalledTimes(1);
+
+    expect(store.updateSettings).toHaveBeenCalledWith('l1', {
       members: logbook.members,
       visibility: 'facility-read',
     });

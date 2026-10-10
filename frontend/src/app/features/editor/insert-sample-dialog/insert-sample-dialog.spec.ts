@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { HarnessLoader } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { provideZonelessChangeDetection } from '@angular/core';
@@ -6,16 +7,18 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSelectHarness } from '@angular/material/select/testing';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
-import { DemoProposalRepository } from '../../../../demo/demo-proposals';
+import { DemoProposalRepository } from '../../../core/data-access/demo-proposal.repository';
 import { InsertSampleDialog } from './insert-sample-dialog';
 
 describe('InsertSampleDialog', () => {
   let fixture: ComponentFixture<InsertSampleDialog>;
   let loader: HarnessLoader;
-  let ref: jasmine.SpyObj<MatDialogRef<InsertSampleDialog>>;
+  let ref: Record<'close', Mock>;
 
   beforeEach(async () => {
-    ref = jasmine.createSpyObj('MatDialogRef', ['close']);
+    ref = {
+      close: vi.fn().mockName('MatDialogRef.close'),
+    };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -39,13 +42,13 @@ describe('InsertSampleDialog', () => {
 
   it('cannot insert before a proposal and a sample are chosen, and the sample list waits for the proposal', async () => {
     const [, sample] = await selects();
-    expect(await sample.isDisabled()).toBeTrue();
-    expect(await (await insert()).isDisabled()).toBeTrue();
+    expect(await sample.isDisabled()).toBe(true);
+    expect(await (await insert()).isDisabled()).toBe(true);
 
     const [proposal] = await selects();
     await choose(proposal, /2026-0412/);
-    expect(await sample.isDisabled()).toBeFalse();
-    expect(await (await insert()).isDisabled()).toBeTrue();
+    expect(await sample.isDisabled()).toBe(false);
+    expect(await (await insert()).isDisabled()).toBe(true);
   });
 
   it('lists only the samples of the chosen proposal', async () => {
@@ -64,7 +67,9 @@ describe('InsertSampleDialog', () => {
 
     await (await insert()).click();
 
-    expect(ref.close).toHaveBeenCalledOnceWith({
+    expect(ref.close).toHaveBeenCalledTimes(1);
+
+    expect(ref.close).toHaveBeenCalledWith({
       proposalId: '2026-0412',
       proposalTitle: 'Micelle structure under shear',
       instrument: 'LoKI',
@@ -81,6 +86,6 @@ describe('InsertSampleDialog', () => {
 
     await choose(proposal, /2026-0290/);
 
-    expect(await (await insert()).isDisabled()).toBeTrue();
+    expect(await (await insert()).isDisabled()).toBe(true);
   });
 });

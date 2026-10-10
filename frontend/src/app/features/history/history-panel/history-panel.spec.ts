@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import type { EntryVersion } from '../../../core/models/logbook.models';
 import { EntryAutosave } from '../../entry/entry-autosave';
 import { HistoryPanel } from './history-panel';
@@ -12,7 +12,7 @@ const version = (id: string, reason: EntryVersion['reason']): EntryVersion => ({
   title: 'Day 1',
   content: { type: 'doc', content: [] },
   savedAt: '2026-10-09T08:46:00Z',
-  savedBy: DEMO_USERS[0],
+  savedBy: TEST_USERS[0],
   reason,
 });
 
@@ -22,8 +22,10 @@ describe('HistoryPanel', () => {
   const items = () => Array.from(el().querySelectorAll<HTMLButtonElement>('li button'));
 
   const create = async (versions: EntryVersion[]) => {
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', ['listVersions']);
-    repo.listVersions.and.resolveTo(versions);
+    const repo = {
+      listVersions: vi.fn().mockName('LogbookRepository.listVersions'),
+    };
+    repo.listVersions.mockResolvedValue(versions);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -47,7 +49,7 @@ describe('HistoryPanel', () => {
 
     expect(repo.listVersions).toHaveBeenCalledWith('e1');
     expect(items().length).toBe(2);
-    expect(items()[0].textContent).toContain(`${DEMO_USERS[0].name} · Saved by user`);
+    expect(items()[0].textContent).toContain(`${TEST_USERS[0].name} · Saved by user`);
     expect(items()[1].textContent).toContain('Automatic');
   });
 

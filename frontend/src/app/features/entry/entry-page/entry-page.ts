@@ -16,8 +16,6 @@ import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { CurrentUserService } from '../../../core/auth/current-user.service';
-import { canDelete, canWrite } from '../../../core/auth/permissions';
 import {
   LogbookRepository,
   PinLimitReachedError,
@@ -40,6 +38,7 @@ const STATUS_TEXT: Record<SaveStatus, string> = {
   saving: 'Saving…',
   dirty: 'Unsaved changes',
   error: 'Could not save – retrying',
+  conflict: 'Changed by someone else – reload to see it',
 };
 
 const STATUS_ICON: Record<SaveStatus, string> = {
@@ -47,6 +46,7 @@ const STATUS_ICON: Record<SaveStatus, string> = {
   saving: 'cloud_sync',
   dirty: 'cloud_upload',
   error: 'cloud_off',
+  conflict: 'sync_problem',
 };
 
 @Component({
@@ -76,7 +76,6 @@ export class EntryPage {
 
   protected readonly autosave = inject(EntryAutosave);
   private readonly logbooks = inject(LogbooksStore);
-  private readonly currentUser = inject(CurrentUserService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
@@ -85,12 +84,12 @@ export class EntryPage {
 
   protected readonly mayWrite = computed(() => {
     const logbook = this.logbooks.logbooks().find((l) => l.id === this.logbookId());
-    return !!logbook && canWrite(logbook, this.currentUser.user());
+    return !!logbook?.canWrite;
   });
 
   protected readonly mayDelete = computed(() => {
     const logbook = this.logbooks.logbooks().find((l) => l.id === this.logbookId());
-    return !!logbook && canDelete(logbook, this.currentUser.user(), this.currentUser.isAdmin());
+    return !!logbook?.canDelete;
   });
 
   /** Whether this person has pinned the entry (pins are personal). */
@@ -115,7 +114,7 @@ export class EntryPage {
   }
 
   private async loadPinned(entryId: string): Promise<void> {
-    const pinned = await this.repository.isEntryPinned(this.currentUser.user(), entryId);
+    const pinned = await this.repository.isEntryPinned(entryId);
     if (this.entryId() === entryId) {
       this.pinned.set(pinned);
     }
@@ -125,7 +124,7 @@ export class EntryPage {
     const pin = !this.pinned();
     this.pinned.set(pin); // at once; it is undone below if saving the pin fails
     try {
-      await this.repository.setEntryPinned(this.currentUser.user(), this.entryId(), pin);
+      await this.repository.setEntryPinned(this.entryId(), pin);
     } catch (error) {
       this.pinned.set(!pin);
       this.snackBar.open(

@@ -23,9 +23,19 @@ export interface Logbook {
   instrument: string | null;
   proposalId: string | null;
   visibility: Visibility;
+  /** The person responsible for the logbook; also in `members`, with the `owner` role. */
+  owner: User;
   members: LogbookMember[];
-  /** Sample content generated for new users; shown with a "Demo" label. */
-  demo?: boolean;
+  /** Sample content made with "Add sample logbooks"; shown with a "Demo" label. */
+  demo: boolean;
+  /**
+   * What the signed-in person may do with this logbook. The server works it out and sends it, so the
+   * screens never apply permission rules themselves (the server enforces them anyway).
+   */
+  myRole: MemberRole | null;
+  canWrite: boolean;
+  canConfigure: boolean;
+  canDelete: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,11 +86,4 @@ export interface EntryVersion {
   savedAt: string;
   savedBy: User;
   reason: VersionReason;
-}
-
-/** A whole logbook with its entries and history, e.g. for import, backup or demo content. */
-export interface LogbookBundle {
-  logbook: Logbook;
-  entries: Entry[];
-  versions: EntryVersion[];
 }

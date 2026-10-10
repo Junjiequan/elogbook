@@ -38,6 +38,17 @@ export class Logbook {
   @Column({ type: 'text', default: 'private' })
   visibility: Visibility;
 
+  /**
+   * The person responsible for the logbook: who created it, or who it was handed over to. Always also a
+   * member with the `owner` role (the service keeps the two together); other members may be owners too.
+   */
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
+  owner: Relation<User>;
+
+  @Column({ type: 'uuid' })
+  ownerId: string;
+
   @OneToMany(() => LogbookMember, (member) => member.logbook)
   members: Relation<LogbookMember[]>;
 

@@ -1,0 +1,9 @@
+.content {
+  width: min(480px, 80vw);
+  overflow: visible;
+}
+
+.danger {
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+}

@@ -1,0 +1,4 @@
+{
+  // ESLint is only used for the Angular app; the API is checked with oxlint (npm run lint -w backend).
+  "eslint.workingDirectories": [{ "directory": "./frontend" }]
+}

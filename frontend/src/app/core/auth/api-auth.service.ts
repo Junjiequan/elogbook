@@ -1,0 +1,119 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { AppConfig } from '../api/app-config';
+import type { User } from '../models/logbook.models';
+import { AuthService } from './auth.service';
+
+const SESSION_KEY = 'elogbook.session';
+
+interface Session {
+  token: string;
+  /** Milliseconds since the epoch: when the token stops working. */
+  expiresAt: number;
+  user: User;
+  isAdmin: boolean;
+}
+
+interface AuthResponse {
+  access_token: string;
+  expires_in: number;
+  user: User;
+  isAdmin: boolean;
+}
+
+/** Sign-in or sign-up failed; the message says why in words a person can act on. */
+export class AuthError extends Error {}
+
+const messageFor = (error: unknown): string => {
+  if (error instanceof HttpErrorResponse) {
+    switch (error.status) {
+      case 0:
+        return 'Cannot reach the server. Try again in a moment.';
+      case 400:
+        return 'Check the details and try again.';
+      case 401:
+        return 'Incorrect email or password.';
+      case 403:
+        return 'Creating an account is turned off. Sign in instead.';
+      case 409:
+        return 'An account with this email already exists. Try signing in.';
+      case 429:
+        return 'Too many attempts. Wait a minute and try again.';
+    }
+  }
+  return 'Something went wrong. Try again.';
+};
+
+/**
+ * Who is signed in, against the eLogbook API (`POST /auth/login` and `/auth/register`).
+ * The token is kept in this browser's local storage until it expires, so a reload keeps you signed in.
+ */
+@Injectable({ providedIn: 'root' })
+export class ApiAuthService extends AuthService {
+  private readonly http = inject(HttpClient);
+  private readonly config = inject(AppConfig);
+  private readonly session = signal<Session | null>(this.readSession());
+
+  override readonly user = computed(() => this.session()?.user ?? null);
+  override readonly isAdmin = computed(() => this.session()?.isAdmin ?? false);
+  /** What the HTTP interceptor sends as the bearer token. */
+  readonly token = computed(() => this.session()?.token ?? null);
+
+  async signIn(email: string, password: string): Promise<void> {
+    await this.start('/auth/login', { email, password });
+  }
+
+  async signUp(name: string, email: string, password: string): Promise<void> {
+    await this.start('/auth/register', { name, email, password });
+  }
+
+  override signOut(): void {
+    this.session.set(null);
+    this.write(null);
+  }
+
+  /** The server no longer accepts the token (it expired, or the account is gone). */
+  expire(): void {
+    this.signOut();
+  }
+
+  private async start(path: string, body: object): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<AuthResponse>(`${this.config.apiUrl}${path}`, body),
+      );
+      const session: Session = {
+        token: response.access_token,
+        expiresAt: Date.now() + response.expires_in * 1000,
+        user: response.user,
+        isAdmin: response.isAdmin,
+      };
+      this.write(session);
+      this.session.set(session);
+    } catch (error) {
+      throw new AuthError(messageFor(error));
+    }
+  }
+
+  private readSession(): Session | null {
+    try {
+      const stored = JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null') as Session | null;
+      return stored && stored.expiresAt > Date.now() ? stored : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private write(session: Session | null): void {
+    try {
+      if (session) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      } else {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    } catch {
+      // storage unavailable: the person is signed in until the page is closed
+    }
+  }
+}

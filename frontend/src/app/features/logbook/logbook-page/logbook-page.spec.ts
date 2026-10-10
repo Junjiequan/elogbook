@@ -3,12 +3,13 @@ import { Component, provideZonelessChangeDetection, signal } from '@angular/core
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { DEMO_USERS } from '../../../../demo/demo-users';
+import { TEST_USERS } from '../../../testing/test-users';
 import type { Entry, Logbook } from '../../../core/models/logbook.models';
 import { provideFakeAuth } from '../../../testing/fake-auth';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 import { EntriesStore } from '../entries.store';
 import { LogbookPage } from './logbook-page';
+import { OWNER_ACCESS, accessFor } from '../../../testing/logbook-fixtures';
 
 @Component({ template: 'stub' })
 class Stub {}
@@ -20,9 +21,18 @@ const logbook: Logbook = {
   instrument: null,
   proposalId: null,
   visibility: 'private',
-  members: [{ user: DEMO_USERS[0], role: 'owner' }],
+  members: [{ user: TEST_USERS[0], role: 'owner' }],
+  owner: TEST_USERS[0],
+  ...OWNER_ACCESS,
+  demo: false,
   createdAt: '2026-10-01T10:00:00Z',
   updatedAt: '2026-10-01T10:00:00Z',
+};
+
+/** The same logbook, where the signed-in person may only read. */
+const readOnly = (book: Logbook): Logbook => {
+  const viewing = { ...book, members: [{ user: TEST_USERS[0], role: 'viewer' as const }] };
+  return { ...viewing, ...accessFor(viewing, TEST_USERS[0]) };
 };
 
 describe('LogbookPage sidebar', () => {
@@ -154,7 +164,7 @@ describe('LogbookPage sidebar', () => {
       revision: 1,
       createdAt: '2026-10-01T10:00:00Z',
       updatedAt: '2026-10-01T10:00:00Z',
-      updatedBy: DEMO_USERS[0],
+      updatedBy: TEST_USERS[0],
     };
 
     it('lets a tap reach an entry instead of the backdrop behind the list', async () => {
@@ -184,7 +194,7 @@ describe('LogbookPage sidebar', () => {
       const box = link.getBoundingClientRect();
       const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
 
-      expect(link.contains(hit)).withContext(`tap landed on ${hit?.className}`).toBeTrue();
+      expect(link.contains(hit), `tap landed on ${hit?.className}`).toBe(true);
     });
   });
 
@@ -196,7 +206,7 @@ describe('LogbookPage sidebar', () => {
 
       const row = el().querySelector('.search-row');
       expect(row?.querySelector('.filter')).not.toBeNull();
-      expect(row?.contains(addButton())).toBeTrue();
+      expect(row?.contains(addButton())).toBe(true);
       expect(addButton()!.getBoundingClientRect().width).toBeLessThanOrEqual(40);
     });
 
@@ -217,9 +227,7 @@ describe('LogbookPage sidebar', () => {
     it('shows neither to someone who can only read', async () => {
       TestBed.overrideProvider(LogbooksStore, {
         useValue: {
-          logbooks: signal([
-            { ...logbook, members: [{ user: DEMO_USERS[0], role: 'viewer' as const }] },
-          ]),
+          logbooks: signal([readOnly(logbook)]),
           status: signal('ready'),
         },
       });

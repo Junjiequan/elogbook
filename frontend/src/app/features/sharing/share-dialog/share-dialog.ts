@@ -21,6 +21,7 @@ import type {
   User,
   Visibility,
 } from '../../../core/models/logbook.models';
+import { ROLE_CAPABILITIES } from '../../../core/models/role-capabilities';
 import { LogbooksStore } from '../../logbooks/logbooks.store';
 
 export interface ShareDialogData {
@@ -62,6 +63,12 @@ export class ShareDialog {
   protected readonly members = signal<LogbookMember[]>(this.data.logbook.members);
   protected readonly visibility = signal<Visibility>(this.data.logbook.visibility);
   protected readonly saving = signal(false);
+  /** What each role can do, most powerful first (the legend under the member list). */
+  protected readonly roles = [
+    ROLE_CAPABILITIES.owner,
+    ROLE_CAPABILITIES.editor,
+    ROLE_CAPABILITIES.viewer,
+  ];
   protected readonly dirty = computed(
     () =>
       this.visibility() !== this.data.logbook.visibility ||

@@ -137,7 +137,7 @@ describe('TablePopover', () => {
     });
 
     it('keeps the click from reaching the table row that contains it', () => {
-      const rowClick = jasmine.createSpy('rowClick');
+      const rowClick = vi.fn().mockName('rowClick');
       el().addEventListener('click', rowClick);
 
       triggers()[0].click();
