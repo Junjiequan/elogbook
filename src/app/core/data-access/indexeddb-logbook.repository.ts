@@ -1,6 +1,6 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
-import { type DBSchema, type IDBPDatabase, openDB } from 'idb';
-import { LogbookRepository } from './logbook.repository';
+import { type DBSchema, type IDBPDatabase, type IDBPObjectStore, openDB } from 'idb';
+import { LogbookRepository, PinLimitReachedError } from './logbook.repository';
 import type {
   Entry,
   EntryChanges,
@@ -9,11 +9,12 @@ import type {
   LogbookBundle,
   LogbookSettingsPatch,
   NewLogbook,
-  RecentEntry,
+  PinnedEntry,
   User,
   VersionReason,
 } from '../models/logbook.models';
 import { canRead } from '../auth/permissions';
+import { MAX_PINNED_ENTRIES } from '../models/logbook.models';
 
 export interface LogbookDbOptions {
   name: string;
@@ -30,7 +31,20 @@ interface LogbookDb extends DBSchema {
   logbooks: { key: string; value: Logbook };
   entries: { key: string; value: Entry; indexes: { byLogbook: string } };
   versions: { key: string; value: EntryVersion; indexes: { byEntry: string } };
+  pins: { key: string; value: Pin; indexes: { byUser: string; byEntry: string } };
 }
+
+/** One person's pin on one entry. The key is both ids, so pinning twice cannot make two. */
+interface Pin {
+  key: string;
+  userId: string;
+  entryId: string;
+  pinnedAt: string;
+  /** Place in the person's own order (0 is first). Pins made before ordering existed have none. */
+  position?: number;
+}
+
+const pinKey = (user: User, entryId: string) => `${user.id}|${entryId}`;
 
 @Injectable()
 export class IndexedDbLogbookRepository extends LogbookRepository {
@@ -70,9 +84,10 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
 
   override async deleteLogbook(id: string): Promise<void> {
     const db = await this.db();
-    const tx = db.transaction(['logbooks', 'entries', 'versions'], 'readwrite');
+    const tx = db.transaction(['logbooks', 'entries', 'versions', 'pins'], 'readwrite');
     const entryIds = await tx.objectStore('entries').index('byLogbook').getAllKeys(id);
     for (const entryId of entryIds) {
+      await deletePins(tx.objectStore('pins'), entryId);
       const versionIds = await tx.objectStore('versions').index('byEntry').getAllKeys(entryId);
       await Promise.all(
         versionIds.map((versionId) => tx.objectStore('versions').delete(versionId)),
@@ -99,27 +114,67 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
     return entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
-  override async listRecentEntries(user: User, limit: number): Promise<RecentEntry[]> {
+  override async listPinnedEntries(user: User): Promise<PinnedEntry[]> {
     const db = await this.db();
-    const readable = new Map(
-      (await db.getAll('logbooks')).filter((l) => canRead(l, user)).map((l) => [l.id, l]),
-    );
-    return (await db.getAll('entries'))
-      .filter((e) => readable.has(e.logbookId))
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-      .slice(0, limit)
-      .map((e) => {
-        const logbook = readable.get(e.logbookId)!;
-        return {
-          entryId: e.id,
-          entryTitle: e.title,
+    const pins = inOrder(await db.getAllFromIndex('pins', 'byUser', user.id));
+    const pinned: PinnedEntry[] = [];
+    for (const pin of pins) {
+      const entry = await db.get('entries', pin.entryId);
+      const logbook = entry && (await db.get('logbooks', entry.logbookId));
+      if (entry && logbook && canRead(logbook, user)) {
+        pinned.push({
+          entryId: entry.id,
+          entryTitle: entry.title,
           logbookId: logbook.id,
           logbookTitle: logbook.title,
           instrument: logbook.instrument,
-          updatedAt: e.updatedAt,
-          updatedBy: e.updatedBy,
-        };
+          pinnedAt: pin.pinnedAt,
+          updatedAt: entry.updatedAt,
+          updatedBy: entry.updatedBy,
+        });
+      }
+    }
+    return pinned;
+  }
+
+  override async isEntryPinned(user: User, entryId: string): Promise<boolean> {
+    return !!(await (await this.db()).get('pins', pinKey(user, entryId)));
+  }
+
+  override async setEntryPinned(user: User, entryId: string, pinned: boolean): Promise<void> {
+    const db = await this.db();
+    if (!pinned) {
+      await db.delete('pins', pinKey(user, entryId));
+    } else if (!(await db.get('pins', pinKey(user, entryId)))) {
+      const mine = await db.getAllFromIndex('pins', 'byUser', user.id);
+      if (mine.length >= MAX_PINNED_ENTRIES) {
+        throw new PinLimitReachedError();
+      }
+      // Number the existing pins first (older ones have no place yet), so the new one is surely last.
+      const ordered = inOrder(mine);
+      for (const [position, pin] of ordered.entries()) {
+        await db.put('pins', { ...pin, position });
+      }
+      await db.put('pins', {
+        key: pinKey(user, entryId),
+        userId: user.id,
+        entryId,
+        pinnedAt: new Date().toISOString(),
+        position: ordered.length,
       });
+    }
+  }
+
+  override async reorderPinnedEntries(user: User, entryIds: string[]): Promise<void> {
+    const db = await this.db();
+    const tx = db.transaction('pins', 'readwrite');
+    for (const [position, entryId] of entryIds.entries()) {
+      const pin = await tx.store.get(pinKey(user, entryId));
+      if (pin) {
+        await tx.store.put({ ...pin, position });
+      }
+    }
+    await tx.done;
   }
 
   override async getEntry(id: string): Promise<Entry | undefined> {
@@ -128,7 +183,8 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
 
   override async deleteEntry(id: string): Promise<void> {
     const db = await this.db();
-    const tx = db.transaction(['entries', 'versions'], 'readwrite');
+    const tx = db.transaction(['entries', 'versions', 'pins'], 'readwrite');
+    await deletePins(tx.objectStore('pins'), id);
     const versionIds = await tx.objectStore('versions').index('byEntry').getAllKeys(id);
     await Promise.all(versionIds.map((versionId) => tx.objectStore('versions').delete(versionId)));
     await tx.objectStore('entries').delete(id);
@@ -213,16 +269,47 @@ export class IndexedDbLogbookRepository extends LogbookRepository {
   }
 
   private async open(): Promise<IDBPDatabase<LogbookDb>> {
-    return openDB<LogbookDb>(this.options.name, 1, {
-      upgrade(database) {
-        database.createObjectStore('logbooks', { keyPath: 'id' });
-        database
-          .createObjectStore('entries', { keyPath: 'id' })
-          .createIndex('byLogbook', 'logbookId');
-        database.createObjectStore('versions', { keyPath: 'id' }).createIndex('byEntry', 'entryId');
+    return openDB<LogbookDb>(this.options.name, 2, {
+      upgrade(database, oldVersion) {
+        if (oldVersion < 1) {
+          database.createObjectStore('logbooks', { keyPath: 'id' });
+          database
+            .createObjectStore('entries', { keyPath: 'id' })
+            .createIndex('byLogbook', 'logbookId');
+          database
+            .createObjectStore('versions', { keyPath: 'id' })
+            .createIndex('byEntry', 'entryId');
+        }
+        if (oldVersion < 2) {
+          const pins = database.createObjectStore('pins', { keyPath: 'key' });
+          pins.createIndex('byUser', 'userId');
+          pins.createIndex('byEntry', 'entryId');
+        }
       },
     });
   }
+}
+
+/** A person's pins in their own order; older pins without a place keep the order they were made in. */
+const inOrder = (pins: Pin[]): Pin[] =>
+  [...pins].sort(
+    (a, b) =>
+      (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
+      a.pinnedAt.localeCompare(b.pinnedAt),
+  );
+
+/** Removes everyone's pins on an entry that is going away. */
+async function deletePins(
+  store: IDBPObjectStore<
+    LogbookDb,
+    ['logbooks', 'entries', 'versions', 'pins'] | ['entries', 'versions', 'pins'],
+    'pins',
+    'readwrite'
+  >,
+  entryId: string,
+): Promise<void> {
+  const keys = await store.index('byEntry').getAllKeys(entryId);
+  await Promise.all(keys.map((key) => store.delete(key)));
 }
 
 const byUpdatedDesc = (a: Logbook, b: Logbook) => b.updatedAt.localeCompare(a.updatedAt);

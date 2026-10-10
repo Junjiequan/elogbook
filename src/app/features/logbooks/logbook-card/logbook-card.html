@@ -1,0 +1,59 @@
+<article class="card">
+  <app-table-popover
+    class="title-slot"
+    heading="Title"
+    icon="menu_book"
+    [text]="logbook().title"
+    [enabled]="title.truncated()"
+  >
+    <!-- The directive writes the title (with the search words marked) into the heading. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
+    <h2
+      appTruncated
+      #title="appTruncated"
+      [appHighlight]="logbook().title"
+      [highlightTerms]="terms()"
+    ></h2>
+    @if (title.truncated()) {
+      <span class="cut-dots cut-dots--title" aria-hidden="true">…</span>
+    }
+  </app-table-popover>
+  <app-table-popover
+    class="description-slot"
+    icon="subject"
+    [heading]="logbook().title"
+    [text]="logbook().description"
+    [enabled]="!!logbook().description && description.truncated()"
+  >
+    <p
+      class="description"
+      appTruncated
+      #description="appTruncated"
+      [appHighlight]="logbook().description"
+      [highlightTerms]="terms()"
+    ></p>
+    @if (logbook().description && description.truncated()) {
+      <span class="cut-dots cut-dots--description" aria-hidden="true">…</span>
+    }
+  </app-table-popover>
+  <app-logbook-tags
+    [instrument]="logbook().instrument"
+    [proposalId]="logbook().proposalId"
+    [demo]="!!logbook().demo"
+    [role]="role()"
+    [visibility]="logbook().visibility"
+  />
+  <div class="foot">
+    <app-member-avatars [members]="logbook().members" />
+    <p class="meta">Updated {{ logbook().updatedAt | date }}</p>
+  </div>
+  <a
+    mat-button
+    class="view-banner"
+    [routerLink]="['/logbooks', logbook().id]"
+    [attr.aria-label]="'View ' + logbook().title"
+  >
+    <mat-icon>visibility</mat-icon>
+    View
+  </a>
+</article>

@@ -1,0 +1,10 @@
+<div class="empty">
+  <mat-icon aria-hidden="true">search_off</mat-icon>
+  <p class="empty-title">No logbooks match your search or filter.</p>
+  <ul class="active-filters" aria-label="What is filtering the list">
+    @for (filter of filters(); track filter) {
+      <li>{{ filter }}</li>
+    }
+  </ul>
+  <button mat-stroked-button type="button" (click)="cleared.emit()">Clear filters</button>
+</div>

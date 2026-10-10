@@ -18,6 +18,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { CurrentUserService } from '../../../core/auth/current-user.service';
 import { canDelete, canWrite } from '../../../core/auth/permissions';
+import {
+  LogbookRepository,
+  PinLimitReachedError,
+} from '../../../core/data-access/logbook.repository';
+import { MAX_PINNED_ENTRIES } from '../../../core/models/logbook.models';
 import type { EntryVersion } from '../../../core/models/logbook.models';
 import { firstValueFrom } from 'rxjs';
 import { RichTextEditor } from '../../editor/rich-text-editor/rich-text-editor';
@@ -76,6 +81,7 @@ export class EntryPage {
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly entries = inject(EntriesStore);
+  private readonly repository = inject(LogbookRepository);
 
   protected readonly mayWrite = computed(() => {
     const logbook = this.logbooks.logbooks().find((l) => l.id === this.logbookId());
@@ -87,6 +93,8 @@ export class EntryPage {
     return !!logbook && canDelete(logbook, this.currentUser.user(), this.currentUser.isAdmin());
   });
 
+  /** Whether this person has pinned the entry (pins are personal). */
+  protected readonly pinned = signal(false);
   protected readonly historyOpen = signal(false);
   /** Older version being looked at instead of the live entry. */
   protected readonly preview = signal<EntryVersion | null>(null);
@@ -99,9 +107,35 @@ export class EntryPage {
       const id = this.entryId();
       untracked(() => {
         this.preview.set(null);
+        this.pinned.set(false);
         void this.autosave.open(id);
+        void this.loadPinned(id);
       });
     });
+  }
+
+  private async loadPinned(entryId: string): Promise<void> {
+    const pinned = await this.repository.isEntryPinned(this.currentUser.user(), entryId);
+    if (this.entryId() === entryId) {
+      this.pinned.set(pinned);
+    }
+  }
+
+  protected async togglePin(): Promise<void> {
+    const pin = !this.pinned();
+    this.pinned.set(pin); // at once; it is undone below if saving the pin fails
+    try {
+      await this.repository.setEntryPinned(this.currentUser.user(), this.entryId(), pin);
+    } catch (error) {
+      this.pinned.set(!pin);
+      this.snackBar.open(
+        error instanceof PinLimitReachedError
+          ? `You can pin up to ${MAX_PINNED_ENTRIES} entries. Unpin one first.`
+          : 'Could not change the pin.',
+        'Dismiss',
+        { duration: 6000 },
+      );
+    }
   }
 
   protected onTitle(event: Event): void {

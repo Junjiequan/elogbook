@@ -29,21 +29,92 @@
   }
 }
 
-// ── Continue where you left off ──────────────────────────────────────────
-.recent {
+// ── Pinned entries ───────────────────────────────────────────────────────
+.pinned {
   display: block;
 }
 
-// ── Search, layout toggle, filters ───────────────────────────────────────
+.section-title {
+  margin: 0 0 10px;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-title-small);
+  font-weight: 700;
+}
+
+// ── Search, filters, sorting, layout: one row ────────────────────────────
+// The bar stays in view while a long list scrolls underneath, so a filter can be changed without
+// going back to the top. (Not on a phone, where it would take too much of the screen.)
+.toolbar-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 0 0 14px; // as wide as the cards or the table beneath it, not wider
+  padding: 8px 0 6px;
+
+  // A backing only once the bar has stuck to the top and cards pass beneath it: before that it would be
+  // a white rectangle behind the controls, on a page that is tinted.
+  &.stuck {
+    background: color-mix(in srgb, var(--mat-sys-surface) 96%, transparent);
+    border-radius: 0 0 12px 12px;
+    box-shadow:
+      0 0 0 1px var(--mat-sys-outline-variant),
+      0 2px 6px rgb(var(--app-shadow-rgb) / calc(12% * var(--app-shadow-strength))),
+      0 14px 26px -8px rgb(var(--app-shadow-rgb) / calc(38% * var(--app-shadow-strength)));
+    backdrop-filter: blur(10px);
+  }
+}
+
+.stuck-sentinel {
+  height: 1px;
+  margin-bottom: -1px;
+}
+
+// Every control has a place of its own and a size that does not depend on what it says: choosing an
+// instrument with a long name must not move or resize anything. Wide: one row. Medium: search and the
+// layout switch above, the filters below. Phone: stacked.
 .toolbar {
-  display: flex;
+  display: grid;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px 12px;
+  grid-template-columns: minmax(200px, 1fr) auto auto auto;
+  grid-template-areas: 'search segments pills view';
+}
+
+.segments {
+  grid-area: segments;
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 1299px) {
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'search view'
+      'segments pills';
+  }
+
+  .pills {
+    justify-self: end;
+  }
+}
+
+// Not enough room for the role switch and the two menus side by side: the menus get a row of their own.
+@media (max-width: 999px) {
+  .toolbar {
+    grid-template-areas:
+      'search view'
+      'segments segments'
+      'pills pills';
+  }
+
+  .pills {
+    justify-self: start;
+  }
 }
 
 .search {
-  flex: 1;
+  grid-area: search;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -78,6 +149,18 @@
     }
   }
 
+  // The key that jumps here.
+  .slash {
+    flex: none;
+    margin-right: 6px;
+    padding: 0 7px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-medium);
+  }
+
   input {
     flex: 1;
     min-width: 0;
@@ -98,20 +181,16 @@
   }
 }
 
-.view-toggle {
+// All / Owned by me / I can edit / View only, as one joined control.
+.filters {
   flex: none;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 999px;
   background: var(--mat-sys-surface);
-  --mat-button-toggle-height: 42px;
-  --mat-button-toggle-shape: 999px;
-}
-
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 18px;
+  box-shadow: var(--app-shadow-sm);
 }
 
 .filter {
@@ -119,11 +198,12 @@
   align-items: center;
   gap: 8px;
   padding: 5px 12px;
-  border: 1px solid var(--mat-sys-outline-variant);
+  border: none;
   border-radius: 999px;
-  background: var(--mat-sys-surface);
+  background: transparent;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-label-large);
+  white-space: nowrap;
   cursor: pointer;
 
   &:hover {
@@ -131,7 +211,6 @@
   }
 
   &.active {
-    border-color: var(--mat-sys-primary);
     background: var(--mat-sys-primary);
     color: var(--mat-sys-on-primary);
 
@@ -153,57 +232,169 @@
   }
 }
 
-.result-note {
-  margin-left: auto;
-  font: var(--mat-sys-label-medium);
+// Instrument and sort: two small menus.
+.pills {
+  grid-area: pills;
+  display: flex;
+  gap: 8px;
+
+  // The closed menus are empty elements; they must not take part in the row (or add a gap each).
+  > mat-menu {
+    display: none;
+  }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  width: 220px; // fixed: a long name is cut with an ellipsis, it never widens the button
+  height: 44px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 999px;
+  background: var(--mat-sys-surface);
+  box-shadow: var(--app-shadow-sm);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-large);
+  white-space: nowrap;
+  cursor: pointer;
+
+  mat-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .pill-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+  }
+
+  &:hover {
+    background: var(--mat-sys-surface-container);
+  }
+
+  // A filter that is on: the same blue as the chosen role.
+  &.active {
+    border-color: var(--mat-sys-primary);
+    background: color-mix(in srgb, var(--mat-sys-primary) 10%, var(--mat-sys-surface));
+    color: var(--mat-sys-primary);
+
+    mat-icon {
+      color: var(--mat-sys-primary);
+    }
+  }
+}
+
+.view-toggle {
+  grid-area: view;
+  justify-self: end;
+  border-radius: 999px;
+  background: var(--mat-sys-surface);
+  --mat-button-toggle-height: 42px;
+  --mat-button-toggle-shape: 999px;
+}
+
+.result-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
   color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+}
+
+.clear-all {
+  padding: 2px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-label-large);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent);
+  }
+}
+
+// ── Phones ───────────────────────────────────────────────────────────────
+// One column, nothing sticky, controls that fit a thumb: the search on its own line, the role control
+// that scrolls sideways, and the two menus side by side. (The list is always cards here.)
+@media (max-width: 700px) {
+  .toolbar-wrap,
+  .toolbar-wrap.stuck {
+    position: static;
+    margin: 0 0 12px;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'search'
+      'segments'
+      'pills';
+  }
+
+  // The counts go on a phone, so all four roles fit side by side; on a very small screen the control still scrolls.
+  .filter {
+    padding: 5px 10px;
+
+    .count {
+      display: none;
+    }
+  }
+
+  .filters {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .pills {
+    justify-self: stretch;
+    min-width: 0; // else the two long labels keep it wider than the screen
+
+    .pill {
+      flex: 1 1 0;
+      width: auto;
+      min-width: 0;
+    }
+
+    // The words are enough on a phone; the icon would only take their room.
+    mat-icon:not(.caret) {
+      display: none;
+    }
+
+    .caret {
+      margin-left: auto;
+    }
+  }
 }
 
 .message {
   color: var(--mat-sys-on-surface-variant);
 }
 
-// ── Pagination ───────────────────────────────────────────────────────────
-.pager {
-  // Under the cards the pager is a bar of its own, so a short last row of cards reads as the end of
-  // the page and the bar as the way to the next one.
-  margin-top: 16px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 8px;
-  box-shadow: var(--app-shadow-sm);
-  --mat-paginator-container-background-color: var(--mat-sys-surface);
-  --mat-paginator-container-size: 48px;
-
-  // A small "10 ▾" box: Material's default page-size field is as tall and wide as a full form field.
-  --mat-form-field-container-height: 32px;
-  --mat-form-field-container-vertical-padding: 4px;
-  --mat-select-trigger-text-size: 14px;
-
-  // The way on is the main thing about a pager: a clear label, and arrows in the accent colour while
-  // there is somewhere to go (Material greys out the ones that cannot be used).
-  --mat-icon-button-icon-color: var(--mat-sys-primary);
-
-  ::ng-deep .mat-mdc-paginator-range-label {
-    color: var(--mat-sys-on-surface);
-    font-weight: 600;
-  }
-
-  // Material only exposes the width of that box through its internal class.
-  ::ng-deep .mat-mdc-paginator-page-size-select {
-    width: 64px;
-  }
-}
-
-// Under the table the pager is its footer, divided from the rows by a line instead of a box.
-app-logbook-table .pager {
-  margin-top: 0;
-  border: none;
-  border-top: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 0;
-  box-shadow: none;
-}
-
-// ── Cards ────────────────────────────────────────────────────────────────
+// ── Cards (the cards themselves are `app-logbook-card`) ──────────────────
 .cards {
   display: grid;
   // One, two or five columns, never three or four: a page holds 10 or 25 logbooks, which fill rows of
@@ -224,142 +415,6 @@ app-logbook-table .pager {
 @media (min-width: 1300px) {
   .cards {
     grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
-
-.card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  // Every card is the same height, so a grid of them stays even whatever the text. Long titles and
-  // descriptions are cut (2 and 3 lines) and shown in full in a card on hover.
-  height: var(--card-height, 17rem);
-  box-sizing: border-box;
-  overflow: hidden;
-  padding: 20px 18px 16px;
-  border-radius: 16px;
-  background: var(--mat-sys-surface);
-  border: 1px solid var(--mat-sys-outline-variant);
-  box-shadow: var(--app-shadow-sm);
-  color: inherit;
-  text-decoration: none;
-
-  // brand-coloured accent along the top edge
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 4px;
-    background: var(--app-brand-accent);
-  }
-
-  h2,
-  .description {
-    // Cut after a fixed number of lines (a clamp), but always take that much room, so the tags and
-    // the date below sit at the same height in every card.
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    overflow-wrap: anywhere;
-    margin: 0;
-  }
-
-  h2 {
-    font: var(--mat-sys-title-medium);
-    line-height: 1.4;
-    min-height: 2lh;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
-
-  .description {
-    flex: 1;
-    color: var(--mat-sys-on-surface-variant);
-    font: var(--mat-sys-body-medium);
-    line-height: 1.45;
-    min-height: 3lh;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-  }
-
-  .title-slot,
-  .description-slot {
-    display: block; // the popover host; the text inside is what is cut
-    min-width: 0;
-  }
-
-  .title-slot ::ng-deep .anchor,
-  .description-slot ::ng-deep .anchor {
-    position: relative; // the "…" marker sits in the bottom-right corner of the cut-off text
-    display: block;
-    width: 100%;
-  }
-
-  // Cut-off text ends in a "…" in the accent colour. It sits over the last line's own ellipsis (the
-  // fade hides that one), so there is exactly one set of dots and it stands out.
-  .cut-dots {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    padding-left: 1.6em;
-    background: linear-gradient(to right, transparent, var(--mat-sys-surface) 40%);
-    color: var(--mat-sys-primary);
-    font-weight: 700;
-    cursor: default;
-  }
-
-  .cut-dots--title {
-    font: var(--mat-sys-title-medium);
-    font-weight: 700;
-    line-height: 1.4;
-  }
-
-  .cut-dots--description {
-    font: var(--mat-sys-body-medium);
-    font-weight: 700;
-    line-height: 1.45;
-  }
-
-  // A full-width banner along the bottom edge: the one way into the logbook (the card itself is not a
-  // link). Quiet on purpose: a soft tint and a hairline, not a solid block of colour.
-  .view-banner {
-    flex: none;
-    width: auto;
-    height: 32px;
-    margin: 0 -18px -16px;
-    border-top: 1px solid var(--mat-sys-outline-variant);
-    border-radius: 0;
-    background: color-mix(in srgb, var(--mat-sys-primary) 7%, var(--mat-sys-surface));
-    --mat-button-text-container-height: 32px;
-    --mat-button-text-label-text-size: 0.8125rem;
-    --mat-button-text-label-text-weight: 500;
-    --mat-button-text-icon-spacing: 6px;
-
-    mat-icon {
-      width: 16px;
-      height: 16px;
-      font-size: 16px;
-    }
-
-    &:hover {
-      background: color-mix(in srgb, var(--mat-sys-primary) 14%, var(--mat-sys-surface));
-    }
-  }
-
-  // Members on the left, when it was last touched on the right: a row of its own, apart from the tags.
-  .foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: auto;
-  }
-
-  .meta {
-    margin: 0;
-    font: var(--mat-sys-label-small);
-    color: var(--mat-sys-on-surface-variant);
   }
 }
 

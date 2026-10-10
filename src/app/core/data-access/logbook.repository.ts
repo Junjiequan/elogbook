@@ -6,10 +6,17 @@ import type {
   LogbookBundle,
   LogbookSettingsPatch,
   NewLogbook,
-  RecentEntry,
+  PinnedEntry,
   User,
   VersionReason,
 } from '../models/logbook.models';
+
+/** Pinning was refused because the person already has `MAX_PINNED_ENTRIES` pins. */
+export class PinLimitReachedError extends Error {
+  constructor() {
+    super('The limit of pinned entries has been reached.');
+  }
+}
 
 /**
  * Persistence contract for the logbook.
@@ -28,8 +35,16 @@ export abstract class LogbookRepository {
 
   abstract listEntries(logbookId: string): Promise<Entry[]>;
   abstract getEntry(id: string): Promise<Entry | undefined>;
-  /** The entries most recently edited, newest first, across every logbook the user may read. */
-  abstract listRecentEntries(user: User, limit: number): Promise<RecentEntry[]>;
+  /**
+   * The entries this person has pinned, in the order they arranged them (a new pin goes last).
+   * Pins are personal: nobody else sees them. An entry the person may no longer read is left out.
+   */
+  abstract listPinnedEntries(user: User): Promise<PinnedEntry[]>;
+  abstract isEntryPinned(user: User, entryId: string): Promise<boolean>;
+  /** Pins or unpins. Pinning more than `MAX_PINNED_ENTRIES` throws `PinLimitReachedError`. */
+  abstract setEntryPinned(user: User, entryId: string, pinned: boolean): Promise<void>;
+  /** Stores the order of the person's pins: `entryIds` first to last. */
+  abstract reorderPinnedEntries(user: User, entryIds: string[]): Promise<void>;
   /** Permanently removes an entry together with its version history. */
   abstract deleteEntry(id: string): Promise<void>;
   abstract createEntry(logbookId: string, author: User): Promise<Entry>;

@@ -13,65 +13,153 @@
     </div>
   </header>
 
-  <app-recent-entries class="recent" />
+  <app-pinned-entries class="pinned" />
 
-  <div class="toolbar" role="search">
-    <label class="search">
-      <mat-icon aria-hidden="true">search</mat-icon>
-      <input
-        type="search"
-        placeholder="Search by title, instrument or proposal"
-        aria-label="Search logbooks"
-        [value]="query()"
-        (input)="setQuery($event)"
-      />
-      @if (query()) {
+  <h2 class="section-title">All logbooks</h2>
+
+  <!-- One row of controls, kept in view while scrolling a long list. -->
+  <!-- Sits just above the bar: once it has scrolled out of sight, the bar is stuck to the top. -->
+  <div #stuckSentinel class="stuck-sentinel" aria-hidden="true"></div>
+  <div class="toolbar-wrap" [class.stuck]="stuck()">
+    <div class="toolbar" role="search">
+      <label class="search">
+        <mat-icon aria-hidden="true">search</mat-icon>
+        <input
+          #searchInput
+          type="search"
+          placeholder="Search by title, instrument or proposal"
+          aria-label="Search logbooks"
+          aria-keyshortcuts="/"
+          [value]="query()"
+          (input)="setQuery($event)"
+          (keydown.enter)="searchNow()"
+        />
+        @if (query()) {
+          <button
+            mat-icon-button
+            type="button"
+            class="clear"
+            aria-label="Clear search"
+            (click)="clearSearch()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        } @else if (!narrow()) {
+          <kbd class="slash" aria-hidden="true" matTooltip="Press / to search">/</kbd>
+        }
+      </label>
+
+      <div class="segments">
+        @for (group of segmented(); track group.filter.id) {
+          <div
+            class="filters"
+            role="group"
+            [attr.aria-label]="'Filter by ' + group.filter.label.toLowerCase()"
+          >
+            @for (option of group.options; track option.value) {
+              <button
+                type="button"
+                class="filter"
+                [class.active]="isChosen(group.filter, option)"
+                [attr.aria-pressed]="isChosen(group.filter, option)"
+                (click)="setFilter(group.filter, option.value)"
+              >
+                {{ option.label }}
+                <span class="count">{{ option.count }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="pills">
+        @for (entry of menus(); track entry.filter.id) {
+          <button
+            type="button"
+            class="pill"
+            [class.active]="filterValues()[entry.filter.id]"
+            [matMenuTriggerFor]="menu"
+            [attr.aria-label]="'Filter by ' + entry.filter.label.toLowerCase()"
+          >
+            <mat-icon aria-hidden="true">{{ entry.filter.icon }}</mat-icon>
+            <span class="pill-text">{{ chosenLabel(entry) }}</span>
+            <mat-icon aria-hidden="true" class="caret">expand_more</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button
+              mat-menu-item
+              role="menuitemradio"
+              [attr.aria-checked]="!filterValues()[entry.filter.id]"
+              (click)="setFilter(entry.filter, '')"
+            >
+              <mat-icon>{{ !filterValues()[entry.filter.id] ? 'check' : '' }}</mat-icon>
+              <span>{{ entry.filter.allLabel }}</span>
+            </button>
+            @for (option of entry.options; track option.value) {
+              <button
+                mat-menu-item
+                role="menuitemradio"
+                [attr.aria-checked]="isChosen(entry.filter, option)"
+                (click)="setFilter(entry.filter, option.value)"
+              >
+                <mat-icon>{{ isChosen(entry.filter, option) ? 'check' : '' }}</mat-icon>
+                <span>{{ option.label }} ({{ option.count }})</span>
+              </button>
+            }
+          </mat-menu>
+        }
+
         <button
-          mat-icon-button
           type="button"
-          class="clear"
-          aria-label="Clear search"
-          (click)="query.set('')"
+          class="pill"
+          [matMenuTriggerFor]="sortMenu"
+          aria-label="Sort the logbooks"
         >
-          <mat-icon>close</mat-icon>
+          <mat-icon aria-hidden="true">sort</mat-icon>
+          <span class="pill-text">Sort: {{ sortLabel() }}</span>
+          <mat-icon aria-hidden="true" class="caret">expand_more</mat-icon>
         </button>
+        <mat-menu #sortMenu="matMenu">
+          @for (option of sorts; track option.key) {
+            <button
+              mat-menu-item
+              role="menuitemradio"
+              [attr.aria-checked]="sort() === option.key"
+              (click)="sort.set(option.key)"
+            >
+              <mat-icon>{{ sort() === option.key ? 'check' : '' }}</mat-icon>
+              <span>{{ option.label }}</span>
+            </button>
+          }
+        </mat-menu>
+      </div>
+
+      @if (!narrow()) {
+        <mat-button-toggle-group
+          class="view-toggle"
+          aria-label="Layout"
+          hideSingleSelectionIndicator
+          [value]="view()"
+          (change)="view.set($event.value)"
+        >
+          <mat-button-toggle value="cards" aria-label="Cards" matTooltip="Cards">
+            <mat-icon>grid_view</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle value="table" aria-label="Compact table" matTooltip="Compact table">
+            <mat-icon>table_rows</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       }
-    </label>
+    </div>
 
-    <mat-button-toggle-group
-      class="view-toggle"
-      aria-label="Layout"
-      hideSingleSelectionIndicator
-      [value]="view()"
-      (change)="view.set($event.value)"
-    >
-      <mat-button-toggle value="cards" aria-label="Cards" matTooltip="Cards">
-        <mat-icon>grid_view</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="table" aria-label="Compact table" matTooltip="Compact table">
-        <mat-icon>table_rows</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
-  </div>
-
-  <div class="filters" role="group" aria-label="Filter by your role">
-    @for (filter of roleFilters; track filter.value) {
-      <button
-        type="button"
-        class="filter"
-        [class.active]="roleFilter() === filter.value"
-        [attr.aria-pressed]="roleFilter() === filter.value"
-        (click)="roleFilter.set(filter.value)"
-      >
-        {{ filter.label }}
-        <span class="count">{{ roleCounts()[filter.value] }}</span>
-      </button>
-    }
-    <!-- Only worth saying when a search or filter hides some: "11 of 11" tells nothing. -->
-    @if (store.status() === 'ready' && visible().length !== store.logbooks().length) {
-      <span class="result-note"
-        >Showing {{ visible().length }} of {{ store.logbooks().length }}</span
-      >
+    <!-- Said only when a search or filter hides some logbooks: "15 of 15" tells nothing. -->
+    @if (store.status() === 'ready' && activeFilters().length > 0) {
+      <div class="result-line" aria-live="polite">
+        <span class="result-note"
+          >Showing {{ visible().length }} of {{ store.logbooks().length }}</span
+        >
+        <button type="button" class="clear-all" (click)="clearFilters()">Clear filters</button>
+      </div>
     }
   </div>
 
@@ -89,84 +177,39 @@
       @if (store.logbooks().length === 0) {
         <p class="message">No logbooks yet. Create one to get started.</p>
       } @else if (visible().length === 0) {
-        <p class="message">No logbooks match your search or filter.</p>
-      } @else if (view() === 'cards') {
+        <app-no-results [filters]="activeFilters()" (cleared)="clearFilters()" />
+      } @else if (shownView() === 'cards') {
         <ul class="cards">
           @for (logbook of pageItems(); track logbook.id) {
             <li>
-              <article class="card">
-                <app-table-popover
-                  class="title-slot"
-                  heading="Title"
-                  icon="menu_book"
-                  [text]="logbook.title"
-                  [enabled]="title.truncated()"
-                >
-                  <h2 appTruncated #title="appTruncated">{{ logbook.title }}</h2>
-                  @if (title.truncated()) {
-                    <span class="cut-dots cut-dots--title" aria-hidden="true">…</span>
-                  }
-                </app-table-popover>
-                <app-table-popover
-                  class="description-slot"
-                  icon="subject"
-                  [heading]="logbook.title"
-                  [text]="logbook.description"
-                  [enabled]="!!logbook.description && description.truncated()"
-                >
-                  <p class="description" appTruncated #description="appTruncated">
-                    {{ logbook.description }}
-                  </p>
-                  @if (logbook.description && description.truncated()) {
-                    <span class="cut-dots cut-dots--description" aria-hidden="true">…</span>
-                  }
-                </app-table-popover>
-                <app-logbook-tags
-                  [instrument]="logbook.instrument"
-                  [proposalId]="logbook.proposalId"
-                  [demo]="!!logbook.demo"
-                  [role]="roleLabel(logbook) || null"
-                  [visibility]="logbook.visibility"
-                />
-                <div class="foot">
-                  <app-member-avatars [members]="logbook.members" />
-                  <p class="meta">Updated {{ logbook.updatedAt | date }}</p>
-                </div>
-                <a
-                  mat-button
-                  class="view-banner"
-                  [routerLink]="['/logbooks', logbook.id]"
-                  [attr.aria-label]="'View ' + logbook.title"
-                >
-                  <mat-icon>visibility</mat-icon>
-                  View
-                </a>
-              </article>
+              <app-logbook-card
+                [logbook]="logbook"
+                [role]="roleLabel(logbook) || null"
+                [terms]="terms()"
+              />
             </li>
           }
         </ul>
       } @else {
-        <app-logbook-table [logbooks]="pageItems()">
-          <ng-container *ngTemplateOutlet="pager" />
+        <app-logbook-table [logbooks]="pageItems()" [terms]="terms()">
+          <ng-container *ngTemplateOutlet="pager; context: { flat: true }" />
         </app-logbook-table>
       }
 
-      @if (view() === 'cards') {
+      @if (shownView() === 'cards') {
         <ng-container *ngTemplateOutlet="pager" />
       }
     }
   }
 
-  <ng-template #pager>
+  <ng-template #pager let-flat="flat">
     @if (showPager()) {
-      <mat-paginator
-        class="pager"
-        aria-label="Logbook pages"
+      <app-logbook-pager
+        [flat]="flat"
         [length]="visible().length"
         [pageSize]="pageSize()"
         [pageIndex]="pageIndex()"
-        [pageSizeOptions]="pageSizes"
-        showFirstLastButtons
+        [pageSizes]="pageSizes"
         (page)="changePage($event)"
       />
     }

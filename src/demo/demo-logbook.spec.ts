@@ -9,7 +9,7 @@ import {
 } from '../app/core/data-access/indexeddb-logbook.repository';
 import { LogbookRepository } from '../app/core/data-access/logbook.repository';
 import { createDemoLogbook } from './demo-logbook';
-import { DEMO_VERSION, DemoSeeder, demoSeededKey } from './demo-seeder';
+import { DEMO_PINNED_TITLES, DEMO_VERSION, DemoSeeder, demoSeededKey } from './demo-seeder';
 import { createDemoLogbooks } from './demo-set';
 import { DEMO_USERS } from './demo-users';
 
@@ -171,6 +171,39 @@ describe('DemoSeeder', () => {
     const detailed = logbooks.find((l) => l.title.startsWith('LoKI'))!;
     const runs = (await repo.listEntries(detailed.id)).find((e) => e.title.startsWith('Runs'))!;
     expect((await repo.listVersions(runs.id)).length).toBe(3);
+  });
+
+  it('pins a few entries so the "Pinned entries" panel has something to show', async () => {
+    await seeder.ensureFor(anna);
+
+    const pinned = await repo.listPinnedEntries(anna);
+    expect(pinned.length).toBe(DEMO_PINNED_TITLES.length);
+    expect(
+      pinned.every((p) => DEMO_PINNED_TITLES.some((t) => p.entryTitle.startsWith(t))),
+    ).toBeTrue();
+    expect(await repo.listPinnedEntries(jon)).toEqual([]); // pins are personal
+  });
+
+  it('pins the demo entries in a fixed order, so the panel always starts the same way', async () => {
+    await seeder.ensureFor(anna);
+
+    const titles = (await repo.listPinnedEntries(anna)).map((p) => p.entryTitle);
+    expect(titles.map((t) => DEMO_PINNED_TITLES.findIndex((d) => t.startsWith(d)))).toEqual([
+      0, 1, 2,
+    ]);
+  });
+
+  it('leaves the pins of someone who already has their own alone', async () => {
+    await seeder.ensureFor(anna);
+    const [first, ...others] = await repo.listPinnedEntries(anna);
+    for (const other of others) {
+      await repo.setEntryPinned(anna, other.entryId, false);
+    }
+    localStorage.setItem(demoSeededKey(anna), 'old');
+
+    await seeder.ensureFor(anna);
+
+    expect((await repo.listPinnedEntries(anna)).map((p) => p.entryId)).toEqual([first.entryId]);
   });
 
   it('does not duplicate anything, even when asked concurrently or again later', async () => {

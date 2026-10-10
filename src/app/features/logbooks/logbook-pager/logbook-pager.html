@@ -1,0 +1,9 @@
+<mat-paginator
+  aria-label="Logbook pages"
+  [length]="length()"
+  [pageSize]="pageSize()"
+  [pageIndex]="pageIndex()"
+  [pageSizeOptions]="pageSizes()"
+  showFirstLastButtons
+  (page)="page.emit($event)"
+/>

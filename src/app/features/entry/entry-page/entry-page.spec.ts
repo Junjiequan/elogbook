@@ -1,9 +1,13 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { LogbookRepository } from '../../../core/data-access/logbook.repository';
+import {
+  LogbookRepository,
+  PinLimitReachedError,
+} from '../../../core/data-access/logbook.repository';
 import { ProposalRepository } from '../../../core/data-access/proposal.repository';
 import type { Entry, Logbook, MemberRole } from '../../../core/models/logbook.models';
 import { DemoProposalRepository } from '../../../../demo/demo-proposals';
@@ -59,6 +63,7 @@ describe('EntryPage', () => {
   let entries: { delete: jasmine.Spy };
   let dialog: { open: jasmine.Spy };
   let navigate: jasmine.Spy;
+  let pins: jasmine.SpyObj<LogbookRepository>;
   const el = () => fixture.nativeElement as HTMLElement;
   const button = (label: string) =>
     el().querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
@@ -71,7 +76,7 @@ describe('EntryPage', () => {
   };
 
   const create = async (
-    options: { as?: typeof anna; role?: MemberRole; loaded?: boolean } = {},
+    options: { as?: typeof anna; role?: MemberRole; loaded?: boolean; pinned?: boolean } = {},
   ) => {
     const { as = anna, role = 'editor', loaded = true } = options;
     autosave = {
@@ -88,8 +93,15 @@ describe('EntryPage', () => {
     };
     entries = { delete: jasmine.createSpy('delete').and.resolveTo() };
     dialog = { open: jasmine.createSpy('open').and.returnValue({ afterClosed: () => of(true) }) };
-    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', ['listVersions']);
+    const repo = jasmine.createSpyObj<LogbookRepository>('LogbookRepository', [
+      'listVersions',
+      'isEntryPinned',
+      'setEntryPinned',
+    ]);
     repo.listVersions.and.resolveTo([]);
+    repo.isEntryPinned.and.resolveTo(options.pinned ?? false);
+    repo.setEntryPinned.and.resolveTo();
+    pins = repo;
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -181,6 +193,62 @@ describe('EntryPage', () => {
     it('links to the export of just this entry', () => {
       const link = el().querySelector<HTMLAnchorElement>('a[aria-label="Export entry"]')!;
       expect(link.getAttribute('href')).toBe('/logbooks/l1/print?entry=e1');
+    });
+  });
+
+  describe('pinning', () => {
+    it('offers to pin the entry, and pins it with a click', async () => {
+      await create({ as: jon, role: 'editor' });
+      expect(button('Pin entry')).not.toBeNull();
+      expect(button('Pin entry')!.getAttribute('aria-pressed')).toBe('false');
+
+      button('Pin entry')!.click();
+      await settle();
+
+      expect(pins.setEntryPinned).toHaveBeenCalledOnceWith(jon, 'e1', true);
+      expect(button('Unpin entry')!.getAttribute('aria-pressed')).toBe('true');
+      expect(button('Unpin entry')!.textContent).toContain('Pinned');
+    });
+
+    it('shows an entry that is already pinned as pinned, and lets go with a click', async () => {
+      await create({ as: jon, role: 'editor', pinned: true });
+      expect(button('Unpin entry')).not.toBeNull();
+
+      button('Unpin entry')!.click();
+      await settle();
+
+      expect(pins.setEntryPinned).toHaveBeenCalledOnceWith(jon, 'e1', false);
+      expect(button('Pin entry')).not.toBeNull();
+    });
+
+    it('is open to a viewer too: a pin is a personal bookmark, not an edit', async () => {
+      await create({ as: jon, role: 'viewer' });
+
+      expect(button('Pin entry')).not.toBeNull();
+    });
+
+    it('explains the limit when there are already as many pins as allowed, and does not pin', async () => {
+      await create({ as: jon, role: 'editor' });
+      const snack = spyOn(TestBed.inject(MatSnackBar), 'open');
+      pins.setEntryPinned.and.rejectWith(new PinLimitReachedError());
+
+      button('Pin entry')!.click();
+      await settle();
+
+      expect(snack.calls.mostRecent().args[0]).toBe(
+        'You can pin up to 4 entries. Unpin one first.',
+      );
+      expect(button('Pin entry')).not.toBeNull();
+    });
+
+    it('undoes itself and says so when the pin could not be saved', async () => {
+      await create({ as: jon, role: 'editor' });
+      pins.setEntryPinned.and.rejectWith(new Error('no'));
+
+      button('Pin entry')!.click();
+      await settle();
+
+      expect(button('Pin entry')).not.toBeNull();
     });
   });
 

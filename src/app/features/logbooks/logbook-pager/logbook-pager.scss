@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+mat-paginator {
+  // Under the cards the pager is a bar of its own, so a short last row of cards reads as the end of
+  // the page and the bar as the way to the next one.
+  margin-top: 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  box-shadow: var(--app-shadow-sm);
+  --mat-paginator-container-background-color: var(--mat-sys-surface);
+  --mat-paginator-container-size: 48px;
+
+  // A small "10 ▾" box: Material's default page-size field is as tall and wide as a full form field.
+  --mat-form-field-container-height: 32px;
+  --mat-form-field-container-vertical-padding: 4px;
+  --mat-select-trigger-text-size: 14px;
+
+  // The way on is the main thing about a pager: a clear label, and arrows in the accent colour while
+  // there is somewhere to go (Material greys out the ones that cannot be used).
+  --mat-icon-button-icon-color: var(--mat-sys-primary);
+
+  ::ng-deep .mat-mdc-paginator-range-label {
+    color: var(--mat-sys-on-surface);
+    font-weight: 600;
+  }
+
+  // Material only exposes the width of that box through its internal class.
+  ::ng-deep .mat-mdc-paginator-page-size-select {
+    width: 64px;
+  }
+}
+
+// Under the table the pager is its footer (`flat`), divided from the rows by a line instead of a box.
+:host(.flat) mat-paginator {
+  margin-top: 0;
+  border: none;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0;
+  box-shadow: none;
+}

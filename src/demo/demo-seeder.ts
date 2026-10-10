@@ -8,7 +8,14 @@ import { createDemoLogbooks } from './demo-set';
  * logbooks, and the text and members of the ones they already have are brought up to date (their
  * entries are left alone).
  */
-export const DEMO_VERSION = '2';
+export const DEMO_VERSION = '3';
+
+/** Entries pinned for a new user, so the "Pinned entries" panel has something to show. */
+export const DEMO_PINNED_TITLES = [
+  'Handover checklist and data management',
+  'Shear cell commissioning',
+  'Pristine vs 500 cycles',
+];
 
 export const demoSeededKey = (user: User): string => `elogbook.demo-seeded.${user.id}`;
 
@@ -52,7 +59,31 @@ export class DemoSeeder {
         });
       }
     }
+    await this.pinDefaults(user);
     this.markSeeded(user);
+  }
+
+  /** Someone who has pinned nothing gets a few demo pins; anyone who already has pins keeps only theirs. */
+  private async pinDefaults(user: User): Promise<void> {
+    if ((await this.repository.listPinnedEntries(user)).length > 0) {
+      return;
+    }
+    const found: { rank: number; entryId: string }[] = [];
+    for (const logbook of await this.repository.listLogbooks(user)) {
+      if (!logbook.demo) {
+        continue;
+      }
+      for (const entry of await this.repository.listEntries(logbook.id)) {
+        const rank = DEMO_PINNED_TITLES.findIndex((title) => entry.title.startsWith(title));
+        if (rank >= 0) {
+          found.push({ rank, entryId: entry.id });
+        }
+      }
+    }
+    // In the order of the list above, so the panel always starts the same way.
+    for (const { entryId } of found.sort((a, b) => a.rank - b.rank)) {
+      await this.repository.setEntryPinned(user, entryId, true);
+    }
   }
 
   private alreadySeeded(user: User): boolean {

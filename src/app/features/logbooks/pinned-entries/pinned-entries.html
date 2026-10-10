@@ -1,0 +1,71 @@
+@if (items().length > 0) {
+  <section aria-labelledby="pinned-title">
+    <h2 id="pinned-title">
+      <mat-icon aria-hidden="true">push_pin</mat-icon>Pinned entries
+      <span class="hint">Drag to reorder</span>
+    </h2>
+    <ul
+      class="slots"
+      cdkDropList
+      cdkDropListOrientation="mixed"
+      aria-label="Pinned entries, in your order"
+      (cdkDropListDropped)="drop($event)"
+    >
+      @for (item of items(); track item.entryId; let i = $index) {
+        <li class="slot" cdkDrag>
+          <a
+            class="tile"
+            [routerLink]="['/logbooks', item.logbookId, 'entries', item.entryId]"
+            [attr.aria-label]="
+              (item.entryTitle || 'Untitled entry') + ', in the logbook ' + item.logbookTitle
+            "
+          >
+            <span class="text">
+              <!-- Which logbook it is in comes first, as its own labelled line: the title of an entry alone
+                   ("Day 1", "Meeting notes") does not say where it belongs. -->
+              <span class="logbook">
+                <mat-icon aria-hidden="true">menu_book</mat-icon>
+                <span class="logbook-name">{{ item.logbookTitle }}</span>
+              </span>
+              <span class="entry">{{ item.entryTitle || 'Untitled entry' }}</span>
+              <span class="updated"
+                >Updated {{ item.updatedAt | date }} by
+                <span class="who">{{
+                  item.updatedBy.id === currentUser.user().id ? 'you' : item.updatedBy.name
+                }}</span></span
+              >
+            </span>
+          </a>
+          <button
+            type="button"
+            class="grip"
+            cdkDragHandle
+            aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+            [attr.aria-label]="
+              'Move ' +
+              (item.entryTitle || 'Untitled entry') +
+              ': drag, or press Alt and an arrow key'
+            "
+            (keydown)="onKey($event, i)"
+          >
+            <mat-icon>drag_indicator</mat-icon>
+          </button>
+          <button
+            type="button"
+            class="unpin"
+            matTooltip="Unpin"
+            [attr.aria-label]="'Unpin ' + (item.entryTitle || 'Untitled entry')"
+            (click)="unpin(item)"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </li>
+      }
+      @for (place of freePlaces(); track $index) {
+        <li class="slot free" aria-hidden="true">
+          <span class="free-text">Pin an entry to keep it here</span>
+        </li>
+      }
+    </ul>
+  </section>
+}

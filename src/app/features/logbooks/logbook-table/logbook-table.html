@@ -41,8 +41,9 @@
                     appTruncated
                     #title="appTruncated"
                     [class.cut]="title.truncated()"
-                    >{{ logbook.title }}</span
-                  >
+                    [appHighlight]="logbook.title"
+                    [highlightTerms]="terms()"
+                  ></span>
                   @if (title.truncated()) {
                     <span class="cut-dots" aria-hidden="true">…</span>
                   }
@@ -65,8 +66,9 @@
                     appTruncated
                     #text="appTruncated"
                     [class.cut]="text.truncated()"
-                    >{{ logbook.description || '–' }}</span
-                  >
+                    [appHighlight]="logbook.description || '–'"
+                    [highlightTerms]="terms()"
+                  ></span>
                   @if (logbook.description && text.truncated()) {
                     <span class="cut-dots" aria-hidden="true">…</span>
                   }

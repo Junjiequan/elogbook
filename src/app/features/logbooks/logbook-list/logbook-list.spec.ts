@@ -1,6 +1,8 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { DEMO_USERS } from '../../../../demo/demo-users';
 import type { Logbook } from '../../../core/models/logbook.models';
 import { LogbookRepository } from '../../../core/data-access/logbook.repository';
@@ -9,7 +11,14 @@ import { HarnessLoader } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MatPaginatorHarness } from '@angular/material/paginator/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
-import { LIST_VIEW_STORAGE_KEY, LogbookList, PAGE_SIZE_STORAGE_KEY } from './logbook-list';
+import {
+  LIST_VIEW_STORAGE_KEY,
+  LogbookList,
+  PAGE_SIZE_STORAGE_KEY,
+  SEARCH_DEBOUNCE_MS,
+  SORT_STORAGE_KEY,
+} from './logbook-list';
+import { FILTERS, type LogbookFilter } from '../logbook-filters';
 import { LogbooksStore } from '../logbooks.store';
 
 const logbook = (
@@ -39,6 +48,7 @@ describe('LogbookList', () => {
     const input = el().querySelector<HTMLInputElement>('input[type="search"]')!;
     input.value = text;
     input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     fixture.detectChanges();
     await fixture.whenStable();
   };
@@ -52,7 +62,7 @@ describe('LogbookList', () => {
         provideFakeAuth(),
         {
           provide: LogbookRepository,
-          useValue: { listRecentEntries: () => Promise.resolve([]) },
+          useValue: { listPinnedEntries: () => Promise.resolve([]) },
         },
         {
           provide: LogbooksStore,
@@ -152,8 +162,22 @@ describe('LogbookList', () => {
     expect(el().querySelector('app-logbook-stats')).toBeNull();
   });
 
-  it('offers to continue where you left off, above the search', () => {
-    const strip = el().querySelector('app-recent-entries')!;
+  it('labels the list itself "All logbooks", below the strip and above the search', () => {
+    const title = el().querySelector('.section-title')!;
+
+    expect(title.textContent).toBe('All logbooks');
+    expect(
+      el().querySelector('app-pinned-entries')!.compareDocumentPosition(title) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      title.compareDocumentPosition(el().querySelector('.toolbar')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('shows the pinned entries above the search', () => {
+    const strip = el().querySelector('app-pinned-entries')!;
     const search = el().querySelector('.toolbar')!;
 
     expect(strip).not.toBeNull();
@@ -196,7 +220,7 @@ describe('LogbookList pagination', () => {
         provideFakeAuth(),
         {
           provide: LogbookRepository,
-          useValue: { listRecentEntries: () => Promise.resolve([]) },
+          useValue: { listPinnedEntries: () => Promise.resolve([]) },
         },
         {
           provide: LogbooksStore,
@@ -222,6 +246,7 @@ describe('LogbookList pagination', () => {
     const input = el().querySelector<HTMLInputElement>('input[type="search"]')!;
     input.value = text;
     input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     fixture.detectChanges();
     await fixture.whenStable();
   };
@@ -334,5 +359,513 @@ describe('LogbookList pagination', () => {
     // Words are matched separately, so "2" also finds 02, 12 and 20–29.
     await type('logbook 2');
     expect(await (await pager()).getRangeLabel()).toBe('1 – 10 of 12');
+  });
+});
+
+describe('LogbookList toolbar', () => {
+  const [anna, jon] = DEMO_USERS;
+  let fixture: ComponentFixture<LogbookList>;
+  const el = () => fixture.nativeElement as HTMLElement;
+  const titles = () =>
+    Array.from(el().querySelectorAll('.card h2')).map((n) => n.textContent?.trim());
+  const books: Logbook[] = [
+    {
+      ...logbook('1', 'Beta run', 'LoKI', '2026-0412'),
+      updatedAt: '2026-10-05T10:00:00Z',
+      createdAt: '2026-09-01T10:00:00Z',
+    },
+    {
+      ...logbook('2', 'Alpha scans', 'DREAM', null),
+      updatedAt: '2026-10-09T10:00:00Z',
+      createdAt: '2026-09-20T10:00:00Z',
+    },
+    {
+      ...logbook('3', 'Gamma notes', null, null),
+      updatedAt: '2026-10-07T10:00:00Z',
+      createdAt: '2026-09-10T10:00:00Z',
+    },
+    {
+      ...logbook('4', 'Delta shifts', 'LoKI', '2026-0500'),
+      updatedAt: '2026-10-01T10:00:00Z',
+      createdAt: '2026-09-30T10:00:00Z',
+      members: [
+        { user: jon, role: 'owner' },
+        { user: anna, role: 'viewer' },
+      ],
+    },
+  ];
+
+  const create = async (options: { narrow?: boolean; storedView?: string } = {}) => {
+    localStorage.removeItem(SORT_STORAGE_KEY);
+    localStorage.removeItem(LIST_VIEW_STORAGE_KEY);
+    if (options.storedView) {
+      localStorage.setItem(LIST_VIEW_STORAGE_KEY, options.storedView);
+    }
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        provideFakeAuth(anna),
+        {
+          provide: BreakpointObserver,
+          useValue: { observe: () => of({ matches: !!options.narrow, breakpoints: {} }) },
+        },
+        { provide: LogbookRepository, useValue: { listPinnedEntries: () => Promise.resolve([]) } },
+        {
+          provide: LogbooksStore,
+          useValue: { status: signal('ready'), load: () => undefined, logbooks: signal(books) },
+        },
+      ],
+    });
+    fixture = TestBed.createComponent(LogbookList);
+    await settle();
+  };
+
+  const settle = async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
+  const pill = (label: string) =>
+    el().querySelector<HTMLButtonElement>(`button.pill[aria-label="${label}"]`)!;
+  const menuItems = () =>
+    Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-panel button[mat-menu-item]'),
+    );
+  const choose = async (button: HTMLButtonElement, item: RegExp) => {
+    button.click();
+    await settle();
+    menuItems()
+      .find((i) => item.test(i.textContent ?? ''))!
+      .click();
+    await settle();
+  };
+  const type = async (text: string) => {
+    const input = el().querySelector<HTMLInputElement>('input[type="search"]')!;
+    input.value = text;
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await settle();
+  };
+
+  afterEach(() => {
+    document.querySelector('.cdk-overlay-backdrop')?.dispatchEvent(new Event('click'));
+    localStorage.removeItem(SORT_STORAGE_KEY);
+    localStorage.removeItem(LIST_VIEW_STORAGE_KEY);
+  });
+
+  describe('the sticky bar', () => {
+    const wrap = () => el().querySelector<HTMLElement>('.toolbar-wrap')!;
+
+    it('has no backing at rest, so there is no white rectangle behind the controls', async () => {
+      await create();
+
+      expect(wrap().classList).not.toContain('stuck');
+      expect(getComputedStyle(wrap()).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(getComputedStyle(wrap()).boxShadow).toBe('none');
+    });
+
+    it('gets a backing and an edge only once it has stuck to the top and the page passes under it', async () => {
+      let notify: IntersectionObserverCallback = () => undefined;
+      const original = window.IntersectionObserver;
+      window.IntersectionObserver = class {
+        constructor(callback: IntersectionObserverCallback) {
+          notify = callback;
+        }
+        observe() {
+          // nothing to watch: the test sends the observer its messages itself
+        }
+        disconnect() {
+          // nothing to release
+        }
+        unobserve() {
+          // nothing to release
+        }
+        takeRecords() {
+          return [];
+        }
+      } as unknown as typeof IntersectionObserver;
+      try {
+        await create();
+        const scrolledAway = (top: number) =>
+          notify(
+            [{ isIntersecting: false, boundingClientRect: { top } } as IntersectionObserverEntry],
+            {} as IntersectionObserver,
+          );
+
+        scrolledAway(-40);
+        await settle();
+        expect(wrap().classList).toContain('stuck');
+        expect(getComputedStyle(wrap()).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+
+        notify(
+          [{ isIntersecting: true, boundingClientRect: { top: 10 } } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+        await settle();
+        expect(wrap().classList).not.toContain('stuck');
+      } finally {
+        window.IntersectionObserver = original;
+      }
+    });
+  });
+
+  describe('sorting', () => {
+    it('starts with the most recently updated', async () => {
+      await create();
+
+      expect(titles()).toEqual(['Alpha scans', 'Gamma notes', 'Beta run', 'Delta shifts']);
+      expect(pill('Sort the logbooks').textContent).toContain('Recently updated');
+    });
+
+    it('offers the other orders in a menu, and applies the one chosen', async () => {
+      await create();
+
+      await choose(pill('Sort the logbooks'), /Title/);
+      expect(titles()).toEqual(['Alpha scans', 'Beta run', 'Delta shifts', 'Gamma notes']);
+
+      await choose(pill('Sort the logbooks'), /Recently created/);
+      expect(titles()).toEqual(['Delta shifts', 'Alpha scans', 'Gamma notes', 'Beta run']);
+
+      await choose(pill('Sort the logbooks'), /Instrument/);
+      // DREAM, then the two LoKI ones by title, then the logbook with no instrument
+      expect(titles()).toEqual(['Alpha scans', 'Beta run', 'Delta shifts', 'Gamma notes']);
+    });
+
+    it('marks the chosen order in the menu, and remembers it', async () => {
+      await create();
+      await choose(pill('Sort the logbooks'), /Title/);
+
+      pill('Sort the logbooks').click();
+      await settle();
+      const checked = menuItems().filter((i) => i.getAttribute('aria-checked') === 'true');
+      expect(checked.map((i) => i.textContent?.replace('check', '').trim())).toEqual([
+        'Title (A–Z)',
+      ]);
+      expect(localStorage.getItem(SORT_STORAGE_KEY)).toBe('title');
+    });
+
+    it('applies to the table too, since both show the same list', async () => {
+      await create({ storedView: 'table' });
+      await choose(pill('Sort the logbooks'), /Title/);
+
+      const rows = Array.from(el().querySelectorAll('tbody .title-text')).map((n) => n.textContent);
+      expect(rows).toEqual(['Alpha scans', 'Beta run', 'Delta shifts', 'Gamma notes']);
+    });
+  });
+
+  describe('searching while typing', () => {
+    const keystroke = (text: string) => {
+      const input = el().querySelector<HTMLInputElement>('input[type="search"]')!;
+      input.value = text;
+      input.dispatchEvent(new Event('input'));
+    };
+    const shown = () => el().querySelectorAll('.cards > li').length;
+
+    beforeEach(() => jasmine.clock().install());
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('does not search on every key: it waits for a pause', async () => {
+      await create();
+      const all = shown();
+
+      for (const text of ['a', 'al', 'alp', 'alpha']) {
+        keystroke(text);
+        jasmine.clock().tick(SEARCH_DEBOUNCE_MS - 50);
+      }
+      await settle();
+      expect(shown()).toBe(all);
+
+      jasmine.clock().tick(SEARCH_DEBOUNCE_MS);
+      await settle();
+      expect(shown()).toBeLessThan(all);
+    });
+
+    it('searches at once on Enter', async () => {
+      await create();
+      const all = shown();
+
+      keystroke('alpha');
+      el()
+        .querySelector('input[type="search"]')!
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      await settle();
+
+      expect(shown()).toBeLessThan(all);
+    });
+
+    it('lets go of the whole list at once when the box is cleared', async () => {
+      await create();
+      const all = shown();
+      await type('alpha');
+      expect(shown()).toBeLessThan(all);
+
+      el().querySelector<HTMLButtonElement>('.search .clear')!.click();
+      await settle();
+
+      expect(shown()).toBe(all);
+    });
+  });
+
+  describe('a toolbar that stays put', () => {
+    const box = (e: Element) => {
+      const r = e.getBoundingClientRect();
+      return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)];
+    };
+    const parts = () =>
+      ['.search', '.segments', '.pills', '.view-toggle'].map((selector) => ({
+        selector,
+        box: box(el().querySelector(selector)!),
+      }));
+
+    it('keeps every control where it is and as big as it is, whatever is chosen or typed', async () => {
+      books.push({
+        ...logbook('9', 'Zeta', 'BIFROST'.repeat(8), null),
+        updatedAt: '2026-09-01T10:00:00Z',
+      });
+      try {
+        await create();
+        const before = parts();
+        const pillWidths = Array.from(el().querySelectorAll('.pill')).map((p) => box(p)[2]);
+
+        await choose(pill('Filter by instrument'), /BIFROSTBIFROST/);
+        await choose(pill('Sort the logbooks'), /Instrument/);
+        await type('zeta');
+
+        expect(parts()).toEqual(before);
+        expect(Array.from(el().querySelectorAll('.pill')).map((p) => box(p)[2])).toEqual(
+          pillWidths,
+        );
+      } finally {
+        books.pop();
+      }
+    });
+
+    it('is exactly as wide as the cards beneath it, so a stuck bar does not overhang them', async () => {
+      await create();
+      const bar = el().querySelector('.toolbar-wrap')!.getBoundingClientRect();
+      const cards = el().querySelector('.cards')!.getBoundingClientRect();
+
+      expect(Math.round(bar.left)).toBe(Math.round(cards.left));
+      expect(Math.round(bar.width)).toBe(Math.round(cards.width));
+    });
+
+    it('never lets one control sit on top of another', async () => {
+      await create();
+      const rects = parts().map(({ selector, box: [left, top, width, height] }) => ({
+        selector,
+        left,
+        top,
+        right: left + width,
+        bottom: top + height,
+      }));
+
+      for (const [i, a] of rects.entries()) {
+        for (const b of rects.slice(i + 1)) {
+          const overlap =
+            a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          expect(overlap).withContext(`${a.selector} and ${b.selector}`).toBeFalse();
+        }
+      }
+    });
+
+    it('cuts a long name with an ellipsis instead of widening the button', async () => {
+      books.push({ ...logbook('9', 'Zeta', 'BIFROST'.repeat(8), null) });
+      try {
+        await create();
+        await choose(pill('Filter by instrument'), /BIFROSTBIFROST/);
+
+        const text = pill('Filter by instrument').querySelector<HTMLElement>('.pill-text')!;
+        expect(getComputedStyle(text).textOverflow).toBe('ellipsis');
+        expect(text.scrollWidth).toBeGreaterThan(text.clientWidth);
+        expect(pill('Filter by instrument').getBoundingClientRect().width).toBe(
+          pill('Sort the logbooks').getBoundingClientRect().width,
+        );
+      } finally {
+        books.pop();
+      }
+    });
+
+    it('calls the sort button "Sort: …", so it is not mistaken for the instrument filter', async () => {
+      await create();
+      await choose(pill('Sort the logbooks'), /Instrument/);
+
+      expect(pill('Sort the logbooks').textContent).toContain('Sort: Instrument');
+      expect(pill('Filter by instrument').textContent).toContain('All instruments');
+    });
+  });
+
+  describe('the instrument filter', () => {
+    it('lists the instruments in use, with how many logbooks each has', async () => {
+      await create();
+      pill('Filter by instrument').click();
+      await settle();
+
+      expect(menuItems().map((i) => i.textContent?.replace('check', '').trim())).toEqual([
+        'All instruments',
+        'DREAM (1)',
+        'LoKI (2)',
+      ]);
+    });
+
+    it('narrows the list to one instrument, says so, and can be cleared', async () => {
+      await create();
+
+      await choose(pill('Filter by instrument'), /LoKI/);
+
+      expect(titles()).toEqual(['Beta run', 'Delta shifts']);
+      expect(pill('Filter by instrument').textContent).toContain('LoKI');
+      expect(pill('Filter by instrument').classList).toContain('active');
+      expect(el().querySelector('.result-note')!.textContent).toContain('Showing 2 of 4');
+
+      el().querySelector<HTMLButtonElement>('.clear-all')!.click();
+      await settle();
+      expect(titles().length).toBe(4);
+      expect(el().querySelector('.result-line')).toBeNull();
+    });
+
+    it('combines with the role filter and the search', async () => {
+      await create();
+      await choose(pill('Filter by instrument'), /LoKI/);
+
+      Array.from(el().querySelectorAll<HTMLButtonElement>('.filter'))
+        .find((b) => b.textContent?.includes('View only'))!
+        .click();
+      await settle();
+      expect(titles()).toEqual(['Delta shifts']);
+
+      await type('zzz');
+      expect(titles()).toEqual([]);
+    });
+  });
+
+  describe('on a phone', () => {
+    it('shows cards only: a table of eight columns cannot fit', async () => {
+      await create({ narrow: true });
+
+      expect(el().querySelector('.cards')).not.toBeNull();
+      expect(el().querySelector('table')).toBeNull();
+    });
+
+    it('ignores a table that was chosen on a bigger screen, and has no layout switch to offer', async () => {
+      await create({ narrow: true, storedView: 'table' });
+
+      expect(el().querySelector('table')).toBeNull();
+      expect(el().querySelector('.view-toggle')).toBeNull();
+      expect(el().querySelector('.slash')).toBeNull(); // nor a keyboard hint
+    });
+
+    it('still has the search, the roles, the instrument and the sort', async () => {
+      await create({ narrow: true });
+
+      expect(el().querySelector('input[type="search"]')).not.toBeNull();
+      expect(el().querySelectorAll('.filter').length).toBe(4);
+      expect(pill('Filter by instrument')).not.toBeNull();
+      expect(pill('Sort the logbooks')).not.toBeNull();
+    });
+
+    it('gets the table back on a wide screen, as chosen', async () => {
+      await create({ narrow: false, storedView: 'table' });
+
+      expect(el().querySelector('table')).not.toBeNull();
+      expect(el().querySelector('.view-toggle')).not.toBeNull();
+    });
+  });
+
+  describe('the search', () => {
+    const slash = (target: EventTarget = document.body) => {
+      const event = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      return event;
+    };
+    const searchBox = () => el().querySelector<HTMLInputElement>('input[type="search"]')!;
+
+    it('jumps into the search box when "/" is pressed', async () => {
+      await create();
+      expect(document.activeElement).not.toBe(searchBox());
+
+      const event = slash();
+
+      expect(document.activeElement).toBe(searchBox());
+      expect(event.defaultPrevented).toBeTrue(); // so the slash is not typed into the box
+      expect(el().querySelector('.slash')).not.toBeNull(); // and the key is shown as a hint
+    });
+
+    it('does not take the key while the user is typing somewhere else', async () => {
+      await create();
+      const other = document.createElement('input');
+      document.body.append(other);
+      other.focus();
+
+      const event = slash(other);
+
+      expect(event.defaultPrevented).toBeFalse();
+      expect(document.activeElement).toBe(other);
+      other.remove();
+    });
+
+    it('marks the search words in the titles, so it is clear why a logbook matched', async () => {
+      await create();
+
+      await type('loki');
+
+      const marks = Array.from(el().querySelectorAll('.card h2 mark')).map((m) => m.textContent);
+      expect(el().querySelectorAll('.card').length).toBe(2); // matched by the instrument
+      await type('beta');
+      expect(Array.from(el().querySelectorAll('.card h2 mark')).map((m) => m.textContent)).toEqual([
+        'Beta',
+      ]);
+      expect(marks).toBeDefined();
+    });
+
+    it('says what is filtering and offers a way out when nothing matches', async () => {
+      await create();
+      await choose(pill('Filter by instrument'), /LoKI/);
+      await type('zzz');
+
+      const empty = el().querySelector('.empty')!;
+      expect(empty.textContent).toContain('No logbooks match your search or filter.');
+      expect(
+        Array.from(empty.querySelectorAll('.active-filters li')).map((l) => l.textContent),
+      ).toEqual(['Search “zzz”', 'Instrument: LoKI']);
+
+      empty.querySelector<HTMLButtonElement>('button')!.click();
+      await settle();
+      expect(titles().length).toBe(4);
+      expect(searchBox().value).toBe('');
+    });
+  });
+
+  describe('adding a filter later', () => {
+    it('needs only a new entry in the list of filters: the toolbar, the menu and the matching follow', async () => {
+      const extra: LogbookFilter = {
+        id: 'proposal',
+        label: 'Proposal',
+        icon: 'description',
+        display: 'menu',
+        allLabel: 'All proposals',
+        options: (logbooks) =>
+          [...new Set(logbooks.map((l) => l.proposalId).filter(Boolean))].map((p) => ({
+            value: p as string,
+            label: p as string,
+            count: logbooks.filter((l) => l.proposalId === p).length,
+          })),
+        matches: (logbook, value) => logbook.proposalId === value,
+      };
+      (FILTERS as LogbookFilter[]).push(extra);
+      try {
+        await create();
+        expect(pill('Filter by proposal')).not.toBeNull();
+
+        await choose(pill('Filter by proposal'), /2026-0500/);
+
+        expect(titles()).toEqual(['Delta shifts']);
+        expect(el().querySelector('.result-note')!.textContent).toContain('Showing 1 of 4');
+      } finally {
+        (FILTERS as LogbookFilter[]).pop();
+      }
+    });
   });
 });

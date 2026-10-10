@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "elogbook",
+      "url": "http://localhost:4300",
+      "port": 4300
+    }
+  ]
+}

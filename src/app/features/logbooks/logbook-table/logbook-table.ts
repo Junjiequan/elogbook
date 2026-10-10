@@ -7,6 +7,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { CurrentUserService } from '../../../core/auth/current-user.service';
 import { roleOf } from '../../../core/auth/permissions';
 import type { Logbook, MemberRole } from '../../../core/models/logbook.models';
+import { Highlight } from '../highlight';
 import { MemberAvatars } from '../member-avatars/member-avatars';
 import { TablePopover } from '../../../shared/table-popover/table-popover';
 import { Truncated } from '../truncated';
@@ -22,6 +23,7 @@ import { Truncated } from '../truncated';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    Highlight,
     MatIconButton,
     MatIcon,
     MatTooltip,
@@ -35,6 +37,8 @@ import { Truncated } from '../truncated';
 })
 export class LogbookTable {
   readonly logbooks = input.required<Logbook[]>();
+  /** Search words to mark in the titles and descriptions. */
+  readonly terms = input<readonly string[]>([]);
 
   private readonly currentUser = inject(CurrentUserService);
 

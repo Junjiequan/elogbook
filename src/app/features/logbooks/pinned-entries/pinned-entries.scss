@@ -1,0 +1,232 @@
+// A panel of its own, as wide as the page: a tinted background and border set it apart from the list
+// below it, which sits straight on the page. The tiles inside stay white, so they read as things to pick up.
+section {
+  margin-bottom: 30px;
+  padding: 12px 14px 14px;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-primary) 22%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mat-sys-primary) 7%, var(--mat-sys-surface));
+}
+
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-title-small);
+  font-weight: 700;
+
+  mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+  }
+
+  .hint {
+    margin-left: auto;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-small);
+    font-weight: 400;
+  }
+}
+
+// Four equal places in a row (two on a medium screen, one on a phone). Pinned entries fill them from
+// the left; the rest are placeholders.
+.slots {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 700px) {
+  .slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .slots {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.slot {
+  position: relative;
+  min-height: 76px;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  box-sizing: border-box;
+  // Room for the grip on the left and, on the right, for the cross: the text never runs under either.
+  padding: 10px 44px 10px 30px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-left: 3px solid var(--app-brand-accent);
+  border-radius: 8px;
+  background: var(--mat-sys-surface);
+  box-shadow: var(--app-shadow-sm);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--mat-sys-primary);
+    border-left-color: var(--mat-sys-primary);
+    box-shadow: var(--app-shadow-md);
+  }
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+// One line each: a long name is cut with "…" (the whole tile opens the entry, and the logbook's own
+// page shows its full name). The logbook is the quieter line and sits above the entry title.
+.logbook-name,
+.entry {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logbook {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  box-sizing: border-box; // so max-width counts the padding too, and the label cannot stick out
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: 3px;
+  padding: 2px 8px 2px 5px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent);
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-label-medium);
+  line-height: 1.3;
+
+  mat-icon {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
+  }
+}
+
+.entry {
+  font: var(--mat-sys-title-small);
+}
+
+.updated {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Who made the last change, in a colour of its own so it reads apart from the date before it.
+.who {
+  color: var(--mat-sys-tertiary);
+  font-weight: 600;
+}
+
+// An empty place: dashed and quiet, so it reads as "room for one more", not as a gap in the layout.
+.free {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1.5px dashed color-mix(in srgb, var(--mat-sys-primary) 35%, transparent);
+  border-radius: 8px;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-medium);
+  text-align: center;
+}
+
+// The grip on the left edge of a tile: where to take hold to move it.
+.grip,
+.unpin {
+  position: absolute;
+  top: 50%;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--mat-sys-on-surface-variant);
+  transform: translateY(-50%);
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
+    color: var(--mat-sys-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+  }
+}
+
+.grip {
+  left: 6px;
+  width: 22px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.unpin {
+  top: 18px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+// While a tile is being dragged: lifted above the rest, with the place it came from left as a faint outline.
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: var(--app-shadow-pop);
+  list-style: none;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+
+.cdk-drag-animating {
+  transition: transform 0.2s ease;
+}
+
+.slots.cdk-drop-list-dragging .slot:not(.cdk-drag-placeholder) {
+  transition: transform 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cdk-drag-animating,
+  .slots.cdk-drop-list-dragging .slot:not(.cdk-drag-placeholder) {
+    transition: none;
+  }
+}

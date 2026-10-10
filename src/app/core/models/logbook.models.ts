@@ -36,13 +36,18 @@ export type LogbookSettingsPatch = Partial<
   Pick<Logbook, 'title' | 'description' | 'visibility' | 'members'>
 >;
 
-/** An entry as the "continue where you left off" strip needs it: where it is and when it was last touched. */
-export interface RecentEntry {
+/** How many entries one person can pin. A short list stays useful; a long one is just another list. */
+export const MAX_PINNED_ENTRIES = 4;
+
+/** An entry the person has pinned, with where it lives: what the list page's "Pinned" panel shows. */
+export interface PinnedEntry {
   entryId: string;
   entryTitle: string;
   logbookId: string;
   logbookTitle: string;
   instrument: string | null;
+  pinnedAt: string;
+  /** When the entry itself was last changed (not when it was pinned), and by whom. */
   updatedAt: string;
   updatedBy: User;
 }

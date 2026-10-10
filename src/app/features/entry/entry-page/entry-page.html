@@ -49,6 +49,22 @@
             <span class="label">Delete</span>
           </button>
         }
+        <!-- Pinning is personal, like a bookmark, so it is open to everyone who can read the entry. -->
+        <button
+          mat-button
+          [class.on]="pinned()"
+          (click)="togglePin()"
+          [matTooltip]="
+            pinned()
+              ? 'Unpin: take it off your list of pinned entries'
+              : 'Pin: keep it on your list of pinned entries'
+          "
+          [attr.aria-label]="pinned() ? 'Unpin entry' : 'Pin entry'"
+          [attr.aria-pressed]="pinned()"
+        >
+          <mat-icon>push_pin</mat-icon>
+          <span class="label">{{ pinned() ? 'Pinned' : 'Pin' }}</span>
+        </button>
         <button
           mat-button
           [class.on]="historyOpen()"
