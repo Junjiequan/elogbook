@@ -32,7 +32,7 @@ services:
       - key: OAUTH_FRONTEND_URL
         sync: false
   - type: web
-    name: elogbook
+    name: jlogbook
     runtime: static
     buildCommand: npm ci && npm run build:static -w frontend
     staticPublishPath: ./frontend/dist/elogbook/browser
@@ -44,4 +44,4 @@ services:
       - key: NODE_VERSION
         value: "24"
       - key: API_URL
-        sync: false
+        value: https://elogbook-api-hyd2.onrender.com/api/v1
