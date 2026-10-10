@@ -40,6 +40,42 @@ describe('logbooks', () => {
     expect(res.body.createdAt).toEqual(expect.any(String));
   });
 
+  it('says what the person asking may do with each logbook', async () => {
+    const id = await anna.createLogbook();
+    await anna.share(id, [
+      { person: jon, role: 'editor' },
+      { person: mei, role: 'viewer' },
+    ]);
+    await anna.patch(`/logbooks/${id}`, { visibility: 'facility-read' }).expect(200);
+
+    const as = async (person: Person) => (await person.get(`/logbooks/${id}`).expect(200)).body;
+
+    expect(await as(anna)).toMatchObject({
+      myRole: 'owner',
+      canWrite: true,
+      canConfigure: true,
+      canDelete: true,
+    });
+    expect(await as(jon)).toMatchObject({
+      myRole: 'editor',
+      canWrite: true,
+      canConfigure: false,
+      canDelete: false,
+    });
+    expect(await as(mei)).toMatchObject({
+      myRole: 'viewer',
+      canWrite: false,
+      canConfigure: false,
+      canDelete: false,
+    });
+    expect(await as(admin)).toMatchObject({
+      myRole: 'viewer',
+      canWrite: false,
+      canConfigure: false,
+      canDelete: true,
+    });
+  });
+
   it('refuses a logbook without a title', async () => {
     await anna.post('/logbooks', { title: '   ' }).expect(400);
     await anna.post('/logbooks', {}).expect(400);

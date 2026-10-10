@@ -32,6 +32,10 @@ export const configuration = () => ({
     allowRegistration: flag(process.env.AUTH_ALLOW_REGISTRATION, true),
     adminEmails: list(process.env.ADMIN_EMAILS).map((email) => email.toLowerCase()),
   },
+  demo: {
+    // POST /demo makes sample logbooks for the signed-in person, DELETE /demo removes them again.
+    enabled: flag(process.env.DEMO_ENABLED, process.env.NODE_ENV !== 'production'),
+  },
   rateLimit: {
     default: Number(process.env.RATE_LIMIT ?? 120),
     auth: Number(process.env.AUTH_RATE_LIMIT ?? 10),

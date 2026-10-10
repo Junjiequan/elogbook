@@ -6,10 +6,11 @@ import { Logbook } from '../logbooks/entities/logbook.entity.js';
 import { PinnedEntry } from '../pins/entities/pinned-entry.entity.js';
 import { User } from '../users/entities/user.entity.js';
 import { InitialSchema1760000000000 } from './migrations/1760000000000-initial-schema.js';
+import { DemoLogbooks1760000000001 } from './migrations/1760000000001-demo-logbooks.js';
 import { SnakeNamingStrategy } from './snake-naming.strategy.js';
 
 export const ENTITIES = [User, Logbook, LogbookMember, Entry, EntryVersion, PinnedEntry];
-export const MIGRATIONS = [InitialSchema1760000000000];
+export const MIGRATIONS = [InitialSchema1760000000000, DemoLogbooks1760000000001];
 
 /**
  * The tables are only ever changed by migrations (`synchronize` stays off: it would happily drop a

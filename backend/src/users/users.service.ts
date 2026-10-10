@@ -63,7 +63,19 @@ export class UsersService {
    * a logbook with a colleague must work before they have signed in for the first time.
    */
   async ensureByEmails(emails: string[], manager: EntityManager): Promise<Map<string, User>> {
-    const keys = [...new Set(emails.map(normaliseEmail))];
+    return this.ensurePeople(
+      emails.map((email) => ({ email })),
+      manager,
+    );
+  }
+
+  /** The same, for people whose name is known (the colleagues in the sample logbooks). */
+  async ensurePeople(
+    people: { email: string; name?: string }[],
+    manager: EntityManager,
+  ): Promise<Map<string, User>> {
+    const named = new Map(people.map((p) => [normaliseEmail(p.email), p.name]));
+    const keys = [...named.keys()];
     await manager
       .createQueryBuilder()
       .insert()
@@ -71,7 +83,7 @@ export class UsersService {
       .values(
         keys.map((email) => ({
           email,
-          name: email.split('@')[0],
+          name: named.get(email) ?? email.split('@')[0],
           invited: true,
           roles: [],
         })),

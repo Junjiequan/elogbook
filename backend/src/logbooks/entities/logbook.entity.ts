@@ -3,11 +3,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   type Relation,
 } from 'typeorm';
+import { User } from '../../users/entities/user.entity.js';
 import { LogbookMember } from './logbook-member.entity.js';
 
 /** `private`: only listed members. `facility-read`: any signed-in user may read. */
@@ -37,6 +40,22 @@ export class Logbook {
 
   @OneToMany(() => LogbookMember, (member) => member.logbook)
   members: Relation<LogbookMember[]>;
+
+  /**
+   * Set on the sample logbooks made by `POST /demo`: the person they were made for. Only `DELETE /demo`
+   * removes them by this, so real logbooks can never be caught by it.
+   */
+  @Index()
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: true })
+  demoUser: Relation<User> | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  demoUserId: string | null;
+
+  /** A sample logbook is personal: the facility-wide rule does not apply to it. */
+  get demo(): boolean {
+    return !!this.demoUserId;
+  }
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

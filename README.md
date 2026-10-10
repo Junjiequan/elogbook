@@ -18,10 +18,11 @@ This is a monorepo: two apps, each with its own `package.json`, tied together by
 nvm use                  # Node 24 (see .nvmrc); needs Node ^22.22.3 or ^24.15
 npm install              # installs both apps
 
-npm start                # frontend: http://localhost:4300
-npm run db:up            # PostgreSQL for the API (Docker)
-npm run start:backend    # API: http://localhost:3000/api/v1 (docs at /api/docs); needs backend/.env, see backend/README.md
-npm run dev              # frontend and API together
+npm run up               # OR everything in Docker with hot reload: frontend, API and PostgreSQL (see "Run it all in Docker")
+npm run setup:backend    # once, to run without Docker: PostgreSQL (Docker) and backend/.env with a random JWT_SECRET
+npm start                # frontend (http://localhost:4300) and API (http://localhost:3000/api/v1, docs at /api/docs) together
+npm run start:frontend   # or only one of them
+npm run start:backend
 
 npm test                 # unit tests of both apps (the frontend in headless Chrome; set CHROME_BIN if it is not found)
 npm run test:e2e         # API tests against PostgreSQL (run db:up first)
@@ -78,8 +79,9 @@ the permissions.
 elogbook/
 ├── package.json        workspaces: ["frontend", "backend"]; the scripts above run in both
 ├── package-lock.json   one lockfile for everything
+├── docker-compose.yaml the whole development stack: frontend, backend, PostgreSQL
 ├── frontend/           Angular app: its own package.json, angular.json, tsconfig*, eslint, karma
-├── backend/            NestJS API: its own package.json, tsconfig*, Dockerfile, docker-compose.yaml
+├── backend/            NestJS API: its own package.json, tsconfig*, Dockerfile (production image)
 ├── packages/
 │   └── permissions/    who may do what (CASL), defined once and used by both apps
 └── .github/workflows/  CI: lint, unit tests, API e2e tests, GitHub Pages deploy of frontend/
@@ -87,6 +89,30 @@ elogbook/
 
 Each app has its own dependencies and scripts and can be run alone (`npm run <script> -w frontend`).
 Code both apps share lives in `packages/`. `@elogbook/permissions` is compiled to `dist/` (it happens on `npm install`); after editing it run `npm run build:packages`.
+
+## Run it all in Docker
+
+One file, `docker-compose.yaml`, starts everything with your code mounted, so saving a file reloads it:
+
+```bash
+npm run up           # = docker compose up --build   (add -d to run in the background)
+npm run down         # stop everything (the database keeps its data in a Docker volume)
+```
+
+| Service       | Where                                                    | What happens when you edit code                                                 |
+| ------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `frontend`    | http://localhost:4300                                    | the Angular dev server rebuilds and the browser reloads                         |
+| `backend`     | http://localhost:3000/api/v1 (docs at `/api/docs`)       | NestJS recompiles and restarts                                                  |
+| `permissions` | (no port)                                                | rebuilds `packages/permissions`, which both apps import                         |
+| `db`          | localhost:5433 (user, password and database: `elogbook`) |                                                                                 |
+| `deps`        | (runs first, then exits)                                 | installs dependencies; runs again when a `package.json` or the lockfile changes |
+
+- Dependencies are installed for Linux into Docker volumes; your own `node_modules` are not used inside the containers
+  (and need not exist). The first start takes a minute or two for that.
+- File watching uses polling, because file events do not reliably cross from macOS or Windows into a container.
+- The API gets its settings from the compose file (a development-only `JWT_SECRET`), not from `backend/.env`.
+- Demo accounts: `docker compose exec backend npm run seed -w backend`. Logs: `docker compose logs -f backend`.
+- Run either this or `npm start`, not both: they use the same ports.
 
 ## Architecture (frontend)
 

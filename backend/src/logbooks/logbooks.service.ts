@@ -43,18 +43,23 @@ export class LogbooksService {
       .leftJoinAndSelect('logbook.members', 'member')
       .leftJoinAndSelect('member.user', 'memberUser')
       .where(
-        `logbook.visibility = 'facility-read' OR EXISTS (
+        `(logbook.visibility = 'facility-read' AND logbook.demo_user_id IS NULL) OR EXISTS (
            SELECT 1 FROM logbook_members mine
            WHERE mine.logbook_id = logbook.id AND mine.user_id = :userId)`,
         { userId: user.id },
       )
       .orderBy('logbook.updatedAt', 'DESC')
       .getMany();
-    return logbooks.map(toLogbookDto);
+    const ability = this.casl.createForUser(user);
+    return logbooks.map((logbook) => toLogbookDto(logbook, ability, user.id));
   }
 
   async get(user: JwtUser, id: string): Promise<LogbookDto> {
-    return toLogbookDto(await this.requireAccess(user, id, 'read'));
+    return toLogbookDto(
+      await this.requireAccess(user, id, 'read'),
+      this.casl.createForUser(user),
+      user.id,
+    );
   }
 
   async create(user: JwtUser, dto: CreateLogbookDto): Promise<LogbookDto> {

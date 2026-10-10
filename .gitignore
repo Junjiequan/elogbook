@@ -3,8 +3,8 @@
 # Dependencies and build output (in every workspace)
 node_modules
 dist
-/out-tsc
-/bazel-out
+out-tsc
+bazel-out
 *.tsbuildinfo
 npm-debug.log
 yarn-error.log
@@ -30,13 +30,13 @@ yarn-error.log
 .history/*
 
 # Miscellaneous
-.angular/cache
+.angular
 .sass-cache/
-/connect.lock
+connect.lock
 coverage
-/libpeerconnection.log
+libpeerconnection.log
 testem.log
-/typings
+typings
 __screenshots__/
 
 # System files

@@ -25,7 +25,10 @@ export function validateEnv(env: Record<string, unknown>): Record<string, unknow
   }
 
   if (problems.length > 0) {
-    throw new Error(`Invalid environment:\n - ${problems.join('\n - ')}`);
+    throw new Error(
+      `Invalid environment:\n - ${problems.join('\n - ')}\n` +
+        'No backend/.env yet? Run `npm run setup:backend` from the repository root (it also starts the database).',
+    );
   }
   return env;
 }

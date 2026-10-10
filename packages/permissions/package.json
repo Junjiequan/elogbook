@@ -13,13 +13,16 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
     "test:ci": "vitest run",
     "lint": "oxlint --type-aware src/",
-    "format:check": "prettier --check \"src/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "watch": "tsc -p tsconfig.build.json --watch --preserveWatchOutput"
   },
   "dependencies": {
     "@casl/ability": "^7.0.1"

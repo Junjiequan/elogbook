@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
 import { type AppConfig, configuration } from './config/configuration.js';
 import { validateEnv } from './config/env.validation.js';
+import { DemoModule } from './demo/demo.module.js';
 import { dataSourceOptions } from './database/database.config.js';
 import { EntriesModule } from './entries/entries.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -37,6 +38,7 @@ import { UsersModule } from './users/users.module.js';
     LogbooksModule,
     EntriesModule,
     PinsModule,
+    DemoModule,
     HealthModule,
   ],
   providers: [

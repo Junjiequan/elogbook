@@ -1,0 +1,120 @@
+# The whole development stack in one command:
+#
+#   docker compose up --build        (or: npm run up)
+#
+#   frontend  http://localhost:4300          Angular dev server, reloads the browser on every change
+#   backend   http://localhost:3000/api/v1   NestJS API, restarts on every change (docs at /api/docs)
+#   db        localhost:5433                 PostgreSQL 17 (user/password/database: elogbook)
+#
+# Your code is mounted into the containers, so saving a file on your machine is enough. Dependencies are
+# installed for Linux into Docker volumes (your macOS node_modules are not used), and they are installed
+# again by the `deps` service when a package.json or the lockfile changes.
+name: elogbook
+
+x-node: &node
+  image: node:24-bookworm-slim
+  working_dir: /app
+  volumes: &code
+    - .:/app
+    - node_modules:/app/node_modules
+    - backend_node_modules:/app/backend/node_modules
+    - frontend_node_modules:/app/frontend/node_modules
+    - frontend_angular_cache:/app/frontend/.angular
+  environment: &watch
+    # File events do not always cross from the host into a container, so the watchers poll instead.
+    CHOKIDAR_USEPOLLING: 'true'
+    TSC_WATCHFILE: PriorityPollingInterval
+    TSC_WATCHDIRECTORY: FixedPollingInterval
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: elogbook
+      POSTGRES_PASSWORD: elogbook
+      POSTGRES_DB: elogbook
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - elogbook-db:/var/lib/postgresql/data
+      - ./backend/docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U elogbook -d elogbook']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Installs the dependencies into the volumes, then exits. The others wait for it.
+  deps:
+    <<: *node
+    restart: 'no'
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        stamp=$$(cat package-lock.json package.json backend/package.json frontend/package.json packages/*/package.json | sha1sum | cut -d' ' -f1)
+        if [ "$$(cat node_modules/.install-stamp 2>/dev/null)" != "$$stamp" ]; then
+          echo "Installing dependencies (first run, or a package.json / the lockfile changed)..."
+          # `install --no-save`, not `ci`: ci deletes node_modules, which is a volume mount point here.
+          # --no-save keeps the lockfile as it is; the install also builds packages/permissions.
+          npm install --no-save --no-audit --no-fund
+          echo "$$stamp" > node_modules/.install-stamp
+        else
+          echo "Dependencies are up to date."
+        fi
+
+  # Rebuilds @elogbook/permissions when its source changes; both apps import its compiled dist/.
+  permissions:
+    <<: *node
+    command: npm run watch -w @elogbook/permissions
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
+  backend:
+    <<: *node
+    command: npm run start:dev -w backend
+    depends_on:
+      db:
+        condition: service_healthy
+      deps:
+        condition: service_completed_successfully
+    environment:
+      <<: *watch
+      PORT: '3000'
+      DATABASE_URL: postgres://elogbook:elogbook@db:5432/elogbook
+      # Development only. Anything else needs its own secret (openssl rand -base64 48).
+      JWT_SECRET: development-only-secret-change-me-0123456789
+      CORS_ORIGINS: http://localhost:4300,http://127.0.0.1:4300
+      ADMIN_EMAILS: anna.lindqvist@example.org
+      DEMO_ENABLED: 'true'
+    ports:
+      - '127.0.0.1:3000:3000'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+
+  frontend:
+    <<: *node
+    command: npm run start -w frontend -- --host 0.0.0.0 --poll 1000
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+    ports:
+      - '127.0.0.1:4300:4300'
+
+volumes:
+  elogbook-db:
+  node_modules:
+  backend_node_modules:
+  frontend_node_modules:
+  frontend_angular_cache:
